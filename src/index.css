@@ -54,3 +54,9 @@
     @apply bg-white rounded-3xl shadow-sm p-6;
   }
 }
+
+@layer utilities {
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0.5rem);
+  }
+}
