@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  /* Garden greens */
+  --color-garden-50: #f0fdf4;
+  --color-garden-100: #dcfce7;
+  --color-garden-200: #bbf7d0;
+  --color-garden-300: #86efac;
+  --color-garden-400: #4ade80;
+  --color-garden-500: #22c55e;
+  --color-garden-600: #16a34a;
+
+  /* Warm yellows */
+  --color-warm-50: #fffbeb;
+  --color-warm-100: #fef3c7;
+  --color-warm-200: #fde68a;
+  --color-warm-300: #fcd34d;
+  --color-warm-400: #fbbf24;
+  --color-warm-500: #f59e0b;
+
+  /* Sky blues */
+  --color-sky-50: #f0f9ff;
+  --color-sky-100: #e0f2fe;
+  --color-sky-200: #bae6fd;
+  --color-sky-300: #7dd3fc;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+
+  body {
+    @apply bg-garden-50 text-gray-800 min-h-screen;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-garden-500 hover:bg-garden-600 text-white font-medium
+           py-3 px-6 rounded-2xl transition-colors
+           active:scale-95 transform;
+  }
+
+  .btn-secondary {
+    @apply bg-warm-100 hover:bg-warm-200 text-gray-800 font-medium
+           py-3 px-6 rounded-2xl transition-colors
+           active:scale-95 transform;
+  }
+
+  .card {
+    @apply bg-white rounded-3xl shadow-sm p-6;
+  }
+}
