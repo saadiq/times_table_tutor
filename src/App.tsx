@@ -1,13 +1,35 @@
+import { useEffect } from 'react'
+import { useProgressStore, useGardenStore, useSessionStore } from './stores'
+import { Layout } from './components/common'
+import { PracticeView, LearnView, GardenViewPage } from './views'
+
 function App() {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="card text-center">
-        <h1 className="text-2xl font-bold text-garden-600">
-          Times Table Tutor
-        </h1>
-        <p className="text-gray-600 mt-2">Loading...</p>
+  const { initialize: initProgress, initialized } = useProgressStore()
+  const { initialize: initGarden } = useGardenStore()
+  const { mode } = useSessionStore()
+
+  useEffect(() => {
+    initProgress()
+    initGarden()
+  }, [initProgress, initGarden])
+
+  if (!initialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-garden-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-gray-500 mt-4">Loading...</p>
+        </div>
       </div>
-    </div>
+    )
+  }
+
+  return (
+    <Layout>
+      {mode === 'learn' && <LearnView />}
+      {mode === 'practice' && <PracticeView />}
+      {mode === 'garden' && <GardenViewPage />}
+    </Layout>
   )
 }
 
