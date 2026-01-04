@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lightbulb, SkipForward, Flower2 } from 'lucide-react'
 import { useProgressStore, useSessionStore, useGardenStore } from '../stores'
@@ -34,12 +34,18 @@ export function PracticeView() {
     }
   }, [facts, recentFacts])
 
-  // Initialize first problem
-  useEffect(() => {
-    if (!currentFact && Object.keys(facts).length > 0) {
-      nextProblem()
+  // Initialize first problem - compute next fact directly instead of calling setState in effect
+  const shouldInitialize = !currentFact && Object.keys(facts).length > 0
+  if (shouldInitialize) {
+    const next = selectNextFact(facts, recentFacts)
+    if (next && currentFact !== next) {
+      // Use a micro-task to avoid render-during-render
+      queueMicrotask(() => {
+        setCurrentFact(next)
+        setRecentFacts(prev => [...prev.slice(-10), next.fact])
+      })
     }
-  }, [currentFact, facts, nextProblem])
+  }
 
   // Handle answer selection
   const handleAnswer = (answer: number) => {

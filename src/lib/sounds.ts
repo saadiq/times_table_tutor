@@ -27,7 +27,7 @@ function playTone(frequency: number, duration: number, type: OscillatorType = 's
 
     oscillator.start(ctx.currentTime)
     oscillator.stop(ctx.currentTime + duration)
-  } catch (e) {
+  } catch {
     // Ignore audio errors (user hasn't interacted yet, etc.)
   }
 }

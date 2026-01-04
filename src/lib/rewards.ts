@@ -85,7 +85,7 @@ export function getPurchasableItems(coins: number): Array<{
   cost: number
 }> {
   return Object.entries(GARDEN_ITEMS)
-    .filter(([_, item]) => item.cost > 0 && item.cost <= coins)
+    .filter(([, item]) => item.cost > 0 && item.cost <= coins)
     .map(([itemId, item]) => ({
       itemId,
       name: item.name,
