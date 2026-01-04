@@ -1,17 +1,19 @@
 import { useEffect } from 'react'
-import { useProgressStore, useGardenStore, useSessionStore } from './stores'
+import { useProgressStore, useGardenStore, useSessionStore, useFocusTablesStore } from './stores'
 import { Layout } from './components/common'
 import { PracticeView, LearnView, GardenViewPage } from './views'
 
 function App() {
   const { initialize: initProgress, initialized } = useProgressStore()
   const { initialize: initGarden } = useGardenStore()
+  const { initialize: initFocusTables } = useFocusTablesStore()
   const { mode } = useSessionStore()
 
   useEffect(() => {
     initProgress()
     initGarden()
-  }, [initProgress, initGarden])
+    initFocusTables()
+  }, [initProgress, initGarden, initFocusTables])
 
   if (!initialized) {
     return (
