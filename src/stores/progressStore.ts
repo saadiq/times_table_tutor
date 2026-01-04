@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { FactProgress, Confidence } from '../types'
+import type { FactProgress, Confidence, FactProgressSync } from '../types'
 import { TIMES_TABLES, REWARDS } from '../lib/constants'
 import { saveToStorage, loadFromStorage } from '../lib/storage'
 import { useGardenStore } from './gardenStore'
@@ -17,6 +17,8 @@ type ProgressActions = {
   getFactsByConfidence: (confidence: Confidence) => FactProgress[]
   getMasteredTables: () => number[]
   setPreferredStrategy: (fact: string, strategy: string) => void
+  loadFromServer: (facts: FactProgressSync[]) => void
+  toSyncPayload: (fact: string) => FactProgressSync | null
 }
 
 function generateAllFacts(): Record<string, FactProgress> {
@@ -191,5 +193,50 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
 
       return { facts }
     })
+  },
+
+  loadFromServer: (facts) => {
+    const factMap: Record<string, FactProgress> = {}
+    for (const f of facts) {
+      const [aStr, bStr] = f.fact.split('x')
+      const a = parseInt(aStr)
+      const b = parseInt(bStr)
+      factMap[f.fact] = {
+        fact: f.fact,
+        a,
+        b,
+        answer: a * b,
+        confidence: f.confidence as Confidence,
+        correctCount: f.correctCount,
+        incorrectCount: f.incorrectCount,
+        lastSeen: f.lastSeen ? new Date(f.lastSeen).toISOString() : null,
+        lastCorrect: f.lastCorrect ? new Date(f.lastCorrect).toISOString() : null,
+        recentAttempts: f.recentAttempts,
+        preferredStrategy: f.preferredStrategy,
+      }
+    }
+    // Merge with defaults for any missing facts
+    const allFacts = generateAllFacts()
+    for (const factKey of Object.keys(allFacts)) {
+      if (!factMap[factKey]) {
+        factMap[factKey] = allFacts[factKey]
+      }
+    }
+    set({ facts: factMap, initialized: true })
+  },
+
+  toSyncPayload: (factKey) => {
+    const fact = get().facts[factKey]
+    if (!fact) return null
+    return {
+      fact: fact.fact,
+      confidence: fact.confidence,
+      correctCount: fact.correctCount,
+      incorrectCount: fact.incorrectCount,
+      lastSeen: fact.lastSeen ? new Date(fact.lastSeen).getTime() : null,
+      lastCorrect: fact.lastCorrect ? new Date(fact.lastCorrect).getTime() : null,
+      recentAttempts: fact.recentAttempts,
+      preferredStrategy: fact.preferredStrategy,
+    }
   },
 }))
