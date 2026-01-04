@@ -60,3 +60,15 @@
     padding-bottom: env(safe-area-inset-bottom, 0.5rem);
   }
 }
+
+/* Profile color safelist - ensures dynamic bg-{color} classes are included */
+@layer components {
+  .bg-garden-500 { background-color: var(--color-garden-500); }
+  .bg-sky-500 { background-color: var(--color-sky-500, #0ea5e9); }
+  .bg-warm-500 { background-color: var(--color-warm-500); }
+  .bg-rose-500 { background-color: #f43f5e; }
+  .bg-purple-500 { background-color: #a855f7; }
+  .bg-indigo-500 { background-color: #6366f1; }
+  .bg-teal-500 { background-color: #14b8a6; }
+  .bg-orange-500 { background-color: #f97316; }
+}

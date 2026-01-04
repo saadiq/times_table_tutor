@@ -5,9 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "wrangler pages dev --d1=DB=ttt-db --local -- bun run dev",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:create": "wrangler d1 create ttt-db",
+    "db:migrate": "wrangler d1 execute ttt-db --file=schema.sql",
+    "db:migrate:local": "wrangler d1 execute ttt-db --local --file=schema.sql"
   },
   "dependencies": {
     "framer-motion": "^12.23.26",
@@ -33,6 +37,7 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4",
-    "vite-plugin-pwa": "^1.2.0"
+    "vite-plugin-pwa": "^1.2.0",
+    "wrangler": "^4.54.0"
   }
 }
