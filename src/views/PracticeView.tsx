@@ -180,7 +180,13 @@ export function PracticeView() {
         <HintPanel
           strategy={strategy}
           isOpen={showHint}
-          onClose={() => { setShowHint(false); nextProblem(); }}
+          onClose={() => {
+            // Allow retry on the same problem
+            setShowHint(false)
+            setShowResult(false)
+            setSelectedAnswer(null)
+            setMessage(null)
+          }}
           rows={currentFact.a}
           cols={currentFact.b}
         />
