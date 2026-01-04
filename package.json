@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:api": "wrangler pages dev --proxy=5173 --d1=DB --persist-to=.wrangler/state",
+    "dev:api": "wrangler pages dev --proxy=5173 --persist-to=.wrangler/state",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
