@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Flower2, TreeDeciduous, Landmark, Sparkles } from 'lucide-react'
+import { Flower2, TreeDeciduous, Landmark, Armchair, Bird, Bug, Waves, Castle, TreePine, Cherry, Fence } from 'lucide-react'
 import type { GardenItem as GardenItemType } from '../../types'
 import { GARDEN_ITEMS } from '../../lib/constants'
 
@@ -8,10 +8,34 @@ type GardenItemProps = {
   onDrag?: (id: string, position: { x: number; y: number }) => void
 }
 
+// Item-specific icons
+const itemIcons: Record<string, typeof Flower2> = {
+  // Flowers
+  daisy: Flower2,
+  tulip: Flower2,
+  sunflower: Flower2,
+  rose: Flower2,
+  lavender: Flower2,
+  // Trees
+  oak: TreeDeciduous,
+  cherry: Cherry,
+  pine: TreePine,
+  // Decorations
+  bench: Armchair,
+  birdhouse: Bird,
+  butterfly: Bug,
+  pond: Waves,
+  // Landmarks
+  fountain: Waves,
+  treehouse: TreeDeciduous,
+  gazebo: Fence,
+  castle: Castle,
+}
+
 const typeIcons = {
   flower: Flower2,
   tree: TreeDeciduous,
-  decoration: Sparkles,
+  decoration: Bird,
   landmark: Landmark,
 }
 
@@ -30,13 +54,15 @@ const typeSizes = {
 }
 
 export function GardenItem({ item, onDrag }: GardenItemProps) {
-  const Icon = typeIcons[item.type]
+  // Use item-specific icon if available, fall back to type icon
+  const Icon = itemIcons[item.itemId] || typeIcons[item.type]
   const itemData = GARDEN_ITEMS[item.itemId]
 
   return (
     <motion.div
       drag
       dragMomentum={false}
+      dragElastic={0}
       onDragEnd={(_, info) => {
         if (onDrag) {
           onDrag(item.id, {
@@ -45,8 +71,8 @@ export function GardenItem({ item, onDrag }: GardenItemProps) {
           })
         }
       }}
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
+      initial={{ scale: 0, x: 0, y: 0 }}
+      animate={{ scale: 1, x: 0, y: 0 }}
       whileHover={{ scale: 1.1 }}
       whileDrag={{ scale: 1.2, zIndex: 50 }}
       className="absolute cursor-grab active:cursor-grabbing"
