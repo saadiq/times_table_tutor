@@ -3,6 +3,7 @@ import type { AttemptRecord, DailySummary, InputMethod } from '../types'
 import { saveToStorage, loadFromStorage } from '../lib/storage'
 
 const MAX_LOCAL_DAYS = 30
+const SYNC_DEBOUNCE_MS = 2000
 
 type SyncStatus = 'synced' | 'syncing' | 'offline' | 'error'
 
@@ -11,10 +12,13 @@ type AttemptsState = {
   pendingSync: AttemptRecord[]
   syncStatus: SyncStatus
   lastSyncTimestamp: string | null
+  syncTimeoutId: number | null
+  currentProfileId: string | null
 }
 
 type AttemptsActions = {
   initialize: () => void
+  setProfileId: (profileId: string | null) => void
   recordAttempt: (params: {
     factKey: string
     correct: boolean
@@ -54,6 +58,8 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
     pendingSync: [],
     syncStatus: 'offline',
     lastSyncTimestamp: null,
+    syncTimeoutId: null,
+    currentProfileId: null,
 
     initialize: () => {
       const saved = loadFromStorage<AttemptRecord[]>('attempts') || []
@@ -61,7 +67,13 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
       set({ attempts: saved, pendingSync: pending })
     },
 
+    setProfileId: (profileId) => {
+      set({ currentProfileId: profileId })
+    },
+
     recordAttempt: (params) => {
+      const { syncTimeoutId, currentProfileId } = get()
+
       const attempt: AttemptRecord = {
         id: generateId(),
         factKey: params.factKey,
@@ -70,7 +82,7 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
         responseTimeMs: params.responseTimeMs,
         inputMethod: params.inputMethod,
         hintShown: params.hintShown,
-        profileId: params.profileId,
+        profileId: params.profileId || currentProfileId || undefined,
       }
 
       set((state) => {
@@ -80,6 +92,17 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
         saveToStorage('pendingAttempts', pendingSync)
         return { attempts, pendingSync }
       })
+
+      // Debounced sync to cloud
+      if (currentProfileId) {
+        if (syncTimeoutId) {
+          clearTimeout(syncTimeoutId)
+        }
+        const newTimeoutId = window.setTimeout(() => {
+          get().syncToCloud(currentProfileId)
+        }, SYNC_DEBOUNCE_MS)
+        set({ syncTimeoutId: newTimeoutId })
+      }
     },
 
     getAttemptsByDate: (date) => {

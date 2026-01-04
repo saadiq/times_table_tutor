@@ -11,6 +11,8 @@ function App() {
   const { initialize: initGarden } = useGardenStore()
   const { initialize: initFocusTables } = useFocusTablesStore()
   const initializeAttempts = useAttemptsStore((s) => s.initialize)
+  const fetchFromCloud = useAttemptsStore((s) => s.fetchFromCloud)
+  const setProfileId = useAttemptsStore((s) => s.setProfileId)
   const { mode } = useSessionStore()
 
   useEffect(() => {
@@ -19,6 +21,16 @@ function App() {
     initFocusTables()
     initializeAttempts()
   }, [initProgress, initGarden, initFocusTables, initializeAttempts])
+
+  // Sync attempts when profile is selected
+  useEffect(() => {
+    if (currentProfile?.id) {
+      setProfileId(currentProfile.id)
+      fetchFromCloud(currentProfile.id)
+    } else {
+      setProfileId(null)
+    }
+  }, [currentProfile?.id, fetchFromCloud, setProfileId])
 
   // Gate: show profile picker if no profile selected
   if (!currentProfile) {
