@@ -256,6 +256,12 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
             syncStatus: 'synced',
           }
         })
+
+        // Push any pending local attempts to cloud
+        const { pendingSync } = get()
+        if (pendingSync.length > 0) {
+          get().syncToCloud(profileId)
+        }
       } catch {
         set({ syncStatus: 'offline' })
       }
