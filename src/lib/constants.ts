@@ -55,5 +55,12 @@ export const GARDEN_ITEMS: Record<string, {
   castle: { name: 'Mini Castle', type: 'landmark', cost: 0, unlockRequirement: 'master_all' },
 }
 
+export const THEME_COSTS: Record<string, number> = {
+  flower: 0,      // Default, always unlocked
+  forest: 50,
+  underwater: 100,
+  space: 200,
+}
+
 export const FLOWER_REWARDS = ['daisy', 'tulip', 'sunflower', 'rose', 'lavender']
 export const TREE_REWARDS = ['oak', 'cherry', 'pine']
