@@ -1,6 +1,8 @@
 export { Button } from './Button'
 export { Celebration } from './Celebration'
+export { FocusTablePicker } from './FocusTablePicker'
 export { Layout } from './Layout'
 export { Modal } from './Modal'
 export { Navigation } from './Navigation'
 export { ProgressBar } from './ProgressBar'
+export { SettingsModal } from './SettingsModal'
