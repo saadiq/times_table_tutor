@@ -1,5 +1,6 @@
 export { Button } from './Button'
-export { ProgressBar } from './ProgressBar'
-export { Modal } from './Modal'
+export { Celebration } from './Celebration'
 export { Layout } from './Layout'
+export { Modal } from './Modal'
 export { Navigation } from './Navigation'
+export { ProgressBar } from './ProgressBar'
