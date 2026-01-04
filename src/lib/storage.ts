@@ -3,6 +3,7 @@ const STORAGE_KEYS = {
   garden: 'ttt_garden',
   session: 'ttt_session',
   settings: 'ttt_settings',
+  focusTables: 'ttt_focus_tables',
 } as const
 
 export function saveToStorage<T>(key: keyof typeof STORAGE_KEYS, data: T): void {
