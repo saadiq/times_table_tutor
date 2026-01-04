@@ -1,11 +1,15 @@
-import { useRef } from 'react'
+import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Coins, Palette } from 'lucide-react'
+import { Coins, Palette, ShoppingBag } from 'lucide-react'
 import { useGardenStore } from '../../stores'
 import { GardenItem } from './GardenItem'
+import { ShopModal } from './ShopModal'
+import { ThemePicker } from './ThemePicker'
 
 export function GardenView() {
   const { items, coins, currentTheme, moveItem } = useGardenStore()
+  const [showShop, setShowShop] = useState(false)
+  const [showThemes, setShowThemes] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const handleDrag = (id: string, position: { x: number; y: number }) => {
@@ -31,14 +35,21 @@ export function GardenView() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm">
-        <div className="flex items-center gap-2">
+        <button
+          onClick={() => setShowShop(true)}
+          className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1 transition-colors"
+        >
           <Coins size={20} className="text-warm-500" />
           <span className="font-semibold text-gray-800">{coins}</span>
-        </div>
-        <div className="flex items-center gap-2 text-gray-600">
+          <ShoppingBag size={16} className="text-gray-400" />
+        </button>
+        <button
+          onClick={() => setShowThemes(true)}
+          className="flex items-center gap-2 text-gray-600 hover:bg-gray-100 rounded-lg px-2 py-1 transition-colors"
+        >
           <Palette size={18} />
           <span className="text-sm capitalize">{currentTheme} Garden</span>
-        </div>
+        </button>
       </div>
 
       {/* Garden area */}
@@ -72,6 +83,10 @@ export function GardenView() {
           </motion.div>
         )}
       </div>
+
+      {/* Modals */}
+      <ShopModal isOpen={showShop} onClose={() => setShowShop(false)} />
+      <ThemePicker isOpen={showThemes} onClose={() => setShowThemes(false)} />
     </div>
   )
 }
