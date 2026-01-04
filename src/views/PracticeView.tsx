@@ -1,0 +1,206 @@
+import { useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Lightbulb, SkipForward, Flower2 } from 'lucide-react'
+import { useProgressStore, useSessionStore, useGardenStore } from '../stores'
+import { selectNextFact } from '../lib/adaptive'
+import { getBestStrategy, getEncouragingMessage } from '../lib/strategies'
+import { calculateReward, getCelebrationMessage } from '../lib/rewards'
+import { ProblemDisplay, AnswerInput, HintPanel } from '../components/practice'
+import { ProgressBar, Button } from '../components/common'
+import type { FactProgress } from '../types'
+
+export function PracticeView() {
+  const { facts, recordAttempt } = useProgressStore()
+  const { goal, progress, streakCount, incrementProgress, incrementStreak, resetStreak, isGoalComplete, resetProgress, setMode } = useSessionStore()
+  const { addCoins, addItem } = useGardenStore()
+
+  const [currentFact, setCurrentFact] = useState<FactProgress | null>(null)
+  const [recentFacts, setRecentFacts] = useState<string[]>([])
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
+  const [showResult, setShowResult] = useState(false)
+  const [showHint, setShowHint] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+
+  // Select next problem
+  const nextProblem = useCallback(() => {
+    const next = selectNextFact(facts, recentFacts)
+    if (next) {
+      setCurrentFact(next)
+      setRecentFacts(prev => [...prev.slice(-10), next.fact])
+      setSelectedAnswer(null)
+      setShowResult(false)
+      setShowHint(false)
+      setMessage(null)
+    }
+  }, [facts, recentFacts])
+
+  // Initialize first problem
+  useEffect(() => {
+    if (!currentFact && Object.keys(facts).length > 0) {
+      nextProblem()
+    }
+  }, [currentFact, facts, nextProblem])
+
+  // Handle answer selection
+  const handleAnswer = (answer: number) => {
+    if (!currentFact || showResult) return
+
+    setSelectedAnswer(answer)
+    setShowResult(true)
+
+    const isCorrect = answer === currentFact.answer
+    recordAttempt(currentFact.fact, isCorrect)
+
+    if (isCorrect) {
+      incrementStreak()
+      incrementProgress()
+
+      const reward = calculateReward(streakCount + 1, progress, goal)
+      addCoins(reward.coins)
+
+      if (reward.item) {
+        addItem({
+          type: reward.item.type,
+          itemId: reward.item.itemId,
+          position: { x: Math.random() * 200 + 50, y: Math.random() * 200 + 50 },
+          earnedFor: `practice_${currentFact.fact}`,
+        })
+      }
+
+      setMessage(reward.bonusMessage || getCelebrationMessage(streakCount + 1))
+
+      // Auto-advance after delay
+      setTimeout(() => {
+        if (!isGoalComplete()) {
+          nextProblem()
+        }
+      }, 1200)
+    } else {
+      resetStreak()
+      setMessage(getEncouragingMessage())
+      setShowHint(true)
+    }
+  }
+
+  // Skip current problem
+  const handleSkip = () => {
+    resetStreak()
+    nextProblem()
+  }
+
+  const strategy = currentFact
+    ? getBestStrategy(currentFact, currentFact.preferredStrategy)
+    : null
+
+  if (isGoalComplete()) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="mb-4"
+        >
+          <Flower2 size={80} className="text-garden-500 mx-auto" />
+        </motion.div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Goal Complete!</h2>
+        <p className="text-gray-600 mb-6">
+          Amazing work! You've added to your garden.
+        </p>
+        <div className="flex gap-3">
+          <Button onClick={() => { resetProgress(); nextProblem(); }}>
+            Keep Going
+          </Button>
+          <Button variant="secondary" onClick={() => setMode('garden')}>
+            View Garden
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!currentFact) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex-1 flex flex-col p-4">
+      {/* Progress header */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-gray-600">Today's Goal</span>
+          <span className="text-sm font-medium text-gray-800">{progress}/{goal}</span>
+        </div>
+        <ProgressBar current={progress} total={goal} />
+      </div>
+
+      {/* Problem */}
+      <div className="flex-1 flex flex-col justify-center">
+        <ProblemDisplay fact={currentFact} />
+
+        {/* Answer feedback */}
+        <AnimatePresence>
+          {message && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className={`text-center py-2 px-4 rounded-full mx-auto mb-4 ${
+                showResult && selectedAnswer === currentFact.answer
+                  ? 'bg-garden-100 text-garden-700'
+                  : 'bg-warm-100 text-warm-700'
+              }`}
+            >
+              {message}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Answer input */}
+        <div className="mb-6">
+          <AnswerInput
+            fact={currentFact}
+            onAnswer={handleAnswer}
+            selectedAnswer={selectedAnswer}
+            showResult={showResult}
+            disabled={showResult && selectedAnswer === currentFact.answer}
+          />
+        </div>
+
+        {/* Hint panel */}
+        <HintPanel
+          strategy={strategy}
+          isOpen={showHint}
+          onClose={() => { setShowHint(false); nextProblem(); }}
+          rows={currentFact.a}
+          cols={currentFact.b}
+        />
+
+        {/* Action buttons */}
+        {!showResult && (
+          <div className="flex justify-center gap-4 mt-4">
+            <Button
+              variant="ghost"
+              onClick={() => setShowHint(true)}
+              className="flex items-center gap-2"
+            >
+              <Lightbulb size={18} />
+              Hint
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={handleSkip}
+              className="flex items-center gap-2"
+            >
+              <SkipForward size={18} />
+              Skip
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
