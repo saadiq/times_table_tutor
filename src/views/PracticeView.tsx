@@ -6,8 +6,12 @@ import { selectNextFact } from '../lib/adaptive'
 import { getBestStrategy, getEncouragingMessage } from '../lib/strategies'
 import { calculateReward, getCelebrationMessage } from '../lib/rewards'
 import { ProblemDisplay, AnswerInput, HintPanel } from '../components/practice'
-import { ProgressBar, Button } from '../components/common'
+import { ProgressBar, Button, Celebration } from '../components/common'
 import type { FactProgress } from '../types'
+
+function getRandomPosition() {
+  return { x: Math.random() * 200 + 50, y: Math.random() * 200 + 50 }
+}
 
 export function PracticeView() {
   const { facts, recordAttempt } = useProgressStore()
@@ -25,6 +29,7 @@ export function PracticeView() {
   const [showResult, setShowResult] = useState(false)
   const [showHint, setShowHint] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [celebrationType, setCelebrationType] = useState<'correct' | 'streak' | 'goal' | null>(null)
 
   // Select next problem
   const nextProblem = useCallback(() => {
@@ -73,15 +78,25 @@ export function PracticeView() {
         addItem({
           type: reward.item.type,
           itemId: reward.item.itemId,
-          position: { x: Math.random() * 200 + 50, y: Math.random() * 200 + 50 },
+          position: getRandomPosition(),
           earnedFor: `practice_${currentFact.fact}`,
         })
       }
 
       setMessage(reward.bonusMessage || getCelebrationMessage(streakCount + 1))
 
-      // Auto-advance after delay
+      // Trigger celebration animation
+      if (progress + 1 >= goal) {
+        setCelebrationType('goal')
+      } else if ((streakCount + 1) % 5 === 0) {
+        setCelebrationType('streak')
+      } else {
+        setCelebrationType('correct')
+      }
+
+      // Clear celebration and auto-advance
       setTimeout(() => {
+        setCelebrationType(null)
         if (!isGoalComplete()) {
           nextProblem()
         }
@@ -139,6 +154,8 @@ export function PracticeView() {
 
   return (
     <div className="flex-1 flex flex-col p-4">
+      <Celebration show={celebrationType !== null} type={celebrationType || 'correct'} />
+
       {/* Progress header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
