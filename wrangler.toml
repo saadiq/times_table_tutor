@@ -5,4 +5,4 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "ttt-db"
-database_id = "local"
+database_id = "5a1b8367-5806-4b6f-98de-4e3328f89cd2"
