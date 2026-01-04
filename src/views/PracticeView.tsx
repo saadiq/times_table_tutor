@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lightbulb, SkipForward, Flower2 } from 'lucide-react'
-import { useProgressStore, useSessionStore, useGardenStore, useFocusTablesStore } from '../stores'
+import { useProgressStore, useSessionStore, useGardenStore, useFocusTablesStore, useProfileStore } from '../stores'
 import { selectNextFact } from '../lib/adaptive'
 import { getBestStrategy, getEncouragingMessage } from '../lib/strategies'
 import { calculateReward, getCelebrationMessage } from '../lib/rewards'
@@ -14,7 +14,8 @@ function getRandomPosition() {
 }
 
 export function PracticeView() {
-  const { facts, recordAttempt } = useProgressStore()
+  const { facts, recordAttempt, toSyncPayload } = useProgressStore()
+  const queueProgressSync = useProfileStore((s) => s.queueProgressSync)
   const { goal, progress, streakCount, incrementProgress, incrementStreak, resetStreak, isGoalComplete, resetProgress, setMode } = useSessionStore()
   const { addCoins, addItem } = useGardenStore()
   const { focusTables, isEnabled } = useFocusTablesStore()
@@ -66,6 +67,12 @@ export function PracticeView() {
 
     const isCorrect = answer === currentFact.answer
     recordAttempt(currentFact.fact, isCorrect)
+
+    // Queue progress sync to server
+    const syncPayload = toSyncPayload(currentFact.fact)
+    if (syncPayload) {
+      queueProgressSync(syncPayload)
+    }
 
     if (isCorrect) {
       incrementStreak()
