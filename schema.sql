@@ -50,3 +50,22 @@ CREATE TABLE IF NOT EXISTS profile_stats (
   current_theme     TEXT NOT NULL DEFAULT 'flower',
   FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
 );
+
+-- Attempt history (for progress tracking)
+CREATE TABLE IF NOT EXISTS attempts (
+  id              TEXT PRIMARY KEY,
+  profile_id      TEXT NOT NULL,
+  fact_key        TEXT NOT NULL,
+  timestamp       INTEGER NOT NULL,
+  correct         INTEGER NOT NULL,
+  response_time_ms INTEGER,
+  input_method    TEXT,
+  hint_shown      INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_attempts_profile_timestamp
+  ON attempts(profile_id, timestamp DESC);
+
+CREATE INDEX IF NOT EXISTS idx_attempts_profile_date
+  ON attempts(profile_id, timestamp);
