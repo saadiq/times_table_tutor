@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { GardenItem, GardenState, GardenTheme, GardenItemType } from '../types'
 import type { GardenItemSync, GardenStatsSync } from '../types/api'
 import { saveToStorage, loadFromStorage } from '../lib/storage'
+import { useProfileStore } from './profileStore'
 
 type GardenActions = {
   initialize: () => void
@@ -21,6 +22,12 @@ const initialState: GardenState = {
   coins: 0,
   unlockedThemes: ['flower'],
   currentTheme: 'flower',
+}
+
+// Helper to sync garden state to server
+const triggerGardenSync = (get: () => GardenState & GardenActions) => {
+  const payload = get().toSyncPayload()
+  useProfileStore.getState().syncGarden(payload.items, payload.stats)
 }
 
 export const useGardenStore = create<GardenState & GardenActions>((set, get) => ({
@@ -45,6 +52,7 @@ export const useGardenStore = create<GardenState & GardenActions>((set, get) => 
       saveToStorage('garden', newState)
       return newState
     })
+    triggerGardenSync(get)
   },
 
   moveItem: (id, position) => {
@@ -56,6 +64,7 @@ export const useGardenStore = create<GardenState & GardenActions>((set, get) => 
       saveToStorage('garden', newState)
       return newState
     })
+    triggerGardenSync(get)
   },
 
   removeItem: (id) => {
@@ -65,6 +74,7 @@ export const useGardenStore = create<GardenState & GardenActions>((set, get) => 
       saveToStorage('garden', newState)
       return newState
     })
+    triggerGardenSync(get)
   },
 
   addCoins: (amount) => {
@@ -73,6 +83,7 @@ export const useGardenStore = create<GardenState & GardenActions>((set, get) => 
       saveToStorage('garden', newState)
       return newState
     })
+    triggerGardenSync(get)
   },
 
   spendCoins: (amount) => {
@@ -84,6 +95,7 @@ export const useGardenStore = create<GardenState & GardenActions>((set, get) => 
       saveToStorage('garden', newState)
       return newState
     })
+    triggerGardenSync(get)
     return true
   },
 
@@ -97,6 +109,7 @@ export const useGardenStore = create<GardenState & GardenActions>((set, get) => 
       saveToStorage('garden', newState)
       return newState
     })
+    triggerGardenSync(get)
   },
 
   setTheme: (theme) => {
@@ -105,6 +118,7 @@ export const useGardenStore = create<GardenState & GardenActions>((set, get) => 
       saveToStorage('garden', newState)
       return newState
     })
+    triggerGardenSync(get)
   },
 
   loadFromServer: (items, stats) => {
