@@ -29,6 +29,8 @@ type AttemptsActions = {
   getStreakDays: () => number
   getTodayStats: () => { attempts: number; correct: number; accuracy: number }
   clearOldAttempts: () => void
+  syncToCloud: (profileId: string) => Promise<void>
+  fetchFromCloud: (profileId: string) => Promise<void>
 }
 
 function generateId(): string {
@@ -163,6 +165,65 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
         saveToStorage('attempts', filtered)
         return { attempts: filtered }
       })
+    },
+
+    syncToCloud: async (profileId) => {
+      const { pendingSync } = get()
+      if (pendingSync.length === 0) return
+
+      set({ syncStatus: 'syncing' })
+
+      try {
+        const response = await fetch('/api/attempts/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            attempts: pendingSync.map((a) => ({ ...a, profileId })),
+          }),
+        })
+
+        if (!response.ok) throw new Error('Sync failed')
+
+        set({ pendingSync: [], syncStatus: 'synced' })
+        saveToStorage('pendingAttempts', [])
+      } catch {
+        set({ syncStatus: 'error' })
+      }
+    },
+
+    fetchFromCloud: async (profileId) => {
+      const { lastSyncTimestamp } = get()
+
+      try {
+        const url = new URL('/api/attempts', window.location.origin)
+        url.searchParams.set('profileId', profileId)
+        if (lastSyncTimestamp) {
+          url.searchParams.set('since', String(new Date(lastSyncTimestamp).getTime()))
+        }
+
+        const response = await fetch(url)
+        if (!response.ok) throw new Error('Fetch failed')
+
+        const { attempts: cloudAttempts } = await response.json()
+
+        set((state) => {
+          const existingIds = new Set(state.attempts.map((a) => a.id))
+          const newAttempts = cloudAttempts.filter(
+            (a: AttemptRecord) => !existingIds.has(a.id)
+          )
+          const merged = [...state.attempts, ...newAttempts].sort(
+            (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          )
+          saveToStorage('attempts', merged)
+          return {
+            attempts: merged,
+            lastSyncTimestamp: new Date().toISOString(),
+            syncStatus: 'synced',
+          }
+        })
+      } catch {
+        set({ syncStatus: 'offline' })
+      }
     },
   })
 )
