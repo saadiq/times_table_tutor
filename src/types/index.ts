@@ -55,4 +55,25 @@ export type Strategy =
   | 'fives_trick'
   | 'ones_zeros'
 
+export type InputMethod = 'multiple_choice' | 'number_pad'
+
+export type AttemptRecord = {
+  id: string
+  factKey: string         // "7x8"
+  timestamp: string       // ISO date
+  correct: boolean
+  responseTimeMs: number
+  inputMethod: InputMethod
+  hintShown: boolean
+  profileId?: string
+}
+
+export type DailySummary = {
+  date: string            // "2026-01-04"
+  attemptCount: number
+  correctCount: number
+  factsAttempted: string[]
+  newMastered: string[]
+}
+
 export * from './api';
