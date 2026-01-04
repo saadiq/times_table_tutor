@@ -33,7 +33,7 @@ export function PracticeView() {
   const [showHint, setShowHint] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [celebrationType, setCelebrationType] = useState<'correct' | 'streak' | 'goal' | null>(null)
-  const [attemptStartTime, setAttemptStartTime] = useState<number>(Date.now())
+  const [attemptStartTime, setAttemptStartTime] = useState<number>(() => Date.now())
 
   // Select next problem
   const nextProblem = useCallback(() => {
