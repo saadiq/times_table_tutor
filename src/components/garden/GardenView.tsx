@@ -32,7 +32,7 @@ export function GardenView() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex-1 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm">
         <button
