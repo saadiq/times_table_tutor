@@ -166,25 +166,6 @@ export function getStrategiesForFact(fact: FactProgress): StrategyHint[] {
 }
 
 /**
- * Get the best strategy for a fact, considering user preferences
- */
-export function getBestStrategy(
-  fact: FactProgress,
-  preferredStrategy: string | null
-): StrategyHint {
-  const strategies = getStrategiesForFact(fact)
-
-  // If user has a preferred strategy and it's available, use it
-  if (preferredStrategy) {
-    const preferred = strategies.find(s => s.id === preferredStrategy)
-    if (preferred) return preferred
-  }
-
-  // Otherwise return the first (most relevant) strategy
-  return strategies[0]
-}
-
-/**
  * Get a short encouraging message for wrong answers
  */
 export function getEncouragingMessage(): string {
