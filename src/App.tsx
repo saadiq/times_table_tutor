@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useProgressStore, useGardenStore, useSessionStore, useFocusTablesStore } from './stores'
+import { useProgressStore, useGardenStore, useSessionStore, useFocusTablesStore, useAttemptsStore } from './stores'
 import { useProfileStore } from './stores/profileStore'
 import { Layout } from './components/common'
 import { ProfilePicker } from './components/common/ProfilePicker'
@@ -10,13 +10,15 @@ function App() {
   const { initialize: initProgress, initialized } = useProgressStore()
   const { initialize: initGarden } = useGardenStore()
   const { initialize: initFocusTables } = useFocusTablesStore()
+  const initializeAttempts = useAttemptsStore((s) => s.initialize)
   const { mode } = useSessionStore()
 
   useEffect(() => {
     initProgress()
     initGarden()
     initFocusTables()
-  }, [initProgress, initGarden, initFocusTables])
+    initializeAttempts()
+  }, [initProgress, initGarden, initFocusTables, initializeAttempts])
 
   // Gate: show profile picker if no profile selected
   if (!currentProfile) {

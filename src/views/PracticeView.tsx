@@ -1,8 +1,8 @@
 import { useState, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lightbulb, SkipForward, Flower2 } from 'lucide-react'
-import { useProgressStore, useSessionStore, useGardenStore, useFocusTablesStore, useProfileStore } from '../stores'
-import { selectNextFact } from '../lib/adaptive'
+import { useProgressStore, useSessionStore, useGardenStore, useFocusTablesStore, useProfileStore, useAttemptsStore } from '../stores'
+import { selectNextFact, shouldUseMultipleChoice } from '../lib/adaptive'
 import { getBestStrategy, getEncouragingMessage } from '../lib/strategies'
 import { calculateReward, getCelebrationMessage } from '../lib/rewards'
 import { ProblemDisplay, AnswerInput, HintPanel } from '../components/practice'
@@ -16,6 +16,8 @@ function getRandomPosition() {
 export function PracticeView() {
   const { facts, recordAttempt, toSyncPayload } = useProgressStore()
   const queueProgressSync = useProfileStore((s) => s.queueProgressSync)
+  const recordAttemptHistory = useAttemptsStore((s) => s.recordAttempt)
+  const currentProfile = useProfileStore((s) => s.currentProfile)
   const { goal, progress, streakCount, incrementProgress, incrementStreak, resetStreak, isGoalComplete, resetProgress, setMode } = useSessionStore()
   const { addCoins, addItem } = useGardenStore()
   const { focusTables, isEnabled } = useFocusTablesStore()
@@ -31,6 +33,7 @@ export function PracticeView() {
   const [showHint, setShowHint] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [celebrationType, setCelebrationType] = useState<'correct' | 'streak' | 'goal' | null>(null)
+  const [attemptStartTime, setAttemptStartTime] = useState<number>(Date.now())
 
   // Select next problem
   const nextProblem = useCallback(() => {
@@ -42,6 +45,7 @@ export function PracticeView() {
       setShowResult(false)
       setShowHint(false)
       setMessage(null)
+      setAttemptStartTime(Date.now())
     }
   }, [facts, recentFacts, activeFocusTables])
 
@@ -67,6 +71,18 @@ export function PracticeView() {
 
     const isCorrect = answer === currentFact.answer
     recordAttempt(currentFact.fact, isCorrect)
+
+    // Record attempt history for progress tracking
+    const responseTimeMs = Date.now() - attemptStartTime
+    const inputMethod = shouldUseMultipleChoice(currentFact) ? 'multiple_choice' : 'number_pad'
+    recordAttemptHistory({
+      factKey: currentFact.fact,
+      correct: isCorrect,
+      responseTimeMs,
+      inputMethod,
+      hintShown: showHint,
+      profileId: currentProfile?.id,
+    })
 
     // Queue progress sync to server
     const syncPayload = toSyncPayload(currentFact.fact)
