@@ -27,12 +27,12 @@ bun run lint     # Run ESLint
 ```
 src/
 ├── components/
-│   ├── common/       # Button, Modal, ProgressBar, Navigation, Layout, Celebration
+│   ├── common/       # Button, Modal, ProgressBar, Navigation, Layout, Celebration, SettingsModal, FocusTablePicker
 │   ├── practice/     # ProblemDisplay, AnswerInput, HintPanel, MultipleChoice, NumberPad
 │   ├── learn/        # FactCard, VisualExplainer
 │   └── garden/       # GardenItem, GardenView
 ├── views/            # PracticeView, LearnView, GardenViewPage
-├── stores/           # Zustand stores (progress, garden, session)
+├── stores/           # Zustand stores (progress, garden, session, focusTables)
 ├── lib/              # Core logic (adaptive, strategies, rewards, sounds, storage)
 ├── hooks/            # useSound
 └── types/            # TypeScript types
@@ -40,16 +40,18 @@ src/
 
 ## Key Concepts
 
-### Three Modes
+### Three Modes + Settings
 1. **Learn** - Visual introduction to facts (no wrong answers)
 2. **Practice** - Adaptive problems with hints on mistakes
 3. **Garden** - View earned rewards, place items
+4. **Settings** - Focus table selection (bottom nav)
 
 ### Adaptive Learning (`src/lib/adaptive.ts`)
 - Tracks each of 144 facts (1x1 through 12x12) individually
 - Confidence levels: `new` → `learning` → `confident` → `mastered`
 - Prioritizes: learning facts > trouble spots > spaced review > new facts
 - Multiple choice for new facts, number pad for confident facts
+- Supports focus tables filter (Settings → select specific tables to practice)
 
 ### Strategy Hints (`src/lib/strategies.ts`)
 Nine strategies: visual_array, skip_counting, break_apart, use_neighbor, nines_trick, fives_trick, doubles, tens_trick, ones_zeros
@@ -58,6 +60,7 @@ Nine strategies: visual_array, skip_counting, break_apart, use_neighbor, nines_t
 - **progressStore**: All 144 fact confidence levels, persisted to localStorage
 - **gardenStore**: Coins, garden items, themes
 - **sessionStore**: Current goal, progress, streak, mode
+- **focusTablesStore**: Which tables (1-12) to focus on, with enable/disable toggle
 
 ## Tailwind v4 Notes
 
