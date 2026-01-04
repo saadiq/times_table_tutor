@@ -12,7 +12,7 @@ export type StrategyHint = {
  * Get applicable strategies for a given multiplication fact
  */
 export function getStrategiesForFact(fact: FactProgress): StrategyHint[] {
-  const { a, b, answer } = fact
+  const { a, b } = fact
   const strategies: StrategyHint[] = []
 
   // Always offer visual array
@@ -23,7 +23,7 @@ export function getStrategiesForFact(fact: FactProgress): StrategyHint[] {
     steps: [
       `Draw ${a} rows`,
       `Put ${b} dots in each row`,
-      `Count all the dots: ${answer}`,
+      `Now count all the dots!`,
     ],
     visual: 'array',
   })
@@ -32,28 +32,31 @@ export function getStrategiesForFact(fact: FactProgress): StrategyHint[] {
   if (a <= 6 || b <= 6) {
     const skipBy = a <= b ? a : b
     const times = a <= b ? b : a
-    const sequence = Array.from({ length: times }, (_, i) => skipBy * (i + 1))
+    // Show first few numbers to get them started
+    const previewCount = Math.min(3, times)
+    const preview = Array.from({ length: previewCount }, (_, i) => skipBy * (i + 1))
     strategies.push({
       id: 'skip_counting',
       name: 'Skip Count',
       description: `Count by ${skipBy}s, ${times} times`,
       steps: [
-        `Count by ${skipBy}s:`,
-        sequence.join(', '),
-        `The ${times}th number is ${answer}`,
+        `Start counting by ${skipBy}s:`,
+        `${preview.join(', ')}...`,
+        `Keep going until you've counted ${times} numbers!`,
       ],
     })
   }
 
   // Ones and zeros (trivial but good to reinforce)
   if (a === 1 || b === 1) {
+    const other = a === 1 ? b : a
     strategies.push({
       id: 'ones_zeros',
       name: 'Ones Rule',
       description: 'Any number times 1 equals itself',
       steps: [
-        `${a} x ${b} = ${answer}`,
-        'Multiplying by 1 gives you the same number!',
+        'When you multiply by 1, the number stays the same!',
+        `What is ${other} times 1?`,
       ],
     })
   }
@@ -64,8 +67,8 @@ export function getStrategiesForFact(fact: FactProgress): StrategyHint[] {
       name: 'Zeros Rule',
       description: 'Any number times 0 equals 0',
       steps: [
-        `${a} x ${b} = 0`,
-        'Multiplying by 0 always gives 0!',
+        'Anything times 0 is always 0!',
+        'Zero groups of anything is nothing.',
       ],
     })
   }
@@ -78,8 +81,8 @@ export function getStrategiesForFact(fact: FactProgress): StrategyHint[] {
       name: 'Fives Trick',
       description: 'Multiply by 10, then cut in half',
       steps: [
-        `${other} x 10 = ${other * 10}`,
-        `Half of ${other * 10} = ${answer}`,
+        `First, what is ${other} × 10?`,
+        `Now cut that number in half!`,
       ],
     })
   }
@@ -92,9 +95,9 @@ export function getStrategiesForFact(fact: FactProgress): StrategyHint[] {
       name: 'Nines Trick',
       description: 'Multiply by 10, then subtract once',
       steps: [
-        `${other} x 10 = ${other * 10}`,
-        `${other * 10} - ${other} = ${answer}`,
-        `Or: tens digit is ${other - 1}, ones digit is ${10 - other} = ${answer}`,
+        `First, what is ${other} × 10?`,
+        `Now subtract ${other} from that!`,
+        `Tip: The tens digit is always one less than ${other}.`,
       ],
     })
   }
@@ -107,8 +110,8 @@ export function getStrategiesForFact(fact: FactProgress): StrategyHint[] {
       name: 'Tens Trick',
       description: 'Just add a zero!',
       steps: [
-        `${other} x 10 = ${other}0`,
-        `The answer is ${answer}`,
+        `When you multiply by 10, just add a zero to the end!`,
+        `What do you get when you add a 0 after ${other}?`,
       ],
     })
   }
@@ -120,8 +123,9 @@ export function getStrategiesForFact(fact: FactProgress): StrategyHint[] {
       name: 'Square Number',
       description: `${a} squared`,
       steps: [
-        `${a} x ${a} = ${answer}`,
         `This is called "${a} squared"`,
+        `Picture a square with ${a} on each side.`,
+        `How many squares in total?`,
       ],
       visual: 'array',
     })
@@ -130,15 +134,14 @@ export function getStrategiesForFact(fact: FactProgress): StrategyHint[] {
   // Use a neighbor (for harder facts)
   if (a > 2 && b > 2) {
     const neighborA = a - 1
-    const neighborAnswer = neighborA * b
     strategies.push({
       id: 'use_neighbor',
       name: 'Use a Neighbor',
-      description: `Start from ${neighborA} x ${b}, add ${b} more`,
+      description: `Start from ${neighborA} × ${b}, add ${b} more`,
       steps: [
-        `You might know: ${neighborA} x ${b} = ${neighborAnswer}`,
-        `Add one more group of ${b}`,
-        `${neighborAnswer} + ${b} = ${answer}`,
+        `Do you know ${neighborA} × ${b}?`,
+        `If so, just add one more group of ${b}!`,
+        `${neighborA} × ${b} + ${b} = ?`,
       ],
     })
   }
@@ -152,9 +155,9 @@ export function getStrategiesForFact(fact: FactProgress): StrategyHint[] {
       name: 'Break Apart',
       description: `Split ${a} into ${halfA} + ${remainder}`,
       steps: [
-        `${halfA} x ${b} = ${halfA * b}`,
-        `${remainder} x ${b} = ${remainder * b}`,
-        `${halfA * b} + ${remainder * b} = ${answer}`,
+        `First, figure out ${halfA} × ${b}`,
+        `Then, figure out ${remainder} × ${b}`,
+        `Finally, add those two answers together!`,
       ],
     })
   }

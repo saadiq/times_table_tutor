@@ -33,7 +33,7 @@ export function VisualArray({ rows, cols }: VisualArrayProps) {
         </p>
       )}
       <p className="text-sm text-gray-600 mt-2">
-        {rows} rows × {cols} columns = <span className="font-bold text-garden-600">{rows * cols}</span>
+        {rows} rows × {cols} columns = <span className="font-bold text-garden-600">?</span>
       </p>
     </div>
   )
