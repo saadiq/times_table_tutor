@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Lightbulb, SkipForward, Flower2 } from 'lucide-react'
 import { useProgressStore, useSessionStore, useGardenStore, useFocusTablesStore, useProfileStore, useAttemptsStore } from '../stores'
 import { selectNextFact, shouldUseMultipleChoice } from '../lib/adaptive'
-import { getBestStrategy, getEncouragingMessage } from '../lib/strategies'
+import { getStrategiesForFact, getEncouragingMessage } from '../lib/strategies'
 import { calculateReward, getCelebrationMessage } from '../lib/rewards'
 import { ProblemDisplay, AnswerInput, HintPanel } from '../components/practice'
 import { ProgressBar, Button, Celebration } from '../components/common'
@@ -137,9 +137,7 @@ export function PracticeView() {
     nextProblem()
   }
 
-  const strategy = currentFact
-    ? getBestStrategy(currentFact, currentFact.preferredStrategy)
-    : null
+  const strategies = currentFact ? getStrategiesForFact(currentFact) : []
 
   if (isGoalComplete()) {
     return (
@@ -223,7 +221,7 @@ export function PracticeView() {
 
         {/* Hint panel */}
         <HintPanel
-          strategy={strategy}
+          strategies={strategies}
           isOpen={showHint}
           onClose={() => {
             // Allow retry on the same problem
