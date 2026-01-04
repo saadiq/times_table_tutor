@@ -25,8 +25,11 @@ export function selectNextFact(
   // Exclude very recently shown facts (last 3)
   const notRecent = eligibleFacts.filter(f => !recentFacts.slice(-3).includes(f.fact))
 
+  // Fallback: if all eligible facts are recent, allow any eligible fact
+  const candidates = notRecent.length > 0 ? notRecent : eligibleFacts
+
   // Score each fact
-  const scored: FactWithScore[] = notRecent.map(fact => ({
+  const scored: FactWithScore[] = candidates.map(fact => ({
     ...fact,
     score: calculateFactScore(fact),
   }))

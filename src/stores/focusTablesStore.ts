@@ -19,6 +19,13 @@ const initialState: FocusTablesState = {
   isEnabled: true,
 }
 
+function saveState(state: FocusTablesState & FocusTablesActions): void {
+  saveToStorage('focusTables', {
+    focusTables: state.focusTables,
+    isEnabled: state.isEnabled,
+  })
+}
+
 export const useFocusTablesStore = create<FocusTablesState & FocusTablesActions>((set) => ({
   ...initialState,
 
@@ -35,7 +42,7 @@ export const useFocusTablesStore = create<FocusTablesState & FocusTablesActions>
         ? state.focusTables.filter(t => t !== table)
         : [...state.focusTables, table].sort((a, b) => a - b)
       const newState = { ...state, focusTables }
-      saveToStorage('focusTables', newState)
+      saveState(newState)
       return newState
     })
   },
@@ -43,7 +50,7 @@ export const useFocusTablesStore = create<FocusTablesState & FocusTablesActions>
   setTables: (tables) => {
     set(state => {
       const newState = { ...state, focusTables: tables.sort((a, b) => a - b) }
-      saveToStorage('focusTables', newState)
+      saveState(newState)
       return newState
     })
   },
@@ -51,7 +58,7 @@ export const useFocusTablesStore = create<FocusTablesState & FocusTablesActions>
   clearTables: () => {
     set(state => {
       const newState = { ...state, focusTables: [] }
-      saveToStorage('focusTables', newState)
+      saveState(newState)
       return newState
     })
   },
@@ -59,7 +66,7 @@ export const useFocusTablesStore = create<FocusTablesState & FocusTablesActions>
   setEnabled: (enabled) => {
     set(state => {
       const newState = { ...state, isEnabled: enabled }
-      saveToStorage('focusTables', newState)
+      saveState(newState)
       return newState
     })
   },

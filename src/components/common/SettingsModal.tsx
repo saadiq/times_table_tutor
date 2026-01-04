@@ -46,6 +46,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           <div className="flex items-center justify-between py-3 border-t border-gray-100">
             <span className="text-sm text-gray-600">Apply focus during practice</span>
             <button
+              role="switch"
+              aria-checked={isEnabled}
+              aria-label="Apply focus during practice"
               onClick={() => setEnabled(!isEnabled)}
               className={`w-12 h-6 rounded-full transition-colors ${
                 isEnabled ? 'bg-garden-500' : 'bg-gray-300'

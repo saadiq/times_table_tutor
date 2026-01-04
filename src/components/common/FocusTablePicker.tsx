@@ -26,6 +26,8 @@ export function FocusTablePicker({
         return (
           <button
             key={table}
+            aria-pressed={isSelected}
+            aria-label={`${table} times table`}
             onClick={() => onToggle(table)}
             className={`flex-shrink-0 ${buttonSize} rounded-xl font-bold transition-colors ${
               isSelected
