@@ -4,6 +4,8 @@ const STORAGE_KEYS = {
   session: 'ttt_session',
   settings: 'ttt_settings',
   focusTables: 'ttt_focus_tables',
+  attempts: 'ttt_attempts',
+  pendingAttempts: 'ttt_pending_attempts',
 } as const
 
 export function saveToStorage<T>(key: keyof typeof STORAGE_KEYS, data: T): void {
