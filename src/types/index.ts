@@ -54,3 +54,5 @@ export type Strategy =
   | 'nines_trick'
   | 'fives_trick'
   | 'ones_zeros'
+
+export * from './api';
