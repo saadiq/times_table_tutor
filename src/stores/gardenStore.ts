@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import type { GardenItem, GardenState, GardenTheme } from '../types'
+import type { GardenItem, GardenState, GardenTheme, GardenItemType } from '../types'
+import type { GardenItemSync, GardenStatsSync } from '../types/api'
 import { saveToStorage, loadFromStorage } from '../lib/storage'
 
 type GardenActions = {
@@ -11,6 +12,8 @@ type GardenActions = {
   spendCoins: (amount: number) => boolean
   unlockTheme: (theme: GardenTheme) => void
   setTheme: (theme: GardenTheme) => void
+  loadFromServer: (items: GardenItemSync[], stats: GardenStatsSync) => void
+  toSyncPayload: () => { items: GardenItemSync[]; stats: GardenStatsSync }
 }
 
 const initialState: GardenState = {
@@ -102,5 +105,41 @@ export const useGardenStore = create<GardenState & GardenActions>((set, get) => 
       saveToStorage('garden', newState)
       return newState
     })
+  },
+
+  loadFromServer: (items, stats) => {
+    set({
+      items: items.map((item) => ({
+        id: item.id,
+        type: item.type as GardenItemType,
+        itemId: item.itemId,
+        position: { x: item.positionX, y: item.positionY },
+        earnedFor: item.earnedFor || '',
+        earnedAt: item.earnedAt ? new Date(item.earnedAt).toISOString() : '',
+      })),
+      coins: stats.coins,
+      unlockedThemes: stats.unlockedThemes as GardenTheme[],
+      currentTheme: stats.currentTheme as GardenTheme,
+    })
+  },
+
+  toSyncPayload: () => {
+    const state = get()
+    return {
+      items: state.items.map((item) => ({
+        id: item.id,
+        itemId: item.itemId,
+        type: item.type,
+        positionX: item.position.x,
+        positionY: item.position.y,
+        earnedFor: item.earnedFor || null,
+        earnedAt: item.earnedAt ? new Date(item.earnedAt).getTime() : null,
+      })),
+      stats: {
+        coins: state.coins,
+        unlockedThemes: state.unlockedThemes,
+        currentTheme: state.currentTheme,
+      },
+    }
   },
 }))
