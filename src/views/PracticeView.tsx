@@ -6,14 +6,14 @@ import { selectNextFact } from '../lib/adaptive'
 import { getBestStrategy, getEncouragingMessage } from '../lib/strategies'
 import { calculateReward, getCelebrationMessage } from '../lib/rewards'
 import { ProblemDisplay, AnswerInput, HintPanel } from '../components/practice'
-import { ProgressBar, Button, FocusTablePicker } from '../components/common'
+import { ProgressBar, Button } from '../components/common'
 import type { FactProgress } from '../types'
 
 export function PracticeView() {
   const { facts, recordAttempt } = useProgressStore()
   const { goal, progress, streakCount, incrementProgress, incrementStreak, resetStreak, isGoalComplete, resetProgress, setMode } = useSessionStore()
   const { addCoins, addItem } = useGardenStore()
-  const { focusTables, isEnabled, toggleTable } = useFocusTablesStore()
+  const { focusTables, isEnabled } = useFocusTablesStore()
   const activeFocusTables = useMemo(
     () => (isEnabled ? focusTables : []),
     [isEnabled, focusTables]
@@ -25,7 +25,6 @@ export function PracticeView() {
   const [showResult, setShowResult] = useState(false)
   const [showHint, setShowHint] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
-  const [showFocusPicker, setShowFocusPicker] = useState(false)
 
   // Select next problem
   const nextProblem = useCallback(() => {
@@ -140,26 +139,6 @@ export function PracticeView() {
 
   return (
     <div className="flex-1 flex flex-col p-4">
-      {/* Quick focus picker */}
-      <div className="mb-4">
-        <button
-          onClick={() => setShowFocusPicker(!showFocusPicker)}
-          className="text-xs text-gray-500 hover:text-gray-700 mb-2"
-        >
-          {activeFocusTables.length > 0
-            ? `Focus: ${activeFocusTables.join(', ')}x`
-            : 'Focus on specific tables...'}
-          <span className="ml-1">{showFocusPicker ? '▲' : '▼'}</span>
-        </button>
-        {showFocusPicker && (
-          <FocusTablePicker
-            selectedTables={focusTables}
-            onToggle={toggleTable}
-            compact
-          />
-        )}
-      </div>
-
       {/* Progress header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
