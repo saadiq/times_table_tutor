@@ -68,7 +68,19 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
     },
 
     setProfileId: (profileId) => {
-      set({ currentProfileId: profileId })
+      const { syncTimeoutId, currentProfileId, pendingSync } = get()
+
+      // Clear existing timeout
+      if (syncTimeoutId) {
+        clearTimeout(syncTimeoutId)
+      }
+
+      // Flush pending sync to old profile before switching
+      if (currentProfileId && currentProfileId !== profileId && pendingSync.length > 0) {
+        get().syncToCloud(currentProfileId)
+      }
+
+      set({ currentProfileId: profileId, syncTimeoutId: null })
     },
 
     recordAttempt: (params) => {
