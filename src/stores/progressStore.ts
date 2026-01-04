@@ -1,7 +1,9 @@
 import { create } from 'zustand'
 import type { FactProgress, Confidence } from '../types'
-import { TIMES_TABLES } from '../lib/constants'
+import { TIMES_TABLES, REWARDS } from '../lib/constants'
 import { saveToStorage, loadFromStorage } from '../lib/storage'
+import { useGardenStore } from './gardenStore'
+import { getMasteryReward } from '../lib/rewards'
 
 type ProgressState = {
   facts: Record<string, FactProgress>
@@ -58,6 +60,37 @@ function calculateConfidence(fact: FactProgress): Confidence {
   return 'new'
 }
 
+function checkTableMastery(
+  facts: Record<string, FactProgress>,
+  tableNumber: number
+): boolean {
+  for (let i = TIMES_TABLES.min; i <= TIMES_TABLES.max; i++) {
+    const fact1 = facts[`${tableNumber}x${i}`]
+    const fact2 = facts[`${i}x${tableNumber}`]
+    if (fact1?.confidence !== 'mastered' || fact2?.confidence !== 'mastered') {
+      return false
+    }
+  }
+  return true
+}
+
+function getMasteredTablesFromFacts(facts: Record<string, FactProgress>): number[] {
+  const mastered: number[] = []
+  for (let table = TIMES_TABLES.min; table <= TIMES_TABLES.max; table++) {
+    if (checkTableMastery(facts, table)) {
+      mastered.push(table)
+    }
+  }
+  return mastered
+}
+
+function getRandomPosition(): { x: number; y: number } {
+  return {
+    x: Math.random() * 200 + 50,
+    y: Math.random() * 200 + 50,
+  }
+}
+
 export const useProgressStore = create<ProgressState & ProgressActions>((set, get) => ({
   facts: {},
   initialized: false,
@@ -95,6 +128,42 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
       const facts = { ...state.facts, [fact]: updated }
       saveToStorage('progress', facts)
 
+      // Check if this completes a table mastery
+      const tableA = current.a
+      const tableB = current.b
+      const gardenStore = useGardenStore.getState()
+      const previousMastered = getMasteredTablesFromFacts(state.facts)
+
+      const nowMasteredA = checkTableMastery(facts, tableA)
+      const nowMasteredB = checkTableMastery(facts, tableB)
+      const wasMasteredA = previousMastered.includes(tableA)
+      const wasMasteredB = previousMastered.includes(tableB)
+
+      // Award mastery reward for newly mastered tables
+      if (nowMasteredA && !wasMasteredA) {
+        const totalMastered = getMasteredTablesFromFacts(facts).length
+        const reward = getMasteryReward(tableA, totalMastered)
+        gardenStore.addCoins(REWARDS.masteredTable)
+        gardenStore.addItem({
+          type: reward.type,
+          itemId: reward.itemId,
+          position: getRandomPosition(),
+          earnedFor: `mastered_${tableA}x`,
+        })
+      }
+
+      if (tableA !== tableB && nowMasteredB && !wasMasteredB) {
+        const totalMastered = getMasteredTablesFromFacts(facts).length
+        const reward = getMasteryReward(tableB, totalMastered)
+        gardenStore.addCoins(REWARDS.masteredTable)
+        gardenStore.addItem({
+          type: reward.type,
+          itemId: reward.itemId,
+          position: getRandomPosition(),
+          earnedFor: `mastered_${tableB}x`,
+        })
+      }
+
       return { facts }
     })
   },
@@ -106,16 +175,7 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
 
   getMasteredTables: () => {
     const facts = get().facts
-    const mastered: number[] = []
-
-    for (let table = TIMES_TABLES.min; table <= TIMES_TABLES.max; table++) {
-      const tableFacts = Object.values(facts).filter(f => f.a === table || f.b === table)
-      if (tableFacts.every(f => f.confidence === 'mastered')) {
-        mastered.push(table)
-      }
-    }
-
-    return mastered
+    return getMasteredTablesFromFacts(facts)
   },
 
   setPreferredStrategy: (fact, strategy) => {
