@@ -5,13 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:api": "wrangler pages dev --proxy=5173 --d1=DB --local",
+    "dev:api": "wrangler pages dev --proxy=5173 --d1=DB --persist-to=.wrangler/state",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "db:create": "wrangler d1 create ttt-db",
     "db:migrate": "wrangler d1 execute ttt-db --file=schema.sql",
-    "db:migrate:local": "wrangler d1 execute ttt-db --local --file=schema.sql"
+    "db:migrate:local": "wrangler d1 execute ttt-db --local --persist-to=.wrangler/state --file=schema.sql"
   },
   "dependencies": {
     "framer-motion": "^12.23.26",
