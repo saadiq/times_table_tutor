@@ -137,7 +137,10 @@ export function PracticeView() {
     nextProblem()
   }
 
-  const strategies = currentFact ? getStrategiesForFact(currentFact) : []
+  const strategies = useMemo(
+    () => (currentFact ? getStrategiesForFact(currentFact) : []),
+    [currentFact]
+  )
 
   if (isGoalComplete()) {
     return (
@@ -232,6 +235,7 @@ export function PracticeView() {
           }}
           rows={currentFact.a}
           cols={currentFact.b}
+          resetKey={currentFact.fact}
         />
 
         {/* Action buttons */}
