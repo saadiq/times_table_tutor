@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lightbulb, SkipForward, Flower2 } from 'lucide-react'
-import { useProgressStore, useSessionStore, useGardenStore } from '../stores'
+import { useProgressStore, useSessionStore, useGardenStore, useFocusTablesStore } from '../stores'
 import { selectNextFact } from '../lib/adaptive'
 import { getBestStrategy, getEncouragingMessage } from '../lib/strategies'
 import { calculateReward, getCelebrationMessage } from '../lib/rewards'
@@ -13,6 +13,11 @@ export function PracticeView() {
   const { facts, recordAttempt } = useProgressStore()
   const { goal, progress, streakCount, incrementProgress, incrementStreak, resetStreak, isGoalComplete, resetProgress, setMode } = useSessionStore()
   const { addCoins, addItem } = useGardenStore()
+  const { focusTables, isEnabled, toggleTable } = useFocusTablesStore()
+  const activeFocusTables = useMemo(
+    () => (isEnabled ? focusTables : []),
+    [isEnabled, focusTables]
+  )
 
   const [currentFact, setCurrentFact] = useState<FactProgress | null>(null)
   const [recentFacts, setRecentFacts] = useState<string[]>([])
@@ -23,7 +28,7 @@ export function PracticeView() {
 
   // Select next problem
   const nextProblem = useCallback(() => {
-    const next = selectNextFact(facts, recentFacts)
+    const next = selectNextFact(facts, recentFacts, activeFocusTables)
     if (next) {
       setCurrentFact(next)
       setRecentFacts(prev => [...prev.slice(-10), next.fact])
@@ -32,12 +37,12 @@ export function PracticeView() {
       setShowHint(false)
       setMessage(null)
     }
-  }, [facts, recentFacts])
+  }, [facts, recentFacts, activeFocusTables])
 
   // Initialize first problem - compute next fact directly instead of calling setState in effect
   const shouldInitialize = !currentFact && Object.keys(facts).length > 0
   if (shouldInitialize) {
-    const next = selectNextFact(facts, recentFacts)
+    const next = selectNextFact(facts, recentFacts, activeFocusTables)
     if (next && currentFact !== next) {
       // Use a micro-task to avoid render-during-render
       queueMicrotask(() => {
@@ -134,6 +139,24 @@ export function PracticeView() {
 
   return (
     <div className="flex-1 flex flex-col p-4">
+      {/* Focus indicator */}
+      {activeFocusTables.length > 0 && (
+        <div className="mb-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-gray-500">Focus:</span>
+            {activeFocusTables.map(t => (
+              <button
+                key={t}
+                onClick={() => toggleTable(t)}
+                className="bg-garden-100 text-garden-700 text-xs px-2 py-0.5 rounded-full hover:bg-garden-200 transition-colors"
+              >
+                {t}x
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Progress header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
