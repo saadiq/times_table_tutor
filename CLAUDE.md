@@ -21,6 +21,38 @@ bun run lint     # Run ESLint
 - **Icons**: Lucide React (no emojis)
 - **State**: Zustand with localStorage persistence
 - **PWA**: vite-plugin-pwa
+- **Backend**: Cloudflare Pages Functions + D1 (SQLite)
+
+## Backend Development
+
+The app uses Cloudflare Pages Functions with D1 database for user profiles and cloud sync.
+
+### Local Development (Two Terminals)
+
+```bash
+# Terminal 1: Start Vite dev server
+bun run dev
+
+# Terminal 2: Start Cloudflare API proxy (after Vite is running)
+bun run dev:api
+```
+
+- Vite runs on `http://localhost:5173`
+- Wrangler proxies API requests on `http://localhost:8788`
+
+### Database Commands
+
+```bash
+bun run db:migrate:local   # Run migrations on local D1
+bun run db:migrate         # Run migrations on production D1
+```
+
+### Deployment
+
+Before deploying to production:
+1. Create D1 database: `bunx wrangler d1 create ttt-db`
+2. Update `database_id` in `wrangler.toml` with the real ID
+3. Run production migrations: `bun run db:migrate`
 
 ## Project Structure
 
