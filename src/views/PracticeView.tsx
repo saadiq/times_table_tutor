@@ -64,7 +64,18 @@ export function PracticeView() {
 
   // Handle answer selection
   const handleAnswer = (answer: number) => {
-    if (!currentFact || showResult) return
+    if (!currentFact) return
+
+    // Don't allow re-answering after correct answer (will auto-advance)
+    if (showResult && selectedAnswer === currentFact.answer) return
+
+    // If already showing result from a wrong answer, reset to allow retry
+    if (showResult && selectedAnswer !== currentFact.answer) {
+      setShowHint(false)
+      setMessage(null)
+      setAttemptStartTime(Date.now())
+      // Continue to process the new answer below
+    }
 
     setSelectedAnswer(answer)
     setShowResult(true)
