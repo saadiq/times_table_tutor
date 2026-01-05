@@ -93,9 +93,9 @@ function HintPanelContent({ strategies, onClose, rows, cols }: ContentProps) {
 
       <button
         onClick={onClose}
-        className="mt-4 w-full py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+        className="mt-4 w-full py-2.5 px-4 text-sm font-medium text-garden-700 bg-garden-100 hover:bg-garden-200 rounded-xl transition-colors"
       >
-        Got it, let me try
+        Try Again
       </button>
     </motion.div>
   )
