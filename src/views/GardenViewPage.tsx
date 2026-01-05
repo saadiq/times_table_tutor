@@ -1,9 +1,9 @@
-import { GardenView } from '../components/garden'
+import { ProgressView } from '../components/progress'
 
 export function GardenViewPage() {
   return (
     <div className="flex-1 flex flex-col">
-      <GardenView />
+      <ProgressView />
     </div>
   )
 }

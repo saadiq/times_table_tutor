@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookOpen, Target, Flower2, Settings, User } from 'lucide-react'
+import { BookOpen, Target, TreeDeciduous, Settings, User } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import { useSessionStore } from '../../stores'
 import { useProfileStore } from '../../stores/profileStore'
@@ -25,7 +25,7 @@ const iconMap: Record<ProfileIcon, React.ComponentType<{ className?: string }>> 
 const navItems: Array<{ mode: AppMode; icon: typeof BookOpen; label: string }> = [
   { mode: 'learn', icon: BookOpen, label: 'Learn' },
   { mode: 'practice', icon: Target, label: 'Practice' },
-  { mode: 'garden', icon: Flower2, label: 'Garden' },
+  { mode: 'garden', icon: TreeDeciduous, label: 'Tree' },
 ]
 
 export function Navigation() {

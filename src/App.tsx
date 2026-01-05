@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useProgressStore, useGardenStore, useSessionStore, useFocusTablesStore, useAttemptsStore } from './stores'
+import { useProgressStore, useGardenStore, useSessionStore, useFocusTablesStore, useAttemptsStore, useProgressViewStore } from './stores'
 import { useProfileStore } from './stores/profileStore'
 import { Layout } from './components/common'
 import { ProfilePicker } from './components/common/ProfilePicker'
@@ -10,6 +10,7 @@ function App() {
   const { initialize: initProgress, initialized } = useProgressStore()
   const { initialize: initGarden } = useGardenStore()
   const { initialize: initFocusTables } = useFocusTablesStore()
+  const { initialize: initProgressView } = useProgressViewStore()
   const initializeAttempts = useAttemptsStore((s) => s.initialize)
   const fetchFromCloud = useAttemptsStore((s) => s.fetchFromCloud)
   const setProfileId = useAttemptsStore((s) => s.setProfileId)
@@ -19,8 +20,9 @@ function App() {
     initProgress()
     initGarden()
     initFocusTables()
+    initProgressView()
     initializeAttempts()
-  }, [initProgress, initGarden, initFocusTables, initializeAttempts])
+  }, [initProgress, initGarden, initFocusTables, initProgressView, initializeAttempts])
 
   // Sync attempts when profile is selected
   useEffect(() => {
