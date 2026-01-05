@@ -1,5 +1,5 @@
 import type p5 from 'p5'
-import type { AnimalData } from './types'
+import { REF_WIDTH, REF_HEIGHT, type AnimalData } from './types'
 import { getSaturation } from './colors'
 
 type AnimalDrawContext = {
@@ -12,10 +12,6 @@ type AnimalDrawContext = {
   width: number
   height: number
 }
-
-// Reference canvas size for scaling
-const REF_WIDTH = 400
-const REF_HEIGHT = 500
 
 export function drawAnimal(ctx: AnimalDrawContext, animal: AnimalData): void {
   const { p, colorProgress, time, centerX, centerY, width, height } = ctx

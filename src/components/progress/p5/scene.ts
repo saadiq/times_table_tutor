@@ -1,5 +1,5 @@
 import type p5 from 'p5'
-import type { SceneElements, SketchParams, TreeData } from './types'
+import { REF_WIDTH, REF_HEIGHT, type SceneElements, type SketchParams, type TreeData } from './types'
 import { PALETTE } from './colors'
 import { createSeededRandom } from './seededRandom'
 import {
@@ -18,10 +18,10 @@ const SCENE_SEED = 12345
 export function generateScene(width: number, height: number): SceneElements {
   const rand = createSeededRandom(SCENE_SEED)
 
-  // Scale tree to canvas dimensions (reference: 400x500)
+  // Scale tree to canvas dimensions
   // Use separate x/y scales so tree occupies same percentage of canvas regardless of aspect ratio
-  const scaleX = width / 400
-  const scaleY = height / 500
+  const scaleX = width / REF_WIDTH
+  const scaleY = height / REF_HEIGHT
   const scale = Math.min(scaleX, scaleY) // For elements that need uniform scaling (leaves, etc.)
 
   const tree: TreeData = {
@@ -30,14 +30,14 @@ export function generateScene(width: number, height: number): SceneElements {
     trunkW: 50 * scaleX,
     trunkH: 160 * scaleY,
     canopy: [
-      { x: 0, y: -180 * scaleY, r: 80 * scale },
-      { x: -70 * scaleX, y: -150 * scaleY, r: 65 * scale },
-      { x: 70 * scaleX, y: -150 * scaleY, r: 65 * scale },
-      { x: -50 * scaleX, y: -220 * scaleY, r: 55 * scale },
-      { x: 50 * scaleX, y: -220 * scaleY, r: 55 * scale },
-      { x: 0, y: -250 * scaleY, r: 50 * scale },
-      { x: -30 * scaleX, y: -280 * scaleY, r: 40 * scale },
-      { x: 30 * scaleX, y: -280 * scaleY, r: 40 * scale },
+      { x: 0, y: -180 * scaleY, r: 100 * scale },
+      { x: -70 * scaleX, y: -150 * scaleY, r: 80 * scale },
+      { x: 70 * scaleX, y: -150 * scaleY, r: 80 * scale },
+      { x: -50 * scaleX, y: -220 * scaleY, r: 70 * scale },
+      { x: 50 * scaleX, y: -220 * scaleY, r: 70 * scale },
+      { x: 0, y: -250 * scaleY, r: 60 * scale },
+      { x: -30 * scaleX, y: -280 * scaleY, r: 45 * scale },
+      { x: 30 * scaleX, y: -280 * scaleY, r: 45 * scale },
     ],
   }
 

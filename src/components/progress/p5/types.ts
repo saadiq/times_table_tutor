@@ -1,3 +1,7 @@
+// Reference canvas size for proportional scaling
+export const REF_WIDTH = 400
+export const REF_HEIGHT = 500
+
 export type CanopyCircle = {
   x: number
   y: number
