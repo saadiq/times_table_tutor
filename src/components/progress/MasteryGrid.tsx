@@ -61,11 +61,11 @@ export function MasteryGrid({ onFactSelect }: MasteryGridProps) {
         <div className="inline-block min-w-full">
           {/* Column labels */}
           <div className="flex">
-            <div className="w-8 h-8" /> {/* Empty corner cell */}
+            <div className="w-8 h-8 m-0.5" /> {/* Empty corner cell */}
             {tables.map(col => (
               <div
                 key={`col-${col}`}
-                className="w-8 h-8 flex items-center justify-center text-xs font-medium text-gray-500"
+                className="w-8 h-8 m-0.5 flex items-center justify-center text-xs font-medium text-gray-500"
               >
                 {col}
               </div>
@@ -76,7 +76,7 @@ export function MasteryGrid({ onFactSelect }: MasteryGridProps) {
           {tables.map(row => (
             <div key={`row-${row}`} className="flex">
               {/* Row label */}
-              <div className="w-8 h-8 flex items-center justify-center text-xs font-medium text-gray-500">
+              <div className="w-8 h-8 m-0.5 flex items-center justify-center text-xs font-medium text-gray-500">
                 {row}
               </div>
               {/* Fact cells */}
