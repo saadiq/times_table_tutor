@@ -69,6 +69,9 @@ export function PracticeView() {
     // Don't allow re-answering after correct answer (will auto-advance)
     if (showResult && selectedAnswer === currentFact.answer) return
 
+    // Capture hint state before potential reset (state updates are async)
+    const wasHintShown = showHint
+
     // If already showing result from a wrong answer, reset to allow retry
     if (showResult && selectedAnswer !== currentFact.answer) {
       setShowHint(false)
@@ -91,7 +94,7 @@ export function PracticeView() {
       correct: isCorrect,
       responseTimeMs,
       inputMethod,
-      hintShown: showHint,
+      hintShown: wasHintShown,
       profileId: currentProfile?.id,
     })
 
