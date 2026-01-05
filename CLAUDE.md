@@ -1,6 +1,6 @@
 # Times Table Tutor
 
-A calm, anxiety-free web app for learning times tables through practice and a garden reward system.
+A calm, anxiety-free web app for learning times tables through adaptive practice and a progressive scene reveal reward system.
 
 ## Quick Start
 
@@ -59,12 +59,13 @@ Before deploying to production:
 ```
 src/
 ├── components/
-│   ├── common/       # Button, Modal, ProgressBar, Navigation, Layout, Celebration, SettingsModal, FocusTablePicker
+│   ├── common/       # Button, Modal, ProgressBar, Navigation, Layout, Celebration, SettingsModal
 │   ├── practice/     # ProblemDisplay, AnswerInput, HintPanel, MultipleChoice, NumberPad
 │   ├── learn/        # FactCard, VisualExplainer
-│   └── garden/       # GardenItem, GardenView
-├── views/            # PracticeView, LearnView, GardenViewPage
-├── stores/           # Zustand stores (progress, garden, session, focusTables)
+│   ├── progress/     # ProgressView, ProgressScene, MasteryGrid, ActivityCalendar, RevealSequence
+│   └── garden/       # (legacy) GardenItem, GardenView
+├── views/            # PracticeView, LearnView, ProgressViewPage
+├── stores/           # Zustand stores (progress, progressView, garden, session, focusTables)
 ├── lib/              # Core logic (adaptive, strategies, rewards, sounds, storage)
 ├── hooks/            # useSound
 └── types/            # TypeScript types
@@ -75,8 +76,15 @@ src/
 ### Three Modes + Settings
 1. **Learn** - Visual introduction to facts (no wrong answers)
 2. **Practice** - Adaptive problems with hints on mistakes
-3. **Garden** - View earned rewards, place items
+3. **Progress** - Scene reveal reward system with stats
 4. **Settings** - Focus table selection (bottom nav)
+
+### Scene Reveal Reward System (`src/components/progress/`)
+- p5.js canvas renders a tree scene that evolves as you master facts
+- **4 tiers** based on facts learned (0-36-72-108-144): dawn → morning → afternoon → golden hour
+- **Progressive elements**: grass (facts 1-50), flowers (51-90), leaves (91-144)
+- **12 animal characters** unlock when you master each times table (1-12)
+- Interactive reveal sequences with sparkle animations
 
 ### Adaptive Learning (`src/lib/adaptive.ts`)
 - Tracks each of 144 facts (1x1 through 12x12) individually
@@ -90,7 +98,8 @@ Nine strategies: visual_array, skip_counting, break_apart, use_neighbor, nines_t
 
 ### State Stores
 - **progressStore**: All 144 fact confidence levels, persisted to localStorage
-- **gardenStore**: Coins, garden items, themes
+- **progressViewStore**: Scene reveal state (revealed facts, unlocked characters, tier level)
+- **gardenStore**: (legacy) Coins, garden items, themes
 - **sessionStore**: Current goal, progress, streak, mode
 - **focusTablesStore**: Which tables (1-12) to focus on, with enable/disable toggle
 

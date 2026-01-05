@@ -1,6 +1,6 @@
 # Times Table Tutor
 
-A calm, anxiety-free web app for learning times tables through adaptive practice and a garden reward system.
+A calm, anxiety-free web app for learning times tables through adaptive practice and a progressive scene reveal reward system.
 
 **[Try it live](https://times-table-tutor.pages.dev)**
 
@@ -18,7 +18,7 @@ Most math practice apps create anxiety with timers, leaderboards, and pressure. 
 
 - **Focus Tables** — Choose specific times tables to practice (e.g., just 7s and 8s) or work on all of them.
 
-- **Garden Rewards** — Earn coins through practice and grow a garden. Place flowers, trees, and decorations as you progress.
+- **Scene Reveal Rewards** — Watch a meadow scene come to life as you learn. Grass, flowers, and leaves appear progressively. Master each times table to unlock one of 12 animal friends. The sky shifts from dawn to golden hour as you approach full mastery.
 
 - **Cloud Sync** — Create profiles for multiple learners and sync progress across devices.
 
