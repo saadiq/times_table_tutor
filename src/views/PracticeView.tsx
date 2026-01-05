@@ -64,19 +64,19 @@ export function PracticeView() {
 
   // Handle answer selection
   const handleAnswer = (answer: number) => {
-    if (!currentFact || showResult) return
+    if (!displayFact || showResult) return
 
     setSelectedAnswer(answer)
     setShowResult(true)
 
-    const isCorrect = answer === currentFact.answer
-    recordAttempt(currentFact.fact, isCorrect)
+    const isCorrect = answer === displayFact.answer
+    recordAttempt(displayFact.fact, isCorrect)
 
     // Record attempt history for progress tracking
     const responseTimeMs = Date.now() - attemptStartTime
-    const inputMethod = shouldUseMultipleChoice(currentFact) ? 'multiple_choice' : 'number_pad'
+    const inputMethod = shouldUseMultipleChoice(displayFact) ? 'multiple_choice' : 'number_pad'
     recordAttemptHistory({
-      factKey: currentFact.fact,
+      factKey: displayFact.fact,
       correct: isCorrect,
       responseTimeMs,
       inputMethod,
@@ -85,7 +85,7 @@ export function PracticeView() {
     })
 
     // Queue progress sync to server
-    const syncPayload = toSyncPayload(currentFact.fact)
+    const syncPayload = toSyncPayload(displayFact.fact)
     if (syncPayload) {
       queueProgressSync(syncPayload)
     }
@@ -102,7 +102,7 @@ export function PracticeView() {
           type: reward.item.type,
           itemId: reward.item.itemId,
           position: getRandomPosition(),
-          earnedFor: `practice_${currentFact.fact}`,
+          earnedFor: `practice_${displayFact.fact}`,
         })
       }
 
