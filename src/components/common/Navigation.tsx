@@ -25,7 +25,7 @@ const iconMap: Record<ProfileIcon, React.ComponentType<{ className?: string }>> 
 const navItems: Array<{ mode: AppMode; icon: typeof BookOpen; label: string }> = [
   { mode: 'learn', icon: BookOpen, label: 'Learn' },
   { mode: 'practice', icon: Target, label: 'Practice' },
-  { mode: 'garden', icon: TreeDeciduous, label: 'Tree' },
+  { mode: 'garden', icon: TreeDeciduous, label: 'Progress' },
 ]
 
 export function Navigation() {
