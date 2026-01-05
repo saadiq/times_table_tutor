@@ -6,23 +6,29 @@ import {
   Squirrel,
   Cat,
   CircleDashed,
+  Flower2,
+  Fish,
+  Egg,
+  Leaf,
+  Shell,
+  Snail,
 } from 'lucide-react'
 import { TABLE_CHARACTERS } from '../../stores/progressViewStore'
 
-// Map table numbers to icons (using available Lucide icons)
-// Some are approximations since Lucide doesn't have all animals
+// Map table numbers to distinct icons for visual variety
+// Using nature-themed icons where exact animals aren't available
 const CHARACTER_ICONS: Record<number, React.ComponentType<{ className?: string; size?: number }>> = {
   1: Bug,        // Ladybug
-  2: Bird,       // Butterfly (approximation)
+  2: Flower2,    // Butterfly -> flower (attracts butterflies)
   3: Bird,       // Robin
   4: Squirrel,   // Squirrel
   5: Rabbit,     // Rabbit
-  6: Cat,        // Fox (approximation)
-  7: Bird,       // Owl (approximation)
-  8: Rabbit,     // Deer (approximation)
-  9: CircleDashed, // Hedgehog (approximation)
-  10: Bird,      // Bluebird
-  11: Cat,       // Badger (approximation)
+  6: Leaf,       // Fox -> leaf (forest creature)
+  7: Egg,        // Owl -> egg (bird family)
+  8: Fish,       // Deer -> fish (different animal)
+  9: Snail,      // Hedgehog -> snail (small garden creature)
+  10: Shell,     // Bluebird -> shell (nature theme)
+  11: Cat,       // Badger -> cat (similar shape)
   12: Cat,       // Cat
 }
 
@@ -35,9 +41,13 @@ export function CharacterBar({ revealedTables, onCharacterTap }: CharacterBarPro
   const discoveredCount = revealedTables.length
 
   return (
-    <div className="bg-white/90 backdrop-blur-sm px-4 py-3 border-t border-gray-100">
+    <div
+      className="bg-white/90 backdrop-blur-sm px-4 py-3 border-t border-gray-100"
+      role="region"
+      aria-label="Discovered characters"
+    >
       {/* Character icons row */}
-      <div className="flex justify-center gap-1.5 mb-2">
+      <div className="flex justify-center gap-1.5 mb-2" role="list" aria-label="Character collection">
         {TABLE_CHARACTERS.map((char) => {
           const isRevealed = revealedTables.includes(char.table)
           const Icon = CHARACTER_ICONS[char.table] || CircleDashed
@@ -54,11 +64,13 @@ export function CharacterBar({ revealedTables, onCharacterTap }: CharacterBarPro
               }`}
               whileTap={isRevealed ? { scale: 0.9 } : undefined}
               title={isRevealed ? `${char.name} (${char.table}s)` : `??? (${char.table}s)`}
+              aria-label={isRevealed ? `${char.name} - ${char.table} times table mastered` : `Undiscovered character for ${char.table} times table`}
+              role="listitem"
             >
               {isRevealed ? (
-                <Icon size={16} />
+                <Icon size={16} aria-hidden="true" />
               ) : (
-                <CircleDashed size={16} className="opacity-40" />
+                <CircleDashed size={16} className="opacity-40" aria-hidden="true" />
               )}
             </motion.button>
           )
@@ -66,7 +78,7 @@ export function CharacterBar({ revealedTables, onCharacterTap }: CharacterBarPro
       </div>
 
       {/* Progress text */}
-      <p className="text-center text-sm text-gray-500">
+      <p className="text-center text-sm text-gray-500" aria-live="polite">
         {discoveredCount === 0 ? (
           'Practice to discover friends!'
         ) : discoveredCount === 12 ? (
