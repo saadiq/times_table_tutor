@@ -1,12 +1,7 @@
 import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles } from 'lucide-react'
-import { TABLE_CHARACTERS, type PendingReveals } from '../../stores/progressViewStore'
-
-type RevealStep =
-  | { type: 'facts'; count: number }
-  | { type: 'character'; table: number; name: string }
-  | { type: 'tier'; tier: number }
+import { Sparkles, PartyPopper, Sunrise } from 'lucide-react'
+import { TABLE_CHARACTERS, type PendingReveals, type RevealStep } from '../../stores/progressViewStore'
 
 type RevealSequenceProps = {
   pending: PendingReveals
@@ -74,6 +69,9 @@ export function RevealSequence({ pending, onStepReveal, onComplete }: RevealSequ
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         className="absolute inset-x-4 top-1/3 flex flex-col items-center"
+        role="dialog"
+        aria-label="Progress reveal"
+        aria-live="polite"
       >
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-lg max-w-xs w-full text-center">
           <RevealStepContent step={currentStep} />
@@ -81,17 +79,18 @@ export function RevealSequence({ pending, onStepReveal, onComplete }: RevealSequ
           <button
             onClick={handleReveal}
             disabled={isAnimating}
+            aria-label={isAnimating ? 'Revealing progress...' : 'Reveal next progress update'}
             className={`mt-4 px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 mx-auto transition-all ${
               isAnimating
                 ? 'bg-gray-200 text-gray-400'
                 : 'bg-garden-500 text-white hover:bg-garden-600 active:scale-95'
             }`}
           >
-            <Sparkles size={18} />
+            <Sparkles size={18} aria-hidden="true" />
             {isAnimating ? 'Revealing...' : 'Show me!'}
           </button>
 
-          <p className="text-xs text-gray-400 mt-3">
+          <p className="text-xs text-gray-400 mt-3" aria-label={`Step ${currentStepIndex + 1} of ${steps.length}`}>
             {currentStepIndex + 1} of {steps.length}
           </p>
         </div>
@@ -105,7 +104,9 @@ function RevealStepContent({ step }: { step: RevealStep }) {
     case 'facts':
       return (
         <>
-          <div className="text-4xl mb-2">✨</div>
+          <div className="mb-2 flex justify-center" aria-hidden="true">
+            <Sparkles size={48} className="text-warm-500" />
+          </div>
           <h3 className="text-lg font-bold text-gray-800">New Progress!</h3>
           <p className="text-gray-600 mt-1">
             You've learned <span className="font-bold text-garden-600">{step.count}</span> more{' '}
@@ -117,7 +118,9 @@ function RevealStepContent({ step }: { step: RevealStep }) {
     case 'character':
       return (
         <>
-          <div className="text-4xl mb-2">🎉</div>
+          <div className="mb-2 flex justify-center" aria-hidden="true">
+            <PartyPopper size={48} className="text-garden-500" />
+          </div>
           <h3 className="text-lg font-bold text-gray-800">New Friend!</h3>
           <p className="text-gray-600 mt-1">
             <span className="font-bold text-garden-600">{step.name}</span> wants to join your
@@ -130,7 +133,9 @@ function RevealStepContent({ step }: { step: RevealStep }) {
     case 'tier':
       return (
         <>
-          <div className="text-4xl mb-2">🌅</div>
+          <div className="mb-2 flex justify-center" aria-hidden="true">
+            <Sunrise size={48} className="text-warm-500" />
+          </div>
           <h3 className="text-lg font-bold text-gray-800">Time Passes!</h3>
           <p className="text-gray-600 mt-1">{TIER_MESSAGES[step.tier]}</p>
         </>

@@ -2,15 +2,10 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Star } from 'lucide-react'
 import { useProgressStore } from '../../stores'
-import { useProgressViewStore, type PendingReveals } from '../../stores/progressViewStore'
+import { useProgressViewStore, type PendingReveals, type RevealStep } from '../../stores/progressViewStore'
 import { ProgressScene } from './ProgressScene'
 import { RevealSequence } from './RevealSequence'
 import { CharacterBar } from './CharacterBar'
-
-type RevealStep =
-  | { type: 'facts'; count: number }
-  | { type: 'character'; table: number; name: string }
-  | { type: 'tier'; tier: number }
 
 // Animation overrides during reveal sequence
 type AnimationOverrides = {
