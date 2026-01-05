@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { TreeDeciduous } from 'lucide-react'
-import { TABLE_CHARACTERS } from '../../stores/progressViewStore'
+import { useP5 } from './p5'
 
 type ProgressSceneProps = {
   revealedFacts: number
@@ -10,27 +10,42 @@ type ProgressSceneProps = {
   animatingCharacter?: number | null
 }
 
-// Use WebP with PNG fallback for older browsers
-const SCENE_IMAGE = '/scene.webp'
-
 export function ProgressScene({
   revealedFacts,
   revealedTables,
   revealedTier,
   animatingCharacter,
 }: ProgressSceneProps) {
-  const [imageError, setImageError] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
 
-  // Calculate visual progress (0 to 1)
-  const progress = Math.min(1, revealedFacts / 144)
+  // Observe container size for responsive canvas
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
 
-  // Tier affects warmth of the colored layer
-  const tierWarmth = revealedTier * 0.06 // 0 -> 0.24 sepia for golden hour
+    const observer = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect
+      if (width > 0 && height > 0) {
+        setDimensions({ width: Math.floor(width), height: Math.floor(height) })
+      }
+    })
 
-  const handleImageError = () => setImageError(true)
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [])
 
-  // Fallback UI when image fails to load
-  if (imageError) {
+  const { isReady, error } = useP5(containerRef, {
+    revealedFacts,
+    revealedTables,
+    revealedTier,
+    animatingCharacter: animatingCharacter ?? null,
+    width: dimensions.width,
+    height: dimensions.height,
+  })
+
+  // Fallback UI when canvas fails
+  if (error) {
     return (
       <div className="absolute inset-0 bg-gradient-to-b from-sky-200 to-garden-200 flex items-center justify-center">
         <div className="text-center text-garden-600">
@@ -43,106 +58,57 @@ export function ProgressScene({
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Bottom layer: grayscale/muted version (always visible) */}
-      <img
-        src={SCENE_IMAGE}
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover object-center"
-        style={{ filter: 'grayscale(1) brightness(0.5)' }}
-        onError={handleImageError}
+      <div
+        ref={containerRef}
+        className="w-full h-full"
+        style={{ opacity: isReady ? 1 : 0, transition: 'opacity 0.3s ease-in' }}
       />
 
-      {/* Top layer: full color version fades in based on progress */}
-      <motion.div
-        className="absolute inset-0"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: progress }}
-        transition={{ duration: 1.5, ease: 'easeOut' }}
-      >
-        <img
-          src={SCENE_IMAGE}
-          alt="Learning Tree"
-          className="w-full h-full object-cover object-center"
-          style={{ filter: `sepia(${tierWarmth})` }}
-        />
-      </motion.div>
-
-      {/* Character mask overlays - hide unrevealed characters */}
-      {TABLE_CHARACTERS.map((char) => {
-        const isRevealed = revealedTables.includes(char.table)
-        const isAnimating = animatingCharacter === char.table
-
-        if (isRevealed && !isAnimating) return null
-
-        return (
-          <motion.div
-            key={char.table}
-            className="absolute"
-            style={{
-              top: char.position.top,
-              left: char.position.left,
-              width: char.position.width,
-              height: char.position.height,
-            }}
-            initial={isAnimating ? { opacity: 1 } : false}
-            animate={isAnimating ? { opacity: 0 } : { opacity: 1 }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-          >
-            {/* Blur/darken overlay to hide character */}
-            <div
-              className="w-full h-full rounded-full"
-              style={{
-                background: `radial-gradient(ellipse at center,
-                  rgba(120, 115, 110, 0.98) 0%,
-                  rgba(120, 115, 110, 0.85) 50%,
-                  rgba(120, 115, 110, 0) 75%)`,
-              }}
-            />
-          </motion.div>
-        )
-      })}
-
       {/* Sparkle effect for animating character */}
-      {animatingCharacter && (
-        <CharacterSparkle
-          position={
-            TABLE_CHARACTERS.find((c) => c.table === animatingCharacter)?.position
-          }
-        />
-      )}
+      {animatingCharacter && <CharacterSparkle tableNum={animatingCharacter} />}
     </div>
   )
 }
 
-function CharacterSparkle({
-  position,
-}: {
-  position?: { top: string; left: string; width: string; height: string }
-}) {
-  if (!position) return null
+function CharacterSparkle({ tableNum }: { tableNum: number }) {
+  // Position sparkles based on animal positions (matching animals.ts order)
+  const positions = [
+    { top: '88%', left: '8%' },
+    { top: '45%', left: '85%' },
+    { top: '32%', left: '62%' },
+    { top: '50%', left: '38%' },
+    { top: '85%', left: '88%' },
+    { top: '82%', left: '15%' },
+    { top: '22%', left: '50%' },
+    { top: '80%', left: '78%' },
+    { top: '90%', left: '25%' },
+    { top: '28%', left: '30%' },
+    { top: '88%', left: '70%' },
+    { top: '78%', left: '55%' },
+  ]
+
+  const pos = positions[tableNum - 1]
+  if (!pos) return null
 
   return (
     <motion.div
       className="absolute pointer-events-none"
       style={{
-        top: position.top,
-        left: position.left,
-        width: position.width,
-        height: position.height,
+        top: pos.top,
+        left: pos.left,
+        width: '15%',
+        height: '12%',
+        transform: 'translate(-50%, -50%)',
       }}
       initial={{ opacity: 0, scale: 0.5 }}
       animate={{ opacity: [0, 1, 1, 0], scale: [0.5, 1.2, 1, 0.8] }}
       transition={{ duration: 1, times: [0, 0.2, 0.7, 1] }}
     >
-      {/* Sparkle particles */}
       {[...Array(8)].map((_, i) => (
         <motion.div
           key={i}
           className="absolute w-2 h-2 bg-yellow-300 rounded-full"
-          style={{
-            top: '50%',
-            left: '50%',
-          }}
+          style={{ top: '50%', left: '50%' }}
           initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
           animate={{
             x: Math.cos((i * Math.PI) / 4) * 40,
