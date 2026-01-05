@@ -49,17 +49,17 @@ export function PracticeView() {
     }
   }, [facts, recentFacts, activeFocusTables])
 
-  // Initialize first problem - compute next fact directly instead of calling setState in effect
+  // Compute display fact synchronously to avoid flicker on initial render
+  // State update is scheduled via microtask to avoid render-during-render warnings
   const shouldInitialize = !currentFact && Object.keys(facts).length > 0
-  if (shouldInitialize) {
-    const next = selectNextFact(facts, recentFacts, activeFocusTables)
-    if (next && currentFact !== next) {
-      // Use a micro-task to avoid render-during-render
-      queueMicrotask(() => {
-        setCurrentFact(next)
-        setRecentFacts(prev => [...prev.slice(-10), next.fact])
-      })
-    }
+  const initialFact = shouldInitialize ? selectNextFact(facts, recentFacts, activeFocusTables) : null
+  const displayFact = currentFact || initialFact
+
+  if (initialFact && !currentFact) {
+    queueMicrotask(() => {
+      setCurrentFact(initialFact)
+      setRecentFacts(prev => [...prev.slice(-10), initialFact.fact])
+    })
   }
 
   // Handle answer selection
@@ -138,8 +138,8 @@ export function PracticeView() {
   }
 
   const strategies = useMemo(
-    () => (currentFact ? getStrategiesForFact(currentFact) : []),
-    [currentFact]
+    () => (displayFact ? getStrategiesForFact(displayFact) : []),
+    [displayFact]
   )
 
   if (isGoalComplete()) {
@@ -168,7 +168,7 @@ export function PracticeView() {
     )
   }
 
-  if (!currentFact) {
+  if (!displayFact) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <p className="text-gray-500">Loading...</p>
@@ -191,7 +191,7 @@ export function PracticeView() {
 
       {/* Problem */}
       <div className="flex-1 flex flex-col justify-center">
-        <ProblemDisplay fact={currentFact} />
+        <ProblemDisplay fact={displayFact} />
 
         {/* Answer feedback */}
         <AnimatePresence>
@@ -201,7 +201,7 @@ export function PracticeView() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               className={`text-center py-2 px-4 rounded-full mx-auto mb-4 ${
-                showResult && selectedAnswer === currentFact.answer
+                showResult && selectedAnswer === displayFact.answer
                   ? 'bg-garden-100 text-garden-700'
                   : 'bg-warm-100 text-warm-700'
               }`}
@@ -214,11 +214,11 @@ export function PracticeView() {
         {/* Answer input */}
         <div className="mb-6">
           <AnswerInput
-            fact={currentFact}
+            fact={displayFact}
             onAnswer={handleAnswer}
             selectedAnswer={selectedAnswer}
             showResult={showResult}
-            disabled={showResult && selectedAnswer === currentFact.answer}
+            disabled={showResult && selectedAnswer === displayFact.answer}
           />
         </div>
 
@@ -233,9 +233,9 @@ export function PracticeView() {
             setSelectedAnswer(null)
             setMessage(null)
           }}
-          rows={currentFact.a}
-          cols={currentFact.b}
-          resetKey={currentFact.fact}
+          rows={displayFact.a}
+          cols={displayFact.b}
+          resetKey={displayFact.fact}
         />
 
         {/* Action buttons */}
