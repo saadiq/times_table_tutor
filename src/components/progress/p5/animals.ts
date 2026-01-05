@@ -1,5 +1,5 @@
 import type p5 from 'p5'
-import type { AnimalData, AnimalType } from './types'
+import type { AnimalData } from './types'
 import { getSaturation } from './colors'
 
 type AnimalDrawContext = {
@@ -265,7 +265,9 @@ function drawBluebird(p: p5, s: number, sat: number, time: number): void {
   p.ellipse(s * 0.38, -s * 0.25, s * 0.08)
 }
 
-function drawBadger(p: p5, s: number, sat: number): void {
+function drawBadger(p: p5, s: number, _sat: number): void {
+  // Badger uses grayscale colors, sat intentionally unused
+  void _sat
   p.fill(0, 0, 35)
   p.ellipse(0, 0, s * 1.2, s * 0.7)
   p.ellipse(s * 0.45, -s * 0.1, s * 0.55, s * 0.5)

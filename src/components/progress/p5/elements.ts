@@ -49,12 +49,17 @@ export function drawGround(ctx: DrawContext): void {
   const sat =
     getSaturation(width / 2, height, centerX, centerY, width, height, colorProgress) * 0.55
 
-  // Gentle hill
+  // Gentle hill - using arc for curved top
   p.fill(hue, sat, 50)
   p.beginShape()
   p.vertex(0, height)
   p.vertex(0, height * 0.75)
-  p.bezierVertex(width * 0.3, height * 0.7, width * 0.7, height * 0.72, width, height * 0.74)
+  // Create curve with multiple vertices
+  for (let x = 0; x <= width; x += width / 20) {
+    const y = height * 0.75 - Math.sin((x / width) * Math.PI) * height * 0.05
+    p.vertex(x, y)
+  }
+  p.vertex(width, height * 0.74)
   p.vertex(width, height)
   p.endShape(p.CLOSE)
 
@@ -63,7 +68,11 @@ export function drawGround(ctx: DrawContext): void {
   p.beginShape()
   p.vertex(0, height)
   p.vertex(0, height * 0.85)
-  p.bezierVertex(width * 0.25, height * 0.82, width * 0.75, height * 0.84, width, height * 0.83)
+  for (let x = 0; x <= width; x += width / 20) {
+    const y = height * 0.85 - Math.sin((x / width) * Math.PI) * height * 0.03
+    p.vertex(x, y)
+  }
+  p.vertex(width, height * 0.83)
   p.vertex(width, height)
   p.endShape(p.CLOSE)
 }
@@ -179,13 +188,9 @@ export function drawLeaf(ctx: DrawContext, l: LeafElement): void {
   p.translate(l.x, l.y)
   p.rotate(l.rotation + sway)
 
-  // Leaf shape
+  // Leaf shape (simple ellipse for compatibility)
   p.fill(hue, sat * 0.7, 55)
-  p.beginShape()
-  p.vertex(0, -l.size / 2)
-  p.bezierVertex(l.size / 2, -l.size / 3, l.size / 2, l.size / 3, 0, l.size / 2)
-  p.bezierVertex(-l.size / 2, l.size / 3, -l.size / 2, -l.size / 3, 0, -l.size / 2)
-  p.endShape()
+  p.ellipse(0, 0, l.size * 0.5, l.size)
 
   // Leaf vein
   p.stroke(hue, sat * 0.5, 40)

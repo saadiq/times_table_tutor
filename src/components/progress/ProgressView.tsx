@@ -34,12 +34,13 @@ export function ProgressView() {
   const liveRevealedTier = overrides.tier ?? lastRevealedTier
 
   // Derive pending reveals (only when not revealing)
+  // Note: getPendingReveals internally reads store state, so it updates when store changes
   const pending = useMemo<PendingReveals | null>(() => {
     if (isRevealing) return null
     const p = getPendingReveals()
     const hasPending = p.newFacts > 0 || p.newTables.length > 0 || p.newTier !== null
     return hasPending ? p : null
-  }, [getPendingReveals, isRevealing, lastRevealedFactCount, revealedTables, lastRevealedTier])
+  }, [getPendingReveals, isRevealing])
 
   // Get current progress count for header (confident + mastered)
   const confidentFacts = getFactsByConfidence('confident')
