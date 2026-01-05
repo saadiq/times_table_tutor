@@ -16,8 +16,11 @@ const variantStyles: Record<ButtonVariant, string> = {
   primary: 'bg-garden-500 hover:bg-garden-600 text-white shadow-sm',
   secondary: 'bg-warm-100 hover:bg-warm-200 text-gray-800',
   ghost: 'bg-transparent hover:bg-gray-100 text-gray-600',
-  answer: 'bg-white hover:bg-gray-50 text-gray-800 border-2 border-gray-200 hover:border-garden-300',
+  answer: 'border-2 border-gray-200 hover:border-garden-300',
 }
+
+// Separate text/bg styles for answer variant to avoid conflicts with isCorrect/isWrong
+const answerDefaultStyles = 'bg-white hover:bg-gray-50 text-gray-800'
 
 const sizeStyles = {
   sm: 'py-2 px-4 text-sm',
@@ -27,11 +30,14 @@ const sizeStyles = {
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = 'primary', size = 'md', isCorrect, isWrong, className = '', children, ...props }, ref) => {
+    // For answer variant, handle bg/text separately to avoid CSS class conflicts
     let stateStyles = ''
     if (isCorrect) {
       stateStyles = 'bg-garden-500 border-garden-500 text-white'
     } else if (isWrong) {
-      stateStyles = 'bg-warm-100 border-warm-300'
+      stateStyles = 'bg-warm-100 border-warm-300 text-gray-800'
+    } else if (variant === 'answer') {
+      stateStyles = answerDefaultStyles
     }
 
     return (
