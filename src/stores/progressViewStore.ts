@@ -24,6 +24,12 @@ export type PendingReveals = {
   newTier: number | null
 }
 
+// Shared type for reveal animation steps
+export type RevealStep =
+  | { type: 'facts'; count: number }
+  | { type: 'character'; table: number; name: string }
+  | { type: 'tier'; tier: number }
+
 type ProgressViewState = {
   lastRevealedFactCount: number
   revealedTables: number[]
