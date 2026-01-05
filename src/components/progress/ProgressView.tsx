@@ -104,9 +104,12 @@ export function ProgressView() {
       <div className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm">
         <div className="flex items-center gap-2">
           <Star size={20} className="text-warm-500" />
-          <span className="font-semibold text-gray-800">
-            {totalProgress} / 144
-          </span>
+          <div className="flex flex-col">
+            <span className="font-semibold text-gray-800">
+              {totalProgress} / 144
+            </span>
+            <span className="text-sm text-gray-500">Facts Learned</span>
+          </div>
         </div>
         <button
           onClick={() => setShowStats(true)}
