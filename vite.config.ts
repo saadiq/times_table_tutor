@@ -40,8 +40,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB to handle scene.png
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
       },
     }),
   ],

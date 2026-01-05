@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { TreeDeciduous } from 'lucide-react'
 import { TABLE_CHARACTERS } from '../../stores/progressViewStore'
 
 type ProgressSceneProps = {
@@ -8,26 +10,46 @@ type ProgressSceneProps = {
   animatingCharacter?: number | null
 }
 
+// Use WebP with PNG fallback for older browsers
+const SCENE_IMAGE = '/scene.webp'
+
 export function ProgressScene({
   revealedFacts,
   revealedTables,
   revealedTier,
   animatingCharacter,
 }: ProgressSceneProps) {
+  const [imageError, setImageError] = useState(false)
+
   // Calculate visual progress (0 to 1)
   const progress = Math.min(1, revealedFacts / 144)
 
   // Tier affects warmth of the colored layer
   const tierWarmth = revealedTier * 0.06 // 0 -> 0.24 sepia for golden hour
 
+  const handleImageError = () => setImageError(true)
+
+  // Fallback UI when image fails to load
+  if (imageError) {
+    return (
+      <div className="absolute inset-0 bg-gradient-to-b from-sky-200 to-garden-200 flex items-center justify-center">
+        <div className="text-center text-garden-600">
+          <TreeDeciduous size={64} className="mx-auto mb-2 opacity-50" />
+          <p className="text-sm opacity-75">Your learning tree</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="absolute inset-0 overflow-hidden">
       {/* Bottom layer: grayscale/muted version (always visible) */}
       <img
-        src="/scene.png"
+        src={SCENE_IMAGE}
         alt=""
         className="absolute inset-0 w-full h-full object-cover object-center"
         style={{ filter: 'grayscale(1) brightness(0.5)' }}
+        onError={handleImageError}
       />
 
       {/* Top layer: full color version fades in based on progress */}
@@ -38,7 +60,7 @@ export function ProgressScene({
         transition={{ duration: 1.5, ease: 'easeOut' }}
       >
         <img
-          src="/scene.png"
+          src={SCENE_IMAGE}
           alt="Learning Tree"
           className="w-full h-full object-cover object-center"
           style={{ filter: `sepia(${tierWarmth})` }}
