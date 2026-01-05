@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Star } from 'lucide-react'
+import { Sparkles, Star, BarChart3 } from 'lucide-react'
 import { useProgressStore } from '../../stores'
 import { useProgressViewStore, type PendingReveals, type RevealStep } from '../../stores/progressViewStore'
 import { ProgressScene } from './ProgressScene'
 import { RevealSequence } from './RevealSequence'
 import { CharacterBar } from './CharacterBar'
+import { StatsSheet } from './StatsSheet'
 
 // Animation overrides during reveal sequence
 type AnimationOverrides = {
@@ -24,6 +25,7 @@ export function ProgressView() {
   const [overrides, setOverrides] = useState<AnimationOverrides>({ facts: null, tables: null, tier: null })
   const [debugMode, setDebugMode] = useState(false)
   const [debugValues, setDebugValues] = useState({ facts: 0, tier: 0, tables: 0 })
+  const [showStats, setShowStats] = useState(false)
 
   // Initialize store
   useEffect(() => {
@@ -106,7 +108,13 @@ export function ProgressView() {
             {totalProgress} / 144
           </span>
         </div>
-        <span className="text-sm text-gray-500">Your Learning Tree</span>
+        <button
+          onClick={() => setShowStats(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm text-gray-600"
+        >
+          <BarChart3 size={16} />
+          <span>Stats</span>
+        </button>
       </div>
 
       {/* Scene area */}
@@ -179,6 +187,13 @@ export function ProgressView() {
         revealedTables={liveRevealedTables}
         onCharacterTap={handleCharacterTap}
       />
+
+      {/* Stats sheet */}
+      <AnimatePresence>
+        {showStats && (
+          <StatsSheet isOpen={showStats} onClose={() => setShowStats(false)} />
+        )}
+      </AnimatePresence>
 
       {/* Debug panel (dev mode only) */}
       {import.meta.env.DEV && (
