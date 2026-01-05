@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Star } from 'lucide-react'
 import { useProgressStore } from '../../stores'
@@ -22,16 +22,18 @@ export function ProgressView() {
   const [isRevealing, setIsRevealing] = useState(false)
   const [animatingCharacter, setAnimatingCharacter] = useState<number | null>(null)
   const [overrides, setOverrides] = useState<AnimationOverrides>({ facts: null, tables: null, tier: null })
+  const [debugMode, setDebugMode] = useState(false)
+  const [debugValues, setDebugValues] = useState({ facts: 0, tier: 0, tables: 0 })
 
   // Initialize store
   useEffect(() => {
     initialize()
   }, [initialize])
 
-  // Compute live values: use overrides during animation, store values otherwise
-  const liveRevealedFacts = overrides.facts ?? lastRevealedFactCount
-  const liveRevealedTables = overrides.tables ?? revealedTables
-  const liveRevealedTier = overrides.tier ?? lastRevealedTier
+  // Compute live values: debug mode > overrides > store values
+  const liveRevealedFacts = debugMode ? debugValues.facts : (overrides.facts ?? lastRevealedFactCount)
+  const liveRevealedTables = debugMode ? Array.from({ length: debugValues.tables }, (_, i) => i + 1) : (overrides.tables ?? revealedTables)
+  const liveRevealedTier = debugMode ? debugValues.tier : (overrides.tier ?? lastRevealedTier)
 
   // Derive pending reveals (only when not revealing)
   // Note: getPendingReveals internally reads store state, so it updates when store changes
@@ -177,6 +179,59 @@ export function ProgressView() {
         revealedTables={liveRevealedTables}
         onCharacterTap={handleCharacterTap}
       />
+
+      {/* Debug panel (dev mode only) */}
+      {import.meta.env.DEV && (
+        <Fragment>
+          {/* Hidden toggle - triple tap header */}
+          <button
+            onClick={() => setDebugMode((d) => !d)}
+            className="fixed top-2 right-2 w-8 h-8 opacity-10 hover:opacity-50"
+            aria-label="Toggle debug mode"
+          />
+          {debugMode && (
+            <div className="fixed bottom-20 left-4 right-4 bg-black/90 text-white p-4 rounded-xl text-sm z-50">
+              <div className="flex justify-between items-center mb-3">
+                <span className="font-bold">Scene Debug</span>
+                <button onClick={() => setDebugMode(false)} className="text-gray-400 hover:text-white">✕</button>
+              </div>
+              <label className="block mb-2">
+                Facts: {debugValues.facts}/144
+                <input
+                  type="range"
+                  min="0"
+                  max="144"
+                  value={debugValues.facts}
+                  onChange={(e) => setDebugValues((v) => ({ ...v, facts: Number(e.target.value) }))}
+                  className="w-full mt-1"
+                />
+              </label>
+              <label className="block mb-2">
+                Tier: {debugValues.tier}/4
+                <input
+                  type="range"
+                  min="0"
+                  max="4"
+                  value={debugValues.tier}
+                  onChange={(e) => setDebugValues((v) => ({ ...v, tier: Number(e.target.value) }))}
+                  className="w-full mt-1"
+                />
+              </label>
+              <label className="block">
+                Animals: {debugValues.tables}/12
+                <input
+                  type="range"
+                  min="0"
+                  max="12"
+                  value={debugValues.tables}
+                  onChange={(e) => setDebugValues((v) => ({ ...v, tables: Number(e.target.value) }))}
+                  className="w-full mt-1"
+                />
+              </label>
+            </div>
+          )}
+        </Fragment>
+      )}
     </div>
   )
 }

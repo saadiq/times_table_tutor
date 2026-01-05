@@ -168,14 +168,14 @@ export function PracticeView() {
         </motion.div>
         <h2 className="text-2xl font-bold text-gray-800 mb-2">Goal Complete!</h2>
         <p className="text-gray-600 mb-6">
-          Amazing work! You've added to your garden.
+          Amazing work! Your scene is coming to life.
         </p>
         <div className="flex gap-3">
           <Button onClick={() => { resetProgress(); nextProblem(); }}>
             Keep Going
           </Button>
           <Button variant="secondary" onClick={() => setMode('garden')}>
-            View Garden
+            View Progress
           </Button>
         </div>
       </div>
