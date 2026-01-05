@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   focusTables: 'ttt_focus_tables',
   attempts: 'ttt_attempts',
   pendingAttempts: 'ttt_pending_attempts',
+  progressView: 'ttt_progress_view',
 } as const
 
 export function saveToStorage<T>(key: keyof typeof STORAGE_KEYS, data: T): void {
