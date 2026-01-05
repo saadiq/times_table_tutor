@@ -84,7 +84,7 @@ export function FactDetailSheet({ fact, onClose }: FactDetailSheetProps) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 bg-black/40 z-40"
+        className="fixed inset-0 bg-black/40 z-[70]"
       />
 
       {/* Sheet */}
@@ -93,7 +93,7 @@ export function FactDetailSheet({ fact, onClose }: FactDetailSheetProps) {
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-xl safe-area-pb"
+        className="fixed inset-x-0 bottom-0 z-[80] bg-white rounded-t-3xl shadow-xl safe-area-pb"
       >
         <div className="p-6">
           {/* Handle bar */}
