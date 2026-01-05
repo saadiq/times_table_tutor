@@ -13,10 +13,16 @@ type AnimalDrawContext = {
   height: number
 }
 
+// Reference canvas size for scaling
+const REF_WIDTH = 400
+const REF_HEIGHT = 500
+
 export function drawAnimal(ctx: AnimalDrawContext, animal: AnimalData): void {
   const { p, colorProgress, time, centerX, centerY, width, height } = ctx
   const sat = getSaturation(animal.x, animal.y, centerX, centerY, width, height, colorProgress)
-  const s = animal.scale * 18
+  // Scale animal size proportionally to canvas
+  const canvasScale = Math.min(width / REF_WIDTH, height / REF_HEIGHT)
+  const s = animal.scale * 18 * canvasScale
 
   p.push()
   p.translate(animal.x, animal.y)

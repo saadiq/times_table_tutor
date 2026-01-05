@@ -18,20 +18,26 @@ const SCENE_SEED = 12345
 export function generateScene(width: number, height: number): SceneElements {
   const rand = createSeededRandom(SCENE_SEED)
 
+  // Scale tree to canvas dimensions (reference: 400x500)
+  // Use separate x/y scales so tree occupies same percentage of canvas regardless of aspect ratio
+  const scaleX = width / 400
+  const scaleY = height / 500
+  const scale = Math.min(scaleX, scaleY) // For elements that need uniform scaling (leaves, etc.)
+
   const tree: TreeData = {
     x: width * 0.5,
     baseY: height * 0.82,
-    trunkW: 50,
-    trunkH: 160,
+    trunkW: 50 * scaleX,
+    trunkH: 160 * scaleY,
     canopy: [
-      { x: 0, y: -180, r: 100 },
-      { x: -70, y: -150, r: 80 },
-      { x: 70, y: -150, r: 80 },
-      { x: -50, y: -220, r: 70 },
-      { x: 50, y: -220, r: 70 },
-      { x: 0, y: -250, r: 60 },
-      { x: -30, y: -280, r: 45 },
-      { x: 30, y: -280, r: 45 },
+      { x: 0, y: -180 * scaleY, r: 80 * scale },
+      { x: -70 * scaleX, y: -150 * scaleY, r: 65 * scale },
+      { x: 70 * scaleX, y: -150 * scaleY, r: 65 * scale },
+      { x: -50 * scaleX, y: -220 * scaleY, r: 55 * scale },
+      { x: 50 * scaleX, y: -220 * scaleY, r: 55 * scale },
+      { x: 0, y: -250 * scaleY, r: 50 * scale },
+      { x: -30 * scaleX, y: -280 * scaleY, r: 40 * scale },
+      { x: 30 * scaleX, y: -280 * scaleY, r: 40 * scale },
     ],
   }
 
@@ -41,7 +47,7 @@ export function generateScene(width: number, height: number): SceneElements {
     grass.push({
       x: rand() * width,
       y: height * 0.78 + rand() * height * 0.22,
-      h: 12 + rand() * 20,
+      h: (12 + rand() * 20) * scale,
       revealIdx: Math.floor((i * 50) / 60) + 1,
       sway: rand() * Math.PI * 2,
     })
@@ -57,7 +63,7 @@ export function generateScene(width: number, height: number): SceneElements {
     flowers.push({
       x: fx,
       y: height * 0.75 + rand() * height * 0.22,
-      size: 6 + rand() * 10,
+      size: (6 + rand() * 10) * scale,
       petals: 5 + Math.floor(rand() * 3),
       hue: PALETTE.flowers[Math.floor(rand() * PALETTE.flowers.length)].h,
       revealIdx: 51 + Math.floor((i * 40) / 35),
@@ -74,7 +80,7 @@ export function generateScene(width: number, height: number): SceneElements {
     leaves.push({
       x: tree.x + c.x + Math.cos(angle) * dist,
       y: tree.baseY + c.y + Math.sin(angle) * dist,
-      size: 10 + rand() * 8,
+      size: (10 + rand() * 8) * scale,
       rotation: rand() * Math.PI * 2,
       hue: 90 + rand() * 50,
       revealIdx: 91 + Math.floor((i * 54) / 80),
@@ -87,8 +93,8 @@ export function generateScene(width: number, height: number): SceneElements {
   for (let i = 0; i < 4; i++) {
     clouds.push({
       x: width * 0.1 + rand() * width * 0.8,
-      y: 30 + rand() * 60,
-      size: 35 + rand() * 25,
+      y: 30 * scaleY + rand() * 60 * scaleY,
+      size: (35 + rand() * 25) * scale,
     })
   }
 
