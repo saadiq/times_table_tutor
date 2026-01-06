@@ -1,5 +1,5 @@
 import type {
-  ProfileSummary,
+  ProfileListItem,
   Profile,
   CreateProfileRequest,
   ProfileData,
@@ -46,7 +46,7 @@ async function request<T>(
 
 export const api = {
   // Profiles
-  async listProfiles(): Promise<Omit<ProfileSummary, 'icon'>[]> {
+  async listProfiles(): Promise<ProfileListItem[]> {
     return request('/profiles');
   },
 

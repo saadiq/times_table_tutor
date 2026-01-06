@@ -1,4 +1,14 @@
 // Profile types for API
+
+// Profile list item (no icon - that's the password)
+export interface ProfileListItem {
+  id: string;
+  name: string;
+  color: string;
+  lastActive: number;
+}
+
+// Full profile summary (includes icon)
 export interface ProfileSummary {
   id: string;
   name: string;

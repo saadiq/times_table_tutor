@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { api } from '../lib/api';
 import type {
   Profile,
-  ProfileSummary,
+  ProfileListItem,
   CreateProfileRequest,
   ProfileData,
   FactProgressSync,
@@ -13,7 +13,7 @@ import type {
 interface ProfileState {
   // State
   currentProfile: Profile | null;
-  profiles: Omit<ProfileSummary, 'icon'>[];
+  profiles: ProfileListItem[];
   isLoading: boolean;
   error: string | null;
 
