@@ -38,6 +38,7 @@ type ProgressViewState = {
 
 type ProgressViewActions = {
   initialize: () => void
+  resync: () => void
   getPendingReveals: () => PendingReveals
   markRevealed: (facts: number, tables: number[], tier: number) => void
   resetForTesting: () => void
@@ -61,21 +62,26 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
         set(saved)
       } else {
         // Bootstrap from current progress so tree shows existing progress
-        const progressStore = useProgressStore.getState()
-        const confidentFacts = progressStore.getFactsByConfidence('confident')
-        const masteredFacts = progressStore.getFactsByConfidence('mastered')
-        const currentCount = confidentFacts.length + masteredFacts.length
-        const completedTables = progressStore.getMasteredTables()
-        const currentTier = Math.min(4, Math.floor(currentCount / 36))
-
-        const bootstrapped = {
-          lastRevealedFactCount: currentCount,
-          revealedTables: completedTables,
-          lastRevealedTier: currentTier,
-        }
-        set(bootstrapped)
-        saveToStorage(STORAGE_KEY, bootstrapped)
+        get().resync()
       }
+    },
+
+    resync: () => {
+      // Re-bootstrap from current progressStore state (used after cloud data loads)
+      const progressStore = useProgressStore.getState()
+      const confidentFacts = progressStore.getFactsByConfidence('confident')
+      const masteredFacts = progressStore.getFactsByConfidence('mastered')
+      const currentCount = confidentFacts.length + masteredFacts.length
+      const completedTables = progressStore.getMasteredTables()
+      const currentTier = Math.min(4, Math.floor(currentCount / 36))
+
+      const synced = {
+        lastRevealedFactCount: currentCount,
+        revealedTables: completedTables,
+        lastRevealedTier: currentTier,
+      }
+      set(synced)
+      saveToStorage(STORAGE_KEY, synced)
     },
 
     getPendingReveals: () => {
