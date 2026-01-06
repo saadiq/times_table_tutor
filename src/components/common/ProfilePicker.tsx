@@ -7,6 +7,7 @@ import { useGardenStore } from '../../stores/gardenStore';
 import { useProgressViewStore } from '../../stores/progressViewStore';
 import { ProfileCard } from './ProfileCard';
 import { ProfileCreator } from './ProfileCreator';
+import { IconVerify } from './IconVerify';
 import type { ProfileIcon, ProfileColor } from '../../types/api';
 
 const MAX_VISIBLE_PROFILES = 12;
@@ -19,25 +20,47 @@ export function ProfilePicker() {
     profiles,
     isLoading,
     error,
+    verifyingProfileId,
+    verifyError,
     fetchProfiles,
-    selectProfile,
+    startVerification,
+    verifyAndSelect,
+    cancelVerification,
     createProfile,
+    restoreSession,
   } = useProfileStore();
 
   const loadProgressFromServer = useProgressStore((s) => s.loadFromServer);
   const loadGardenFromServer = useGardenStore((s) => s.loadFromServer);
   const resyncProgressView = useProgressViewStore((s) => s.resync);
 
+  // Try to restore session on mount
   useEffect(() => {
-    fetchProfiles();
-  }, [fetchProfiles]);
+    const tryRestoreSession = async () => {
+      const data = await restoreSession();
+      if (data) {
+        // Session restored successfully, load data into stores
+        loadProgressFromServer(data.facts);
+        loadGardenFromServer(data.gardenItems, data.stats);
+        resyncProgressView();
+      } else {
+        // No valid session, fetch profile list
+        fetchProfiles();
+      }
+    };
+    tryRestoreSession();
+  }, []);
 
-  const handleSelectProfile = async (id: string) => {
+  const handleSelectProfile = (id: string) => {
+    startVerification(id);
+  };
+
+  const handleVerify = async (id: string, icon: ProfileIcon) => {
     try {
-      const data = await selectProfile(id);
+      const data = await verifyAndSelect(id, icon);
       loadProgressFromServer(data.facts);
       loadGardenFromServer(data.gardenItems, data.stats);
-      resyncProgressView(); // Sync scene reveal state with loaded progress
+      resyncProgressView();
     } catch {
       // Error handled in store
     }
@@ -50,25 +73,25 @@ export function ProfilePicker() {
   ) => {
     try {
       await createProfile({ name, icon, color });
-      // New profile starts fresh, initialize empty stores
       loadProgressFromServer([]);
       loadGardenFromServer([], {
         coins: 0,
         unlockedThemes: ['flower'],
         currentTheme: 'flower',
       });
-      resyncProgressView(); // Reset scene reveal state for new profile
+      resyncProgressView();
     } catch {
       // Error handled in store
     }
   };
 
+  const verifyingProfile = profiles.find((p) => p.id === verifyingProfileId);
   const visibleProfiles = showAll
     ? profiles
     : profiles.slice(0, MAX_VISIBLE_PROFILES);
   const hasMore = profiles.length > MAX_VISIBLE_PROFILES;
 
-  if (isLoading && profiles.length === 0) {
+  if (isLoading && profiles.length === 0 && !verifyingProfileId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-garden-50 to-white">
         <Loader2 className="w-8 h-8 animate-spin text-garden-500" />
@@ -84,6 +107,16 @@ export function ProfilePicker() {
             key="creator"
             onSubmit={handleCreateProfile}
             onCancel={() => setShowCreator(false)}
+            isLoading={isLoading}
+            error={error}
+          />
+        ) : verifyingProfile ? (
+          <IconVerify
+            key="verify"
+            profile={verifyingProfile}
+            onVerify={(icon) => handleVerify(verifyingProfile.id, icon)}
+            onCancel={cancelVerification}
+            error={verifyError}
             isLoading={isLoading}
           />
         ) : (
@@ -113,7 +146,6 @@ export function ProfilePicker() {
                 />
               ))}
 
-              {/* Add New Profile Button */}
               <motion.button
                 onClick={() => setShowCreator(true)}
                 className="flex flex-col items-center gap-2 p-4"
