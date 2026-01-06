@@ -13,7 +13,7 @@ import type {
 interface ProfileState {
   // State
   currentProfile: Profile | null;
-  profiles: ProfileSummary[];
+  profiles: Omit<ProfileSummary, 'icon'>[];
   isLoading: boolean;
   error: string | null;
 
@@ -23,7 +23,7 @@ interface ProfileState {
 
   // Actions
   fetchProfiles: () => Promise<void>;
-  selectProfile: (id: string) => Promise<ProfileData>;
+  selectProfile: (id: string, icon: string) => Promise<ProfileData>;
   createProfile: (data: CreateProfileRequest) => Promise<Profile>;
   clearProfile: () => void;
   deleteProfile: (id: string) => Promise<void>;
@@ -57,10 +57,10 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     }
   },
 
-  selectProfile: async (id: string) => {
+  selectProfile: async (id: string, icon: string) => {
     set({ isLoading: true, error: null });
     try {
-      const data = await api.getProfile(id);
+      const data = await api.verifyProfile(id, icon);
       set({
         currentProfile: data.profile,
         isLoading: false,

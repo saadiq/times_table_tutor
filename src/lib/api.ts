@@ -46,7 +46,7 @@ async function request<T>(
 
 export const api = {
   // Profiles
-  async listProfiles(): Promise<ProfileSummary[]> {
+  async listProfiles(): Promise<Omit<ProfileSummary, 'icon'>[]> {
     return request('/profiles');
   },
 
@@ -57,8 +57,11 @@ export const api = {
     });
   },
 
-  async getProfile(id: string): Promise<ProfileData> {
-    return request(`/profiles/${id}`);
+  async verifyProfile(id: string, icon: string): Promise<ProfileData> {
+    return request(`/profiles/${id}/verify`, {
+      method: 'POST',
+      body: JSON.stringify({ icon }),
+    });
   },
 
   async deleteProfile(id: string): Promise<void> {
