@@ -8,18 +8,30 @@ import type { AppMode } from '../../types'
 import type { ProfileIcon } from '../../types/api'
 
 const iconMap: Record<ProfileIcon, React.ComponentType<{ className?: string }>> = {
+  // Animals (7)
   cat: Icons.Cat,
   dog: Icons.Dog,
-  bird: Icons.Bird,
-  star: Icons.Star,
-  heart: Icons.Heart,
-  flower: Icons.Flower2,
-  rocket: Icons.Rocket,
+  rabbit: Icons.Rabbit,
+  fish: Icons.Fish,
+  owl: Icons.Bird, // Lucide doesn't have Owl, using Bird
+  turtle: Icons.Turtle,
+  butterfly: Icons.Bug, // Lucide doesn't have Butterfly, using Bug
+  // Nature (4)
   sun: Icons.Sun,
   moon: Icons.Moon,
-  fish: Icons.Fish,
-  rabbit: Icons.Rabbit,
-  bear: Icons.PawPrint,
+  flower: Icons.Flower2,
+  tree: Icons.TreeDeciduous,
+  // Objects (5)
+  rocket: Icons.Rocket,
+  star: Icons.Star,
+  heart: Icons.Heart,
+  crown: Icons.Crown,
+  diamond: Icons.Diamond,
+  // Fun (4)
+  rainbow: Icons.Rainbow,
+  cloud: Icons.Cloud,
+  lightning: Icons.Zap,
+  snowflake: Icons.Snowflake,
 }
 
 const navItems: Array<{ mode: AppMode; icon: typeof BookOpen; label: string }> = [

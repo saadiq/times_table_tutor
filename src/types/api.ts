@@ -52,10 +52,16 @@ export interface ProfileData {
   stats: GardenStatsSync;
 }
 
-// Avatar options
+// Avatar options - 20 visually distinct icons
 export const PROFILE_ICONS = [
-  'cat', 'dog', 'bird', 'star', 'heart', 'flower',
-  'rocket', 'sun', 'moon', 'fish', 'rabbit', 'bear'
+  // Animals (7)
+  'cat', 'dog', 'rabbit', 'fish', 'owl', 'turtle', 'butterfly',
+  // Nature (4)
+  'sun', 'moon', 'flower', 'tree',
+  // Objects (5)
+  'rocket', 'star', 'heart', 'crown', 'diamond',
+  // Fun (4)
+  'rainbow', 'cloud', 'lightning', 'snowflake'
 ] as const;
 
 export type ProfileIcon = typeof PROFILE_ICONS[number];
