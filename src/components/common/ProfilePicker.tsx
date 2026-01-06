@@ -4,6 +4,7 @@ import { Plus, Loader2 } from 'lucide-react';
 import { useProfileStore } from '../../stores/profileStore';
 import { useProgressStore } from '../../stores/progressStore';
 import { useGardenStore } from '../../stores/gardenStore';
+import { useProgressViewStore } from '../../stores/progressViewStore';
 import { ProfileCard } from './ProfileCard';
 import { ProfileCreator } from './ProfileCreator';
 import type { ProfileIcon, ProfileColor } from '../../types/api';
@@ -25,6 +26,7 @@ export function ProfilePicker() {
 
   const loadProgressFromServer = useProgressStore((s) => s.loadFromServer);
   const loadGardenFromServer = useGardenStore((s) => s.loadFromServer);
+  const resyncProgressView = useProgressViewStore((s) => s.resync);
 
   useEffect(() => {
     fetchProfiles();
@@ -35,6 +37,7 @@ export function ProfilePicker() {
       const data = await selectProfile(id);
       loadProgressFromServer(data.facts);
       loadGardenFromServer(data.gardenItems, data.stats);
+      resyncProgressView(); // Sync scene reveal state with loaded progress
     } catch {
       // Error handled in store
     }
@@ -54,6 +57,7 @@ export function ProfilePicker() {
         unlockedThemes: ['flower'],
         currentTheme: 'flower',
       });
+      resyncProgressView(); // Reset scene reveal state for new profile
     } catch {
       // Error handled in store
     }
