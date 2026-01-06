@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Loader2 } from 'lucide-react';
 import { useProfileStore } from '../../stores/profileStore';
@@ -15,6 +15,7 @@ const MAX_VISIBLE_PROFILES = 12;
 export function ProfilePicker() {
   const [showCreator, setShowCreator] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const hasInitialized = useRef(false);
 
   const {
     profiles,
@@ -36,6 +37,9 @@ export function ProfilePicker() {
 
   // Try to restore session on mount
   useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
     const tryRestoreSession = async () => {
       const data = await restoreSession();
       if (data) {
@@ -48,7 +52,10 @@ export function ProfilePicker() {
         fetchProfiles();
       }
     };
-    tryRestoreSession();
+
+    void tryRestoreSession();
+    // Intentionally run once on mount only via ref guard
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSelectProfile = (id: string) => {

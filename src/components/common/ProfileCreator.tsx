@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
-import { IconPicker, iconMap } from './IconPicker';
+import { IconPicker } from './IconPicker';
+import { iconMap } from '../../lib/iconMap';
 import { PROFILE_COLORS, type ProfileIcon, type ProfileColor } from '../../types/api';
 
 interface ProfileCreatorProps {
