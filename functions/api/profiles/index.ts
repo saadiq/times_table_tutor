@@ -18,6 +18,19 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     icon: string;
     color: string;
   }>();
+
+  // Check for existing name (case-insensitive)
+  const existing = await env.DB.prepare(
+    `SELECT id FROM profiles WHERE name = ? COLLATE NOCASE`
+  ).bind(name).first();
+
+  if (existing) {
+    return new Response(
+      JSON.stringify({ error: 'Name already taken' }),
+      { status: 409, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
   const id = crypto.randomUUID();
   const now = Date.now();
   await env.DB.prepare(
