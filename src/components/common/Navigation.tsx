@@ -1,38 +1,11 @@
 import { useState } from 'react'
 import { BookOpen, Target, TreeDeciduous, Settings, User } from 'lucide-react'
-import * as Icons from 'lucide-react'
 import { useSessionStore } from '../../stores'
 import { useProfileStore } from '../../stores/profileStore'
 import { SettingsModal } from './SettingsModal'
+import { iconMap } from '../../lib/iconMap'
 import type { AppMode } from '../../types'
 import type { ProfileIcon } from '../../types/api'
-
-const iconMap: Record<ProfileIcon, React.ComponentType<{ className?: string }>> = {
-  // Animals (7)
-  cat: Icons.Cat,
-  dog: Icons.Dog,
-  rabbit: Icons.Rabbit,
-  fish: Icons.Fish,
-  owl: Icons.Bird, // Lucide doesn't have Owl, using Bird
-  turtle: Icons.Turtle,
-  butterfly: Icons.Bug, // Lucide doesn't have Butterfly, using Bug
-  // Nature (4)
-  sun: Icons.Sun,
-  moon: Icons.Moon,
-  flower: Icons.Flower2,
-  tree: Icons.TreeDeciduous,
-  // Objects (5)
-  rocket: Icons.Rocket,
-  star: Icons.Star,
-  heart: Icons.Heart,
-  crown: Icons.Crown,
-  diamond: Icons.Diamond,
-  // Fun (4)
-  rainbow: Icons.Rainbow,
-  cloud: Icons.Cloud,
-  lightning: Icons.Zap,
-  snowflake: Icons.Snowflake,
-}
 
 const navItems: Array<{ mode: AppMode; icon: typeof BookOpen; label: string }> = [
   { mode: 'learn', icon: BookOpen, label: 'Learn' },
