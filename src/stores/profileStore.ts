@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import type {
   Profile,
   ProfileListItem,
@@ -10,6 +10,14 @@ import type {
   GardenStatsSync,
 } from '../types/api';
 
+// localStorage keys for session persistence
+const SESSION_KEY = 'ttt_session';
+
+interface SavedSession {
+  profileId: string;
+  icon: string;
+}
+
 interface ProfileState {
   // State
   currentProfile: Profile | null;
@@ -17,16 +25,26 @@ interface ProfileState {
   isLoading: boolean;
   error: string | null;
 
+  // Verification flow state
+  verifyingProfileId: string | null;
+  verifyError: string | null;
+
   // Sync state
   pendingProgressSync: FactProgressSync[];
   syncTimeoutId: number | null;
 
   // Actions
   fetchProfiles: () => Promise<void>;
-  selectProfile: (id: string, icon: string) => Promise<ProfileData>;
   createProfile: (data: CreateProfileRequest) => Promise<Profile>;
   clearProfile: () => void;
   deleteProfile: (id: string) => Promise<void>;
+
+  // Verification flow actions
+  startVerification: (id: string) => void;
+  verifyAndSelect: (id: string, icon: string) => Promise<ProfileData>;
+  cancelVerification: () => void;
+  restoreSession: () => Promise<ProfileData | null>;
+  clearSession: () => void;
 
   // Sync actions
   queueProgressSync: (fact: FactProgressSync) => void;
@@ -36,11 +54,40 @@ interface ProfileState {
 
 const SYNC_DEBOUNCE_MS = 2000;
 
+// Helper functions for session persistence
+function saveSession(profileId: string, icon: string): void {
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ profileId, icon }));
+  } catch {
+    // localStorage might be unavailable
+  }
+}
+
+function loadSession(): SavedSession | null {
+  try {
+    const data = localStorage.getItem(SESSION_KEY);
+    if (!data) return null;
+    return JSON.parse(data) as SavedSession;
+  } catch {
+    return null;
+  }
+}
+
+function clearSavedSession(): void {
+  try {
+    localStorage.removeItem(SESSION_KEY);
+  } catch {
+    // localStorage might be unavailable
+  }
+}
+
 export const useProfileStore = create<ProfileState>((set, get) => ({
   currentProfile: null,
   profiles: [],
   isLoading: false,
   error: null,
+  verifyingProfileId: null,
+  verifyError: null,
   pendingProgressSync: [],
   syncTimeoutId: null,
 
@@ -57,28 +104,80 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     }
   },
 
-  selectProfile: async (id: string, icon: string) => {
-    set({ isLoading: true, error: null });
+  startVerification: (id: string) => {
+    set({
+      verifyingProfileId: id,
+      verifyError: null,
+    });
+  },
+
+  verifyAndSelect: async (id: string, icon: string) => {
+    set({ isLoading: true, verifyError: null });
     try {
       const data = await api.verifyProfile(id, icon);
+      // Save session to localStorage for auto-login
+      saveSession(id, icon);
+      set({
+        currentProfile: data.profile,
+        isLoading: false,
+        verifyingProfileId: null,
+        verifyError: null,
+      });
+      return data;
+    } catch (err) {
+      // Handle 401 = wrong icon
+      if (err instanceof ApiError && err.status === 401) {
+        set({
+          verifyError: 'Try again!',
+          isLoading: false,
+        });
+      } else {
+        set({
+          verifyError: err instanceof Error ? err.message : 'Verification failed',
+          isLoading: false,
+        });
+      }
+      throw err;
+    }
+  },
+
+  cancelVerification: () => {
+    set({
+      verifyingProfileId: null,
+      verifyError: null,
+    });
+  },
+
+  restoreSession: async () => {
+    const session = loadSession();
+    if (!session) return null;
+
+    set({ isLoading: true, error: null });
+    try {
+      const data = await api.verifyProfile(session.profileId, session.icon);
       set({
         currentProfile: data.profile,
         isLoading: false,
       });
       return data;
-    } catch (err) {
-      set({
-        error: err instanceof Error ? err.message : 'Failed to load profile',
-        isLoading: false,
-      });
-      throw err;
+    } catch {
+      // Session invalid, clear it
+      clearSavedSession();
+      set({ isLoading: false });
+      return null;
     }
+  },
+
+  clearSession: () => {
+    clearSavedSession();
   },
 
   createProfile: async (data: CreateProfileRequest) => {
     set({ isLoading: true, error: null });
     try {
       const profile = await api.createProfile(data);
+      // Save session for the new profile
+      saveSession(profile.id, data.icon);
       set((state) => ({
         profiles: [
           { ...profile, lastActive: profile.createdAt },
@@ -89,10 +188,18 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       }));
       return profile;
     } catch (err) {
-      set({
-        error: err instanceof Error ? err.message : 'Failed to create profile',
-        isLoading: false,
-      });
+      // Handle 409 = name already taken
+      if (err instanceof ApiError && err.status === 409) {
+        set({
+          error: 'That name is already taken!',
+          isLoading: false,
+        });
+      } else {
+        set({
+          error: err instanceof Error ? err.message : 'Failed to create profile',
+          isLoading: false,
+        });
+      }
       throw err;
     }
   },
@@ -103,11 +210,16 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       clearTimeout(syncTimeoutId);
     }
 
-    // Clear state first
+    // Clear session from localStorage
+    clearSavedSession();
+
+    // Clear state
     set({
       currentProfile: null,
       pendingProgressSync: [],
       syncTimeoutId: null,
+      verifyingProfileId: null,
+      verifyError: null,
     });
 
     // Fire-and-forget sync with captured state
@@ -120,6 +232,11 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
   deleteProfile: async (id: string) => {
     await api.deleteProfile(id);
+    // If we're deleting the current profile's session, clear it
+    const session = loadSession();
+    if (session?.profileId === id) {
+      clearSavedSession();
+    }
     set((state) => ({
       profiles: state.profiles.filter((p) => p.id !== id),
       currentProfile:
