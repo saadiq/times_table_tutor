@@ -12,7 +12,7 @@ interface ProfileCreatorProps {
   error?: string | null;
 }
 
-type Step = 'name' | 'icon' | 'color';
+type Step = 'name' | 'icon' | 'color' | 'confirm';
 
 export function ProfileCreator({ onSubmit, onCancel, isLoading, error }: ProfileCreatorProps) {
   const [step, setStep] = useState<Step>('name');
@@ -25,12 +25,15 @@ export function ProfileCreator({ onSubmit, onCancel, isLoading, error }: Profile
       setStep('icon');
     } else if (step === 'icon' && icon) {
       setStep('color');
+    } else if (step === 'color') {
+      setStep('confirm');
     }
   };
 
   const handleBack = () => {
     if (step === 'icon') setStep('name');
     else if (step === 'color') setStep('icon');
+    else if (step === 'confirm') setStep('color');
     else onCancel();
   };
 
@@ -62,7 +65,7 @@ export function ProfileCreator({ onSubmit, onCancel, isLoading, error }: Profile
 
       {/* Progress dots */}
       <div className="flex justify-center gap-2 mb-6">
-        {(['name', 'icon', 'color'] as Step[]).map((s) => (
+        {(['name', 'icon', 'color', 'confirm'] as Step[]).map((s) => (
           <div
             key={s}
             className={`w-2 h-2 rounded-full ${
@@ -159,12 +162,55 @@ export function ProfileCreator({ onSubmit, onCancel, isLoading, error }: Profile
             </div>
 
             <button
+              onClick={handleNext}
+              className="w-full py-3 rounded-lg bg-garden-500 text-white font-medium flex items-center justify-center gap-2"
+            >
+              Next <ArrowRight className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+
+        {/* Step 4: Confirm */}
+        {step === 'confirm' && (
+          <motion.div
+            key="confirm"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="text-center"
+          >
+            <p className="text-xl font-bold text-gray-800 mb-2">Hi {name}!</p>
+            <p className="text-gray-600 mb-6">This is YOUR special icon:</p>
+
+            {/* Large icon display */}
+            <div className="flex justify-center mb-6">
+              <motion.div
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                className={`w-28 h-28 rounded-full flex items-center justify-center bg-${color} shadow-lg`}
+              >
+                {IconComponent && <IconComponent className="w-14 h-14 text-white" />}
+              </motion.div>
+            </div>
+
+            <p className="text-gray-600 mb-2">Remember it!</p>
+            <p className="text-gray-500 text-sm mb-6">
+              Next time you come back, you'll find your icon to log in.
+              <br />
+              It's like a secret key just for you!
+            </p>
+
+            {error && (
+              <p className="text-red-500 text-sm mb-4">{error}</p>
+            )}
+
+            <button
               onClick={handleSubmit}
               disabled={isLoading}
               className="w-full py-3 rounded-lg bg-garden-500 text-white font-medium disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isLoading ? 'Creating...' : (
-                <>Start Learning <Check className="w-4 h-4" /></>
+                <>I'll remember! <Check className="w-4 h-4" /></>
               )}
             </button>
           </motion.div>
