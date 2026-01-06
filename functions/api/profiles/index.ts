@@ -4,7 +4,7 @@ interface Env {
 
 export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
   const { results } = await env.DB.prepare(
-    `SELECT id, name, icon, color, last_active as lastActive
+    `SELECT id, name, color, last_active as lastActive
      FROM profiles
      ORDER BY last_active DESC
      LIMIT 20`
