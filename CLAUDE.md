@@ -27,18 +27,15 @@ bun run lint     # Run ESLint
 
 The app uses Cloudflare Pages Functions with D1 database for user profiles and cloud sync.
 
-### Local Development (Two Terminals)
+### Local Development
 
 ```bash
-# Terminal 1: Start Vite dev server
-bun run dev
-
-# Terminal 2: Start Cloudflare API proxy (after Vite is running)
-bun run dev:api
+bun run dev       # Start frontend + API concurrently
+bun run cleanup   # Kill phantom processes, free ports
 ```
 
-- Vite runs on `http://localhost:5173`
-- Wrangler proxies API requests on `http://localhost:8788`
+- Frontend (Vite): `http://localhost:5173`
+- API (Wrangler): `http://localhost:8788`
 
 ### Database Commands
 
