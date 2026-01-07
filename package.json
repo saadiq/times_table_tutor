@@ -15,7 +15,8 @@
     "db:migrate": "wrangler d1 execute ttt-db --file=schema.sql",
     "db:migrate:local": "wrangler d1 execute ttt-db --local --persist-to=.wrangler/state --file=schema.sql",
     "db:migrate:file": "wrangler d1 execute ttt-db --file",
-    "db:migrate:file:local": "wrangler d1 execute ttt-db --local --persist-to=.wrangler/state --file"
+    "db:migrate:file:local": "wrangler d1 execute ttt-db --local --persist-to=.wrangler/state --file",
+    "db:sync": "bash scripts/sync-from-prod.sh"
   },
   "dependencies": {
     "@types/p5": "^1.7.7",
