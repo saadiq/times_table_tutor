@@ -84,11 +84,18 @@ export function PracticeView() {
     setShowResult(true)
 
     const isCorrect = answer === displayFact.answer
-    recordAttempt(displayFact.fact, isCorrect)
-
-    // Record attempt history for progress tracking
     const responseTimeMs = Date.now() - attemptStartTime
     const inputMethod = shouldUseMultipleChoice(displayFact) ? 'multiple_choice' : 'number_pad'
+
+    // Record to progress store with rich data for confidence calculation
+    recordAttempt({
+      fact: displayFact.fact,
+      correct: isCorrect,
+      inputMethod,
+      responseTimeMs,
+    })
+
+    // Record attempt history for analytics/sync
     recordAttemptHistory({
       factKey: displayFact.fact,
       correct: isCorrect,

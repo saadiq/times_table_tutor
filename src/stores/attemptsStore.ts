@@ -41,8 +41,23 @@ function generateId(): string {
   return crypto.randomUUID()
 }
 
-function getDateKey(timestamp: string): string {
-  return timestamp.split('T')[0]
+/**
+ * Get local date string (YYYY-MM-DD) from a Date object.
+ * Uses user's local timezone, not UTC.
+ */
+function getLocalDateKey(date: Date = new Date()): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+/**
+ * Get local date key from an ISO timestamp string.
+ * Converts the UTC timestamp to the user's local timezone.
+ */
+function getDateKeyFromTimestamp(timestamp: string): string {
+  return getLocalDateKey(new Date(timestamp))
 }
 
 function isWithinDays(timestamp: string, days: number): boolean {
@@ -118,7 +133,7 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
     },
 
     getAttemptsByDate: (date) => {
-      return get().attempts.filter((a) => getDateKey(a.timestamp) === date)
+      return get().attempts.filter((a) => getDateKeyFromTimestamp(a.timestamp) === date)
     },
 
     getDailySummaries: (days) => {
@@ -128,7 +143,7 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
       for (const attempt of attempts) {
         if (!isWithinDays(attempt.timestamp, days)) continue
 
-        const date = getDateKey(attempt.timestamp)
+        const date = getDateKeyFromTimestamp(attempt.timestamp)
         const existing = summaries.get(date) || {
           date,
           attemptCount: 0,
@@ -166,7 +181,7 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
       for (let i = 0; i < 365; i++) {
         const checkDate = new Date(today)
         checkDate.setDate(checkDate.getDate() - i)
-        const dateKey = checkDate.toISOString().split('T')[0]
+        const dateKey = getLocalDateKey(checkDate)
 
         const hasPractice = summaries.some((s) => s.date === dateKey)
         if (hasPractice) {
@@ -180,7 +195,7 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
     },
 
     getTodayStats: () => {
-      const today = new Date().toISOString().split('T')[0]
+      const today = getLocalDateKey()
       const todayAttempts = get().getAttemptsByDate(today)
       const correct = todayAttempts.filter((a) => a.correct).length
       return {

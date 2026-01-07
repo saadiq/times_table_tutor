@@ -1,9 +1,16 @@
 import { create } from 'zustand'
-import type { FactProgress, Confidence, FactProgressSync } from '../types'
-import { TIMES_TABLES, REWARDS } from '../lib/constants'
+import type { FactProgress, Confidence, FactProgressSync, RecentAttempt, InputMethod } from '../types'
+import { TIMES_TABLES, REWARDS, CONFIDENCE_THRESHOLDS } from '../lib/constants'
 import { saveToStorage, loadFromStorage } from '../lib/storage'
 import { useGardenStore } from './gardenStore'
 import { getMasteryReward } from '../lib/rewards'
+
+type RecordAttemptParams = {
+  fact: string
+  correct: boolean
+  inputMethod: InputMethod
+  responseTimeMs: number
+}
 
 type ProgressState = {
   facts: Record<string, FactProgress>
@@ -12,7 +19,7 @@ type ProgressState = {
 
 type ProgressActions = {
   initialize: () => void
-  recordAttempt: (fact: string, correct: boolean) => void
+  recordAttempt: (params: RecordAttemptParams) => void
   getFactProgress: (fact: string) => FactProgress | undefined
   getFactsByConfidence: (confidence: Confidence) => FactProgress[]
   getMasteredTables: () => number[]
@@ -46,20 +53,48 @@ function generateAllFacts(): Record<string, FactProgress> {
   return facts
 }
 
+/**
+ * Calculate confidence based on number pad performance.
+ * Multiple choice can only get you to 'learning' - number pad is required for confident/mastered.
+ */
 function calculateConfidence(fact: FactProgress): Confidence {
-  const recentCorrect = fact.recentAttempts.filter(Boolean).length
-  const recentTotal = fact.recentAttempts.length
+  const recent = fact.recentAttempts.slice(-CONFIDENCE_THRESHOLDS.recentAttemptsWindow)
 
-  if (fact.correctCount >= 5 && recentCorrect >= 3) {
+  // No attempts = new
+  if (recent.length === 0) return 'new'
+
+  // Filter to number pad attempts only for confident/mastered evaluation
+  const recentNP = recent.filter(a => a.inputMethod === 'number_pad')
+  const correctNP = recentNP.filter(a => a.correct)
+
+  // Calculate NP metrics
+  const npAccuracy = recentNP.length > 0
+    ? correctNP.length / recentNP.length
+    : 0
+  const avgNPTime = correctNP.length > 0
+    ? correctNP.reduce((sum, a) => sum + a.responseTimeMs, 0) / correctNP.length
+    : Infinity
+
+  // MASTERED: 5+ NP correct, <5s avg, 90%+ accuracy
+  if (
+    correctNP.length >= CONFIDENCE_THRESHOLDS.masteredMinCorrect &&
+    avgNPTime < CONFIDENCE_THRESHOLDS.masteredMaxTime &&
+    npAccuracy >= CONFIDENCE_THRESHOLDS.masteredMinAccuracy
+  ) {
     return 'mastered'
   }
-  if (recentTotal >= 3 && recentCorrect >= 3) {
+
+  // CONFIDENT: 3+ NP correct, <10s avg, 70%+ accuracy
+  if (
+    correctNP.length >= CONFIDENCE_THRESHOLDS.confidentMinCorrect &&
+    avgNPTime < CONFIDENCE_THRESHOLDS.confidentMaxTime &&
+    npAccuracy >= CONFIDENCE_THRESHOLDS.confidentMinAccuracy
+  ) {
     return 'confident'
   }
-  if (fact.correctCount > 0 || fact.incorrectCount > 0) {
-    return 'learning'
-  }
-  return 'new'
+
+  // LEARNING: Has any attempts
+  return 'learning'
 }
 
 function checkTableMastery(
@@ -93,6 +128,45 @@ function getRandomPosition(): { x: number; y: number } {
   }
 }
 
+/**
+ * Migrate old boolean[] recentAttempts to new RecentAttempt[] format
+ */
+function migrateRecentAttempts(attempts: unknown[]): RecentAttempt[] {
+  if (attempts.length === 0) return []
+
+  // Check if already in new format (has inputMethod property)
+  const first = attempts[0]
+  if (typeof first === 'object' && first !== null && 'inputMethod' in first) {
+    return attempts as RecentAttempt[]
+  }
+
+  // Migrate from old boolean[] format
+  const now = new Date().toISOString()
+  return (attempts as boolean[]).map(correct => ({
+    correct,
+    inputMethod: 'multiple_choice' as InputMethod, // Assume MC for legacy data
+    responseTimeMs: 5000, // Default to 5s for legacy
+    timestamp: now,
+  }))
+}
+
+/**
+ * Migrate all facts in storage to new format and recalculate confidence
+ */
+function migrateFacts(facts: Record<string, FactProgress>): Record<string, FactProgress> {
+  const migrated: Record<string, FactProgress> = {}
+
+  for (const [key, fact] of Object.entries(facts)) {
+    const migratedAttempts = migrateRecentAttempts(fact.recentAttempts as unknown[])
+    const migratedFact = { ...fact, recentAttempts: migratedAttempts }
+    // Recalculate confidence with new algorithm
+    migratedFact.confidence = calculateConfidence(migratedFact)
+    migrated[key] = migratedFact
+  }
+
+  return migrated
+}
+
 export const useProgressStore = create<ProgressState & ProgressActions>((set, get) => ({
   facts: {},
   initialized: false,
@@ -100,7 +174,10 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
   initialize: () => {
     const saved = loadFromStorage<Record<string, FactProgress>>('progress')
     if (saved) {
-      set({ facts: saved, initialized: true })
+      // Migrate old format to new format if needed
+      const migrated = migrateFacts(saved)
+      set({ facts: migrated, initialized: true })
+      saveToStorage('progress', migrated)
     } else {
       const facts = generateAllFacts()
       set({ facts, initialized: true })
@@ -108,13 +185,20 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
     }
   },
 
-  recordAttempt: (fact, correct) => {
+  recordAttempt: ({ fact, correct, inputMethod, responseTimeMs }) => {
     set(state => {
       const current = state.facts[fact]
       if (!current) return state
 
-      const recentAttempts = [...current.recentAttempts, correct].slice(-5)
       const now = new Date().toISOString()
+      const newAttempt: RecentAttempt = {
+        correct,
+        inputMethod,
+        responseTimeMs,
+        timestamp: now,
+      }
+      const recentAttempts = [...current.recentAttempts, newAttempt]
+        .slice(-CONFIDENCE_THRESHOLDS.recentAttemptsWindow)
 
       const updated: FactProgress = {
         ...current,
@@ -201,19 +285,24 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
       const [aStr, bStr] = f.fact.split('x')
       const a = parseInt(aStr)
       const b = parseInt(bStr)
-      factMap[f.fact] = {
+      // Migrate recentAttempts to new format
+      const migratedAttempts = migrateRecentAttempts(f.recentAttempts as unknown[])
+      const factData: FactProgress = {
         fact: f.fact,
         a,
         b,
         answer: a * b,
-        confidence: f.confidence as Confidence,
+        confidence: 'new', // Will be recalculated
         correctCount: f.correctCount,
         incorrectCount: f.incorrectCount,
         lastSeen: f.lastSeen ? new Date(f.lastSeen).toISOString() : null,
         lastCorrect: f.lastCorrect ? new Date(f.lastCorrect).toISOString() : null,
-        recentAttempts: f.recentAttempts,
+        recentAttempts: migratedAttempts,
         preferredStrategy: f.preferredStrategy,
       }
+      // Recalculate confidence with new algorithm
+      factData.confidence = calculateConfidence(factData)
+      factMap[f.fact] = factData
     }
     // Merge with defaults for any missing facts
     const allFacts = generateAllFacts()

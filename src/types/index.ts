@@ -1,5 +1,15 @@
 export type Confidence = 'new' | 'learning' | 'confident' | 'mastered'
 
+export type InputMethod = 'multiple_choice' | 'number_pad'
+
+// Rich attempt data for smarter confidence calculation
+export type RecentAttempt = {
+  correct: boolean
+  inputMethod: InputMethod
+  responseTimeMs: number
+  timestamp: string
+}
+
 export type FactProgress = {
   fact: string              // "7x8"
   a: number                 // 7
@@ -10,7 +20,7 @@ export type FactProgress = {
   incorrectCount: number
   lastSeen: string | null   // ISO date string
   lastCorrect: string | null
-  recentAttempts: boolean[] // Last 5 attempts
+  recentAttempts: RecentAttempt[] // Last 8 attempts with rich data
   preferredStrategy: string | null
 }
 
@@ -54,8 +64,6 @@ export type Strategy =
   | 'nines_trick'
   | 'fives_trick'
   | 'ones_zeros'
-
-export type InputMethod = 'multiple_choice' | 'number_pad'
 
 export type AttemptRecord = {
   id: string

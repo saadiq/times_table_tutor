@@ -28,6 +28,13 @@ export interface CreateProfileRequest {
 }
 
 // Sync payload types
+export interface RecentAttemptSync {
+  correct: boolean;
+  inputMethod: 'multiple_choice' | 'number_pad';
+  responseTimeMs: number;
+  timestamp: string;
+}
+
 export interface FactProgressSync {
   fact: string;
   confidence: string;
@@ -35,7 +42,7 @@ export interface FactProgressSync {
   incorrectCount: number;
   lastSeen: number | null;
   lastCorrect: number | null;
-  recentAttempts: boolean[];
+  recentAttempts: RecentAttemptSync[];
   preferredStrategy: string | null;
 }
 

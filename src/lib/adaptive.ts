@@ -159,17 +159,50 @@ export function generateChoices(fact: FactProgress, count: number = 4): number[]
 }
 
 /**
- * Determine if user should type answer or use multiple choice
+ * Determine if user should type answer or use multiple choice.
+ * Includes regression logic: if struggling on number pad, go back to multiple choice.
  */
 export function shouldUseMultipleChoice(fact: FactProgress): boolean {
   // New facts: always multiple choice
   if (fact.confidence === 'new') return true
 
-  // Learning: multiple choice until some success
-  if (fact.confidence === 'learning') {
-    return fact.correctCount < 2
+  // Confident/Mastered: always number pad (they've proven recall)
+  if (fact.confidence === 'confident' || fact.confidence === 'mastered') {
+    return false
   }
 
-  // Confident/Mastered: type answer
+  // Learning: check recent number pad performance for regression
+  const recentNP = fact.recentAttempts
+    .filter(a => a.inputMethod === 'number_pad')
+    .slice(-CONFIDENCE_THRESHOLDS.regressionWindow)
+
+  // Not enough NP attempts yet? Use MC until 2 correct on MC
+  if (recentNP.length < 2) {
+    const mcCorrect = fact.recentAttempts
+      .filter(a => a.inputMethod === 'multiple_choice' && a.correct)
+      .length
+    return mcCorrect < CONFIDENCE_THRESHOLDS.mcCorrectToAdvance
+  }
+
+  // Check if struggling on NP (failed too many of recent NP attempts)
+  const npCorrect = recentNP.filter(a => a.correct).length
+  const npAccuracy = npCorrect / recentNP.length
+
+  // REGRESSION: If below threshold on recent NP, go back to MC
+  if (npAccuracy < CONFIDENCE_THRESHOLDS.regressionThreshold) {
+    return true
+  }
+
+  // Check if answers are labored (avg time too slow on correct NP)
+  const correctNP = recentNP.filter(a => a.correct)
+  if (correctNP.length > 0) {
+    const avgTime = correctNP.reduce((sum, a) => sum + a.responseTimeMs, 0) / correctNP.length
+    // REGRESSION: If correct but very slow, go back to MC
+    if (avgTime > CONFIDENCE_THRESHOLDS.laboredTime) {
+      return true
+    }
+  }
+
+  // Otherwise, use number pad
   return false
 }

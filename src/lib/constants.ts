@@ -6,9 +6,27 @@ export const TIMES_TABLES = {
 } as const
 
 export const CONFIDENCE_THRESHOLDS = {
-  learningToConfident: 3,    // Correct in a row to advance
-  confidentToMastered: 5,    // Total correct across sessions
-  reviewInterval: 3,         // Days before reviewing mastered facts
+  // Time thresholds (ms) - based on real learner data
+  masteredMaxTime: 5000,       // <5s for mastered (fluent recall)
+  confidentMaxTime: 10000,     // <10s for confident
+  laboredTime: 12000,          // >12s triggers regression to MC
+
+  // Accuracy thresholds
+  masteredMinAccuracy: 0.9,    // 90% for mastered
+  confidentMinAccuracy: 0.7,   // 70% for confident
+  regressionThreshold: 0.6,    // <60% triggers regression to MC
+
+  // Count thresholds (number pad correct answers)
+  masteredMinCorrect: 5,       // 5+ NP correct for mastered
+  confidentMinCorrect: 3,      // 3+ NP correct for confident
+  mcCorrectToAdvance: 2,       // 2 MC correct before trying NP
+
+  // Window sizes
+  recentAttemptsWindow: 8,     // Track last 8 attempts
+  regressionWindow: 5,         // Check last 5 NP attempts for regression
+
+  // Spaced repetition
+  reviewInterval: 3,           // Days before reviewing mastered facts
 } as const
 
 export const SESSION_DEFAULTS = {
