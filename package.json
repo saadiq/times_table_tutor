@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently --kill-others --raw \"bun run dev:frontend\" \"bun run dev:api\"",
+    "dev": "concurrently --kill-others --raw \"vite\" \"wrangler pages dev --proxy=5173 --persist-to=.wrangler/state\"",
     "dev:frontend": "vite",
     "dev:api": "wrangler pages dev --proxy=5173 --persist-to=.wrangler/state",
     "cleanup": "bash scripts/cleanup-dev.sh",
