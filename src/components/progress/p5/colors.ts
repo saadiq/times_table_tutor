@@ -1,7 +1,3 @@
-import type p5 from 'p5'
-
-export type HSBColor = { h: number; s: number; b: number }
-
 /**
  * Color palette matching app theme (HSB: 360, 100, 100)
  */
@@ -75,19 +71,4 @@ export function applyWarmth(hue: number, tier: number): number {
   const shift = tier * 8
   if (hue > 60 && hue < 300) return hue - shift
   return hue
-}
-
-
-/**
- * Helper to set fill color with saturation adjustment
- */
-export function setFill(
-  p: p5,
-  color: HSBColor,
-  saturationMultiplier: number,
-  tier: number
-): void {
-  const h = applyWarmth(color.h, tier)
-  const s = color.s * saturationMultiplier
-  p.fill(h, s, color.b)
 }
