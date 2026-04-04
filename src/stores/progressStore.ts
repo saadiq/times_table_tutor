@@ -22,6 +22,7 @@ type ProgressActions = {
   recordAttempt: (params: RecordAttemptParams) => void
   getFactProgress: (fact: string) => FactProgress | undefined
   getFactsByConfidence: (confidence: Confidence) => FactProgress[]
+  getFactsAtOrAbove: (minLevel: Confidence) => FactProgress[]
   getMasteredTables: () => number[]
   setPreferredStrategy: (fact: string, strategy: string) => void
   loadFromServer: (facts: FactProgressSync[]) => void
@@ -258,6 +259,12 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
 
   getFactsByConfidence: (confidence) =>
     Object.values(get().facts).filter(f => f.confidence === confidence),
+
+  getFactsAtOrAbove: (minLevel: Confidence) => {
+    const order: Confidence[] = ['new', 'learning', 'confident', 'mastered']
+    const minIdx = order.indexOf(minLevel)
+    return Object.values(get().facts).filter(f => order.indexOf(f.confidence) >= minIdx)
+  },
 
   getMasteredTables: () => {
     const facts = get().facts
