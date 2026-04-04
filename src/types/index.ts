@@ -52,6 +52,8 @@ export type Session = {
   currentFact: string | null
   mode: AppMode
   streakCount: number
+  newFactsIntroduced: number       // Count of "new" confidence facts shown this session
+  recentResults: boolean[]          // Rolling window of correct/incorrect for accuracy targeting
 }
 
 export type Strategy =
