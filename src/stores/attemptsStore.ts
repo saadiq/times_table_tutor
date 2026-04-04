@@ -221,9 +221,10 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
     },
 
     clearOldAttempts: () => {
+      const { currentProfileId } = get()
       set((state) => {
         const filtered = state.attempts.filter((a) =>
-          isWithinDays(a.timestamp, MAX_LOCAL_DAYS)
+          !matchesProfile(a, currentProfileId) || isWithinDays(a.timestamp, MAX_LOCAL_DAYS)
         )
         saveToStorage('attempts', filtered)
         return { attempts: filtered }

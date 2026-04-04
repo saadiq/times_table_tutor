@@ -46,6 +46,9 @@ function formatResponseTime(ms: number): string {
 }
 
 export function FactDetailSheet({ fact, onClose }: FactDetailSheetProps) {
+  // Subscribe to raw data so the component re-renders when attempts change
+  useAttemptsStore(state => state.attempts)
+  useAttemptsStore(state => state.currentProfileId)
   const getFactAttempts = useAttemptsStore(state => state.getFactAttempts)
   const attempts = getFactAttempts(fact.fact)
 

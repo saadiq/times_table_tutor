@@ -48,6 +48,9 @@ export function ActivityCalendar() {
   const [expanded, setExpanded] = useState(false)
   const [selectedDay, setSelectedDay] = useState<DayCell | null>(null)
 
+  // Subscribe to raw data so the component re-renders when attempts change
+  useAttemptsStore(state => state.attempts)
+  useAttemptsStore(state => state.currentProfileId)
   const getDailySummaries = useAttemptsStore(state => state.getDailySummaries)
   const getStreakDays = useAttemptsStore(state => state.getStreakDays)
   const getTodayStats = useAttemptsStore(state => state.getTodayStats)

@@ -47,6 +47,7 @@ type ProgressViewActions = {
   getPendingReveals: () => PendingReveals
   markRevealed: (details: number, tables: number[], tier: number) => void
   incrementSessions: () => void
+  reset: () => void
   resetForTesting: () => void
 }
 
@@ -200,9 +201,13 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
       })
     },
 
-    resetForTesting: () => {
+    reset: () => {
       set(initialState)
       saveToStorage(STORAGE_KEY, initialState)
+    },
+
+    resetForTesting: () => {
+      get().reset()
     },
   })
 )
