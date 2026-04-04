@@ -3,17 +3,27 @@ import { CONFIDENCE_THRESHOLDS } from './constants'
 
 type FactWithScore = FactProgress & { score: number }
 
+type SelectionContext = {
+  newFactsIntroduced?: number
+  sessionAccuracy?: number
+  consecutiveWrong?: number
+  nearGoalEnd?: boolean
+}
+
 /**
  * Selects the next fact to practice based on adaptive learning principles:
  * 1. Prioritize facts currently being learned
  * 2. Focus on trouble spots (frequently missed)
  * 3. Review mastered facts using spaced repetition
- * 4. Introduce new facts gradually
+ * 4. Introduce new facts gradually (max 2 per session)
+ * 5. Target ~85% success rate
+ * 6. End sessions on a success
  */
 export function selectNextFact(
   facts: Record<string, FactProgress>,
   recentFacts: string[] = [],
-  focusTables: number[] = []
+  focusTables: number[] = [],
+  context: SelectionContext = {}
 ): FactProgress | null {
   const allFacts = Object.values(facts)
 
@@ -28,10 +38,10 @@ export function selectNextFact(
   // Fallback: if all eligible facts are recent, allow any eligible fact
   const candidates = notRecent.length > 0 ? notRecent : eligibleFacts
 
-  // Score each fact
+  // Score each fact with session context
   const scored: FactWithScore[] = candidates.map(fact => ({
     ...fact,
-    score: calculateFactScore(fact),
+    score: calculateFactScore(fact, context),
   }))
 
   // Sort by score (higher = more likely to show)
@@ -45,19 +55,41 @@ export function selectNextFact(
   return topCandidates[randomIndex]
 }
 
-function calculateFactScore(fact: FactProgress): number {
+function calculateFactScore(fact: FactProgress, context: SelectionContext = {}): number {
+  const { newFactsIntroduced = 0, sessionAccuracy = 0.85, consecutiveWrong = 0, nearGoalEnd = false } = context
   let score = 0
 
-  // Priority by confidence level
   const confidenceScores: Record<Confidence, number> = {
-    learning: 100,    // Highest priority - actively learning
-    new: 50,          // Medium - introduce gradually
-    confident: 30,    // Lower - occasional practice
-    mastered: 10,     // Lowest - spaced review
+    learning: 100,
+    new: 50,
+    confident: 30,
+    mastered: 10,
   }
   score += confidenceScores[fact.confidence]
 
-  // Trouble spot bonus (high incorrect rate)
+  // Incremental rehearsal: max 2 new facts per session (Intervention Central best practice)
+  if (fact.confidence === 'new' && newFactsIntroduced >= 2) {
+    return 0
+  }
+
+  // Target ~85% success rate (Nature Communications 2019)
+  if (sessionAccuracy < 0.75) {
+    if (fact.confidence === 'confident' || fact.confidence === 'mastered') score += 40
+    if (fact.confidence === 'new') score -= 30
+  } else if (sessionAccuracy > 0.92) {
+    if (fact.confidence === 'learning' || fact.confidence === 'new') score += 20
+  }
+
+  // Prevent frustration spirals with an easy win
+  if (consecutiveWrong >= 3 && (fact.confidence === 'confident' || fact.confidence === 'mastered')) {
+    score += 50
+  }
+
+  // Last problem in session should be one the child knows
+  if (nearGoalEnd && (fact.confidence === 'confident' || fact.confidence === 'mastered')) {
+    score += 60
+  }
+
   if (fact.incorrectCount > 0) {
     const errorRate = fact.incorrectCount / (fact.correctCount + fact.incorrectCount)
     score += errorRate * 50
