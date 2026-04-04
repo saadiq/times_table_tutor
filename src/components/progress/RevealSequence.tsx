@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PartyPopper } from 'lucide-react'
 import { TABLE_CHARACTERS } from '../../stores/progressViewStore'
@@ -38,6 +38,12 @@ export function RevealSequence({
   const [showToast, setShowToast] = useState(false)
   const [showTierOverlay, setShowTierOverlay] = useState(false)
 
+  // Stable refs for callbacks to avoid re-firing effects on parent re-render
+  const callbacksRef = useRef({ onDetailsRevealed, onTierRevealed, onLandmarkRevealed, onComplete })
+  useEffect(() => {
+    callbacksRef.current = { onDetailsRevealed, onTierRevealed, onLandmarkRevealed, onComplete }
+  })
+
   // Phase: details — animate elements in, show toast
   useEffect(() => {
     if (phase !== 'details') return
@@ -49,8 +55,7 @@ export function RevealSequence({
       return () => clearTimeout(skipTimer)
     }
 
-    // Trigger scene animation and show toast
-    onDetailsRevealed()
+    callbacksRef.current.onDetailsRevealed()
 
     const showTimer = setTimeout(() => setShowToast(true), 0)
     const toastTimer = setTimeout(() => setShowToast(false), TOAST_FADE_MS)
@@ -61,15 +66,14 @@ export function RevealSequence({
       clearTimeout(toastTimer)
       clearTimeout(advanceTimer)
     }
-  }, [phase, pending, onDetailsRevealed])
+  }, [phase, pending])
 
   // Phase: tier — smooth sky transition with text overlay
   useEffect(() => {
     if (phase !== 'tier') return
 
-    onTierRevealed()
+    callbacksRef.current.onTierRevealed()
 
-    // Use microtask to avoid synchronous setState in effect body
     const showTimer = setTimeout(() => setShowTierOverlay(true), 0)
     const hideTimer = setTimeout(() => {
       setShowTierOverlay(false)
@@ -80,31 +84,31 @@ export function RevealSequence({
       clearTimeout(showTimer)
       clearTimeout(hideTimer)
     }
-  }, [phase, pending.newLandmarks.length, onTierRevealed])
+  }, [phase, pending.newLandmarks.length])
 
   // Phase: done
   useEffect(() => {
-    if (phase === 'done') onComplete()
-  }, [phase, onComplete])
+    if (phase === 'done') callbacksRef.current.onComplete()
+  }, [phase])
 
   // Handle landmark modal dismiss
   const handleLandmarkDismiss = useCallback(() => {
     const nextIdx = landmarkIdx + 1
     if (nextIdx < pending.newLandmarks.length) {
       setLandmarkIdx(nextIdx)
-      onLandmarkRevealed(pending.newLandmarks[nextIdx])
+      callbacksRef.current.onLandmarkRevealed(pending.newLandmarks[nextIdx])
     } else {
       setPhase('done')
     }
-  }, [landmarkIdx, pending.newLandmarks, onLandmarkRevealed])
+  }, [landmarkIdx, pending.newLandmarks])
 
   // Trigger first landmark reveal when entering landmark phase
   useEffect(() => {
     if (phase !== 'landmark') return
     if (pending.newLandmarks.length > 0) {
-      onLandmarkRevealed(pending.newLandmarks[0])
+      callbacksRef.current.onLandmarkRevealed(pending.newLandmarks[0])
     }
-  }, [phase, pending.newLandmarks, onLandmarkRevealed])
+  }, [phase, pending.newLandmarks])
 
   return (
     <>
