@@ -46,6 +46,7 @@ export function PracticeView() {
   const [message, setMessage] = useState<string | null>(null)
   const [celebrationType, setCelebrationType] = useState<'correct' | 'streak' | 'goal' | null>(null)
   const [attemptStartTime, setAttemptStartTime] = useState<number>(() => Date.now())
+  const [recentlyFailed, setRecentlyFailed] = useState<Set<string>>(new Set())
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   // Clear any pending auto-advance timer on unmount
@@ -65,7 +66,6 @@ export function PracticeView() {
       nearGoalEnd: progress >= goal - 1,
     })
     if (next) {
-      if (next.confidence === 'new') incrementNewFacts()
       setCurrentFact(next)
       setRecentFacts(prev => [...prev.slice(-10), next.fact])
       setSelectedAnswer(null)
@@ -75,7 +75,7 @@ export function PracticeView() {
       setAttemptStartTime(Date.now())
       if (ttsEnabled) speakProblem(next.a, next.b)
     }
-  }, [facts, recentFacts, activeFocusTables, newFactsIntroduced, progress, goal, getSessionAccuracy, incrementNewFacts, ttsEnabled])
+  }, [facts, recentFacts, activeFocusTables, newFactsIntroduced, progress, goal, getSessionAccuracy, ttsEnabled])
 
   // Compute display fact synchronously to avoid flicker on initial render
   const shouldInitialize = !currentFact && Object.keys(facts).length > 0
@@ -98,12 +98,17 @@ export function PracticeView() {
 
     const wasHintShown = showHint
 
+    // Count new facts when actually attempted, not when selected (avoids skip double-count)
+    if (displayFact.confidence === 'new' && !recentlyFailed.has(displayFact.fact)) {
+      incrementNewFacts()
+    }
+
     setSelectedAnswer(answer)
     setShowResult(true)
 
     const isCorrect = answer === displayFact.answer
     const responseTimeMs = Date.now() - attemptStartTime
-    const inputMethod = shouldUseMultipleChoice(displayFact) ? 'multiple_choice' : 'number_pad'
+    const inputMethod = shouldUseMultipleChoice(displayFact, recentlyFailed) ? 'multiple_choice' : 'number_pad'
 
     recordAttempt({
       fact: displayFact.fact,
@@ -129,6 +134,10 @@ export function PracticeView() {
     recordResult(isCorrect)
 
     if (isCorrect) {
+      // Clear from recently-failed so it shows as number pad next time
+      if (recentlyFailed.has(displayFact.fact)) {
+        setRecentlyFailed(prev => { const next = new Set(prev); next.delete(displayFact.fact); return next })
+      }
       incrementStreak()
       incrementProgress()
 
@@ -163,6 +172,7 @@ export function PracticeView() {
       }, 1200)
     } else {
       resetStreak()
+      setRecentlyFailed(prev => new Set(prev).add(displayFact.fact))
       setMessage(`${displayFact.a} × ${displayFact.b} = ${displayFact.answer}`)
       if (ttsEnabled) speakFact(displayFact.a, displayFact.b, displayFact.answer)
       setShowHint(true)
@@ -262,7 +272,7 @@ export function PracticeView() {
         <HintPanel
           strategies={strategies}
           isOpen={showHint}
-          onClose={() => nextProblem()}
+          onClose={() => { if (showHint) nextProblem() }}
           rows={displayFact.a}
           cols={displayFact.b}
           resetKey={displayFact.fact}

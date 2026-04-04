@@ -194,11 +194,12 @@ export function generateChoices(fact: FactProgress, count: number = 4): number[]
  * Determine if user should type answer or use multiple choice.
  * Includes regression logic: if struggling on number pad, go back to multiple choice.
  */
-export function shouldUseMultipleChoice(fact: FactProgress): boolean {
-  // New facts: always multiple choice
+export function shouldUseMultipleChoice(fact: FactProgress, recentlyFailed?: Set<string>): boolean {
   if (fact.confidence === 'new') return true
 
-  // Confident/Mastered: always number pad (they've proven recall)
+  // Recently failed facts re-appear as MC to rebuild confidence
+  if (recentlyFailed?.has(fact.fact)) return true
+
   if (fact.confidence === 'confident' || fact.confidence === 'mastered') {
     return false
   }
