@@ -48,10 +48,11 @@ export function PracticeView() {
   const [attemptStartTime, setAttemptStartTime] = useState<number>(() => Date.now())
   const [recentlyFailed, setRecentlyFailed] = useState<Set<string>>(new Set())
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const cancelledRef = useRef(false)
 
-  // Clear any pending auto-advance timer on unmount
   useEffect(() => {
     return () => {
+      cancelledRef.current = true
       if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current)
     }
   }, [])
@@ -76,6 +77,20 @@ export function PracticeView() {
       if (ttsEnabled) speakProblem(next.a, next.b)
     }
   }, [facts, recentFacts, activeFocusTables, newFactsIntroduced, progress, goal, getSessionAccuracy, ttsEnabled])
+
+  const speakThenAdvance = (minDelayMs: number, onAdvance: () => void) => {
+    if (!displayFact) return
+    const start = Date.now()
+    const ttsPromise = ttsEnabled
+      ? speakFact(displayFact.a, displayFact.b, displayFact.answer)
+      : Promise.resolve()
+
+    ttsPromise.then(() => {
+      if (cancelledRef.current) return
+      const remaining = Math.max(0, minDelayMs - (Date.now() - start))
+      advanceTimerRef.current = setTimeout(onAdvance, remaining)
+    })
+  }
 
   // Compute display fact synchronously to avoid flicker on initial render
   const shouldInitialize = !currentFact && Object.keys(facts).length > 0
@@ -154,7 +169,6 @@ export function PracticeView() {
       }
 
       setMessage(reward.bonusMessage || getCelebrationMessage(streakCount + 1))
-      if (ttsEnabled) speakFact(displayFact.a, displayFact.b, displayFact.answer)
 
       if (progress + 1 >= goal) {
         setCelebrationType('goal')
@@ -164,22 +178,17 @@ export function PracticeView() {
         setCelebrationType('correct')
       }
 
-      advanceTimerRef.current = setTimeout(() => {
+      speakThenAdvance(1200, () => {
         setCelebrationType(null)
-        if (!isGoalComplete()) {
-          nextProblem()
-        }
-      }, 1200)
+        if (!isGoalComplete()) nextProblem()
+      })
     } else {
       resetStreak()
       setRecentlyFailed(prev => new Set(prev).add(displayFact.fact))
       setMessage(`${displayFact.a} × ${displayFact.b} = ${displayFact.answer}`)
-      if (ttsEnabled) speakFact(displayFact.a, displayFact.b, displayFact.answer)
       setShowHint(true)
 
-      advanceTimerRef.current = setTimeout(() => {
-        nextProblem()
-      }, 2500)
+      speakThenAdvance(2500, () => nextProblem())
     }
   }
 
