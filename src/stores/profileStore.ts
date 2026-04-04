@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { api, ApiError } from '../lib/api';
+import { useSessionStore } from './sessionStore';
+import { useAttemptsStore } from './attemptsStore';
 import type {
   Profile,
   ProfileListItem,
@@ -212,6 +214,10 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
     // Clear session from localStorage
     clearSavedSession();
+
+    // Reset other stores to prevent data leaking between accounts
+    useSessionStore.getState().resetProgress();
+    useAttemptsStore.getState().clearForProfileSwitch();
 
     // Clear state
     set({

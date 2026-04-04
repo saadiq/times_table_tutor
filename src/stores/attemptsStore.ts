@@ -33,6 +33,7 @@ type AttemptsActions = {
   getStreakDays: () => number
   getTodayStats: () => { attempts: number; correct: number; accuracy: number }
   clearOldAttempts: () => void
+  clearForProfileSwitch: () => void
   syncToCloud: (profileId: string) => Promise<void>
   fetchFromCloud: (profileId: string) => Promise<void>
 }
@@ -133,11 +134,19 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
     },
 
     getAttemptsByDate: (date) => {
-      return get().attempts.filter((a) => getDateKeyFromTimestamp(a.timestamp) === date)
+      const { currentProfileId } = get()
+      return get().attempts.filter((a) =>
+        getDateKeyFromTimestamp(a.timestamp) === date &&
+        (!currentProfileId || a.profileId === currentProfileId)
+      )
     },
 
     getDailySummaries: (days) => {
-      const attempts = get().attempts
+      const { currentProfileId } = get()
+      const allAttempts = get().attempts
+      const attempts = currentProfileId
+        ? allAttempts.filter((a) => a.profileId === currentProfileId)
+        : allAttempts
       const summaries: Map<string, DailySummary> = new Map()
 
       for (const attempt of attempts) {
@@ -167,7 +176,11 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
     },
 
     getFactAttempts: (factKey) => {
-      return get().attempts.filter((a) => a.factKey === factKey)
+      const { currentProfileId } = get()
+      return get().attempts.filter((a) =>
+        a.factKey === factKey &&
+        (!currentProfileId || a.profileId === currentProfileId)
+      )
     },
 
     getStreakDays: () => {
@@ -214,6 +227,19 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
         )
         saveToStorage('attempts', filtered)
         return { attempts: filtered }
+      })
+    },
+
+    clearForProfileSwitch: () => {
+      const { syncTimeoutId } = get()
+      if (syncTimeoutId) {
+        clearTimeout(syncTimeoutId)
+      }
+      set({
+        currentProfileId: null,
+        pendingSync: [],
+        syncTimeoutId: null,
+        lastSyncTimestamp: null,
       })
     },
 
