@@ -33,6 +33,7 @@ type AttemptsActions = {
   getStreakDays: () => number
   getTodayStats: () => { attempts: number; correct: number; accuracy: number }
   clearOldAttempts: () => void
+  clearForProfileSwitch: () => void
   syncToCloud: (profileId: string) => Promise<void>
   fetchFromCloud: (profileId: string) => Promise<void>
 }
@@ -65,6 +66,10 @@ function isWithinDays(timestamp: string, days: number): boolean {
   const cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - days)
   return date >= cutoff
+}
+
+function matchesProfile(attempt: AttemptRecord, profileId: string | null): boolean {
+  return !profileId || attempt.profileId === profileId
 }
 
 export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
@@ -133,14 +138,19 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
     },
 
     getAttemptsByDate: (date) => {
-      return get().attempts.filter((a) => getDateKeyFromTimestamp(a.timestamp) === date)
+      const { attempts, currentProfileId } = get()
+      return attempts.filter((a) =>
+        matchesProfile(a, currentProfileId) &&
+        getDateKeyFromTimestamp(a.timestamp) === date
+      )
     },
 
     getDailySummaries: (days) => {
-      const attempts = get().attempts
+      const { attempts, currentProfileId } = get()
       const summaries: Map<string, DailySummary> = new Map()
 
       for (const attempt of attempts) {
+        if (!matchesProfile(attempt, currentProfileId)) continue
         if (!isWithinDays(attempt.timestamp, days)) continue
 
         const date = getDateKeyFromTimestamp(attempt.timestamp)
@@ -167,7 +177,10 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
     },
 
     getFactAttempts: (factKey) => {
-      return get().attempts.filter((a) => a.factKey === factKey)
+      const { attempts, currentProfileId } = get()
+      return attempts.filter((a) =>
+        matchesProfile(a, currentProfileId) && a.factKey === factKey
+      )
     },
 
     getStreakDays: () => {
@@ -208,13 +221,24 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
     },
 
     clearOldAttempts: () => {
+      const { currentProfileId } = get()
       set((state) => {
         const filtered = state.attempts.filter((a) =>
-          isWithinDays(a.timestamp, MAX_LOCAL_DAYS)
+          !matchesProfile(a, currentProfileId) || isWithinDays(a.timestamp, MAX_LOCAL_DAYS)
         )
         saveToStorage('attempts', filtered)
         return { attempts: filtered }
       })
+    },
+
+    clearForProfileSwitch: () => {
+      // Flush pending attempts to the old profile before clearing
+      get().setProfileId(null)
+      set({
+        pendingSync: [],
+        lastSyncTimestamp: null,
+      })
+      saveToStorage('pendingAttempts', [])
     },
 
     syncToCloud: async (profileId) => {

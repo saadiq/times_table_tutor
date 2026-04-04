@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { api, ApiError } from '../lib/api';
+import { resetStoresForProfileSwitch } from '../lib/resetStores';
 import type {
   Profile,
   ProfileListItem,
@@ -212,6 +213,9 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
     // Clear session from localStorage
     clearSavedSession();
+
+    // Reset other stores to prevent data leaking between accounts
+    resetStoresForProfileSwitch();
 
     // Clear state
     set({
