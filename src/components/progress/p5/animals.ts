@@ -1,21 +1,11 @@
 import type p5 from 'p5'
 import { REF_WIDTH, REF_HEIGHT, type AnimalData } from './types'
-import { getSaturation } from './colors'
+import { getVibrancySaturation } from './colors'
+import type { DrawContext } from './elements'
 
-type AnimalDrawContext = {
-  p: p5
-  colorProgress: number
-  tier: number
-  time: number
-  centerX: number
-  centerY: number
-  width: number
-  height: number
-}
-
-export function drawAnimal(ctx: AnimalDrawContext, animal: AnimalData): void {
-  const { p, colorProgress, time, centerX, centerY, width, height } = ctx
-  const sat = getSaturation(animal.x, animal.y, centerX, centerY, width, height, colorProgress)
+export function drawAnimal(ctx: DrawContext, animal: AnimalData): void {
+  const { p, warmth, vibrancy, time, centerX, centerY, width, height } = ctx
+  const sat = getVibrancySaturation(animal.x, animal.y, centerX, centerY, width, height, warmth, vibrancy)
   // Scale animal size proportionally to canvas
   const canvasScale = Math.min(width / REF_WIDTH, height / REF_HEIGHT)
   const s = animal.scale * 18 * canvasScale

@@ -1,3 +1,5 @@
+import type { SceneState } from '../../../types/scene'
+
 // Reference canvas size for proportional scaling
 export const REF_WIDTH = 400
 export const REF_HEIGHT = 500
@@ -71,6 +73,21 @@ export type AnimalType =
   | 'badger'
   | 'cat'
 
+export type AmbientCreature = {
+  baseX: number
+  baseY: number
+  speed: number
+  offset: number
+  size: number
+  hue: number
+}
+
+export type AmbientData = {
+  butterflies: AmbientCreature[]
+  birds: AmbientCreature[]
+  fireflies: AmbientCreature[]
+}
+
 export type SceneElements = {
   tree: TreeData
   grass: GrassElement[]
@@ -78,12 +95,11 @@ export type SceneElements = {
   leaves: LeafElement[]
   clouds: CloudElement[]
   animals: AnimalData[]
+  ambient: AmbientData
 }
 
 export type SketchParams = {
-  revealedFacts: number
-  revealedTables: number[]
-  revealedTier: number
+  scene: SceneState
   animatingCharacter: number | null
   width: number
   height: number

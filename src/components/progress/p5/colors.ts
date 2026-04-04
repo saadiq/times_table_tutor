@@ -29,24 +29,43 @@ export const PALETTE = {
 }
 
 /**
- * Calculate saturation based on distance from tree center.
- * Color spreads radially outward as colorProgress increases.
+ * Calculate saturation for sky/ground using warmth (effort-based).
+ * Color spreads radially outward as warmth increases.
  */
-export function getSaturation(
+export function getWarmthSaturation(
   x: number,
   y: number,
   centerX: number,
   centerY: number,
   canvasWidth: number,
   canvasHeight: number,
-  colorProgress: number
+  warmth: number
 ): number {
   const dx = x - centerX
   const dy = y - centerY
   const dist = Math.sqrt(dx * dx + dy * dy)
   const maxDist = Math.sqrt(canvasWidth * canvasWidth + canvasHeight * canvasHeight) * 0.5
   const normalized = dist / maxDist
-  return Math.max(0, Math.min(100, (colorProgress * 1.8 - normalized) * 100))
+  return Math.max(0, Math.min(100, (warmth * 1.8 - normalized) * 100))
+}
+
+/**
+ * Calculate saturation for scene elements using vibrancy (confidence-based).
+ * Vibrancy ranges from 0.3 (all learning) to 1.0 (all mastered).
+ */
+export function getVibrancySaturation(
+  x: number,
+  y: number,
+  centerX: number,
+  centerY: number,
+  canvasWidth: number,
+  canvasHeight: number,
+  warmth: number,
+  vibrancy: number
+): number {
+  // Base radial spread from warmth, then scaled by vibrancy
+  const base = getWarmthSaturation(x, y, centerX, centerY, canvasWidth, canvasHeight, warmth)
+  return base * vibrancy
 }
 
 /**
@@ -57,6 +76,7 @@ export function applyWarmth(hue: number, tier: number): number {
   if (hue > 60 && hue < 300) return hue - shift
   return hue
 }
+
 
 /**
  * Helper to set fill color with saturation adjustment

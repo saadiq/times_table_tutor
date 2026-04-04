@@ -6,11 +6,12 @@ import type {
   LeafElement,
   CloudElement,
 } from './types'
-import { PALETTE, getSaturation, applyWarmth } from './colors'
+import { PALETTE, getWarmthSaturation, getVibrancySaturation, applyWarmth } from './colors'
 
-type DrawContext = {
+export type DrawContext = {
   p: p5
-  colorProgress: number
+  warmth: number // 0-1, effort-based (sky/ground saturation)
+  vibrancy: number // 0.3-1.0, confidence-based (element saturation)
   tier: number
   time: number
   centerX: number
@@ -20,14 +21,14 @@ type DrawContext = {
 }
 
 export function drawSky(ctx: DrawContext): void {
-  const { p, colorProgress, tier, height, width } = ctx
+  const { p, warmth, tier, height, width } = ctx
   const skyColor = PALETTE.sky[tier]
   const skyHeight = height * 0.72
 
   for (let y = 0; y < skyHeight; y++) {
     const inter = y / skyHeight
     const bri = p.lerp(skyColor.b, skyColor.b - 15, inter)
-    p.stroke(skyColor.h, skyColor.s * colorProgress, bri)
+    p.stroke(skyColor.h, skyColor.s * warmth, bri)
     p.line(0, y, width, y)
   }
   p.noStroke()
@@ -44,17 +45,16 @@ export function drawClouds(ctx: DrawContext, clouds: CloudElement[]): void {
 }
 
 export function drawGround(ctx: DrawContext): void {
-  const { p, colorProgress, tier, width, height, centerX, centerY } = ctx
+  const { p, warmth, tier, width, height, centerX, centerY } = ctx
   const hue = applyWarmth(PALETTE.ground.h, tier)
   const sat =
-    getSaturation(width / 2, height, centerX, centerY, width, height, colorProgress) * 0.55
+    getWarmthSaturation(width / 2, height, centerX, centerY, width, height, warmth) * 0.55
 
   // Gentle hill - using arc for curved top
   p.fill(hue, sat, 50)
   p.beginShape()
   p.vertex(0, height)
   p.vertex(0, height * 0.75)
-  // Create curve with multiple vertices
   for (let x = 0; x <= width; x += width / 20) {
     const y = height * 0.75 - Math.sin((x / width) * Math.PI) * height * 0.05
     p.vertex(x, y)
@@ -78,13 +78,13 @@ export function drawGround(ctx: DrawContext): void {
 }
 
 export function drawTree(ctx: DrawContext, tree: TreeData): void {
-  const { p, colorProgress, tier, centerX, centerY, width, height } = ctx
+  const { p, warmth, vibrancy, tier, centerX, centerY, width, height } = ctx
   const trunkHue = applyWarmth(PALETTE.tree.trunk.h, tier)
   const trunkSat =
-    getSaturation(tree.x, tree.baseY, centerX, centerY, width, height, colorProgress) * 0.55
+    getWarmthSaturation(tree.x, tree.baseY, centerX, centerY, width, height, warmth) * 0.55
   const canopyHue = applyWarmth(PALETTE.tree.canopy.h, tier)
   const canopySat =
-    getSaturation(tree.x, tree.baseY - 180, centerX, centerY, width, height, colorProgress) * 0.65
+    getVibrancySaturation(tree.x, tree.baseY - 180, centerX, centerY, width, height, warmth, vibrancy) * 0.65
 
   // Canopy background (darker green mass)
   p.fill(canopyHue, canopySat * 0.8, 38)
@@ -133,9 +133,9 @@ export function drawTree(ctx: DrawContext, tree: TreeData): void {
 }
 
 export function drawGrass(ctx: DrawContext, g: GrassElement): void {
-  const { p, colorProgress, tier, time, centerX, centerY, width, height } = ctx
+  const { p, warmth, vibrancy, tier, time, centerX, centerY, width, height } = ctx
   const hue = applyWarmth(105 + ((g.sway * 10) % 20), tier)
-  const sat = getSaturation(g.x, g.y, centerX, centerY, width, height, colorProgress) * 0.65
+  const sat = getVibrancySaturation(g.x, g.y, centerX, centerY, width, height, warmth, vibrancy) * 0.65
   const sway = Math.sin(time * 2.5 + g.sway) * 0.08
 
   p.fill(hue, sat, 45)
@@ -149,8 +149,8 @@ export function drawGrass(ctx: DrawContext, g: GrassElement): void {
 }
 
 export function drawFlower(ctx: DrawContext, f: FlowerElement): void {
-  const { p, colorProgress, tier, time, centerX, centerY, width, height } = ctx
-  const sat = getSaturation(f.x, f.y, centerX, centerY, width, height, colorProgress)
+  const { p, warmth, vibrancy, tier, time, centerX, centerY, width, height } = ctx
+  const sat = getVibrancySaturation(f.x, f.y, centerX, centerY, width, height, warmth, vibrancy)
   const sway = Math.sin(time * 1.8 + f.sway) * 0.06
   const hue = applyWarmth(f.hue, tier)
 
@@ -179,8 +179,8 @@ export function drawFlower(ctx: DrawContext, f: FlowerElement): void {
 }
 
 export function drawLeaf(ctx: DrawContext, l: LeafElement): void {
-  const { p, colorProgress, tier, time, centerX, centerY, width, height } = ctx
-  const sat = getSaturation(l.x, l.y, centerX, centerY, width, height, colorProgress)
+  const { p, warmth, vibrancy, tier, time, centerX, centerY, width, height } = ctx
+  const sat = getVibrancySaturation(l.x, l.y, centerX, centerY, width, height, warmth, vibrancy)
   const sway = Math.sin(time * 1.2 + l.sway) * 0.12
   const hue = applyWarmth(l.hue, tier)
 
@@ -188,7 +188,7 @@ export function drawLeaf(ctx: DrawContext, l: LeafElement): void {
   p.translate(l.x, l.y)
   p.rotate(l.rotation + sway)
 
-  // Leaf shape (simple ellipse for compatibility)
+  // Leaf shape
   p.fill(hue, sat * 0.7, 55)
   p.ellipse(0, 0, l.size * 0.5, l.size)
 
