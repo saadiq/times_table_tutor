@@ -13,16 +13,18 @@ function numberToWords(n: number): string {
   return remainder === 0 ? hundredPart : `${hundredPart} and ${numberToWords(remainder)}`
 }
 
-export function speakProblem(a: number, b: number): void {
-  speak(`${numberToWords(a)} times ${numberToWords(b)}`)
+export function speakProblem(a: number, b: number): Promise<void> {
+  return speak(`${numberToWords(a)} times ${numberToWords(b)}`)
 }
 
-export function speakFact(a: number, b: number, answer: number): void {
-  speak(`${numberToWords(a)} times ${numberToWords(b)} equals ${numberToWords(answer)}`)
+export function speakFact(a: number, b: number, answer: number): Promise<void> {
+  return speak(`${numberToWords(a)} times ${numberToWords(b)} equals ${numberToWords(answer)}`)
 }
 
-function speak(text: string): void {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return
+const MAX_SPEECH_MS = 5000
+
+function speak(text: string): Promise<void> {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return Promise.resolve()
 
   window.speechSynthesis.cancel()
 
@@ -31,5 +33,10 @@ function speak(text: string): void {
   utterance.pitch = 1.0
   utterance.volume = 0.8
 
-  window.speechSynthesis.speak(utterance)
+  return new Promise<void>((resolve) => {
+    const timeout = setTimeout(resolve, MAX_SPEECH_MS)
+    utterance.onend = () => { clearTimeout(timeout); resolve() }
+    utterance.onerror = () => { clearTimeout(timeout); resolve() }
+    window.speechSynthesis.speak(utterance)
+  })
 }
