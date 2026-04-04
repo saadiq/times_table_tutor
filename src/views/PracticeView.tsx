@@ -1,10 +1,11 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lightbulb, SkipForward, Flower2 } from 'lucide-react'
-import { useProgressStore, useSessionStore, useGardenStore, useFocusTablesStore, useProfileStore, useAttemptsStore } from '../stores'
+import { useProgressStore, useSessionStore, useGardenStore, useFocusTablesStore, useProfileStore, useAttemptsStore, useSettingsStore } from '../stores'
 import { selectNextFact, shouldUseMultipleChoice } from '../lib/adaptive'
-import { getStrategiesForFact, getEncouragingMessage } from '../lib/strategies'
+import { getStrategiesForFact } from '../lib/strategies'
 import { calculateReward, getCelebrationMessage } from '../lib/rewards'
+import { speakProblem, speakFact } from '../lib/speech'
 import { ProblemDisplay, AnswerInput, HintPanel } from '../components/practice'
 import { ProgressBar, Button, Celebration } from '../components/common'
 import type { FactProgress } from '../types'
@@ -13,13 +14,24 @@ function getRandomPosition() {
   return { x: Math.random() * 200 + 50, y: Math.random() * 200 + 50 }
 }
 
+function countConsecutiveWrong(): number {
+  const results = useSessionStore.getState().recentResults
+  let count = 0
+  for (let i = results.length - 1; i >= 0; i--) {
+    if (results[i]) break
+    count++
+  }
+  return count
+}
+
 export function PracticeView() {
   const { facts, recordAttempt, toSyncPayload } = useProgressStore()
   const queueProgressSync = useProfileStore((s) => s.queueProgressSync)
   const recordAttemptHistory = useAttemptsStore((s) => s.recordAttempt)
   const currentProfile = useProfileStore((s) => s.currentProfile)
-  const { goal, progress, streakCount, incrementProgress, incrementStreak, resetStreak, isGoalComplete, resetProgress, setMode } = useSessionStore()
+  const { goal, progress, streakCount, newFactsIntroduced, incrementProgress, incrementStreak, resetStreak, isGoalComplete, resetProgress, setMode, incrementNewFacts, recordResult, getSessionAccuracy } = useSessionStore()
   const { addCoins, addItem } = useGardenStore()
+  const ttsEnabled = useSettingsStore((s) => s.ttsEnabled)
   const { focusTables, isEnabled } = useFocusTablesStore()
   const activeFocusTables = useMemo(
     () => (isEnabled ? focusTables : []),
@@ -34,11 +46,26 @@ export function PracticeView() {
   const [message, setMessage] = useState<string | null>(null)
   const [celebrationType, setCelebrationType] = useState<'correct' | 'streak' | 'goal' | null>(null)
   const [attemptStartTime, setAttemptStartTime] = useState<number>(() => Date.now())
+  const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
-  // Select next problem
+  // Clear any pending auto-advance timer on unmount
+  useEffect(() => {
+    return () => {
+      if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current)
+    }
+  }, [])
+
   const nextProblem = useCallback(() => {
-    const next = selectNextFact(facts, recentFacts, activeFocusTables)
+    if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current)
+
+    const next = selectNextFact(facts, recentFacts, activeFocusTables, {
+      newFactsIntroduced,
+      sessionAccuracy: getSessionAccuracy(),
+      consecutiveWrong: countConsecutiveWrong(),
+      nearGoalEnd: progress >= goal - 1,
+    })
     if (next) {
+      if (next.confidence === 'new') incrementNewFacts()
       setCurrentFact(next)
       setRecentFacts(prev => [...prev.slice(-10), next.fact])
       setSelectedAnswer(null)
@@ -46,13 +73,16 @@ export function PracticeView() {
       setShowHint(false)
       setMessage(null)
       setAttemptStartTime(Date.now())
+      if (ttsEnabled) speakProblem(next.a, next.b)
     }
-  }, [facts, recentFacts, activeFocusTables])
+  }, [facts, recentFacts, activeFocusTables, newFactsIntroduced, progress, goal, getSessionAccuracy, incrementNewFacts, ttsEnabled])
 
   // Compute display fact synchronously to avoid flicker on initial render
-  // State update is scheduled via microtask to avoid render-during-render warnings
   const shouldInitialize = !currentFact && Object.keys(facts).length > 0
-  const initialFact = shouldInitialize ? selectNextFact(facts, recentFacts, activeFocusTables) : null
+  const initialFact = shouldInitialize ? selectNextFact(facts, recentFacts, activeFocusTables, {
+    newFactsIntroduced,
+    sessionAccuracy: getSessionAccuracy(),
+  }) : null
   const displayFact = currentFact || initialFact
 
   if (initialFact && !currentFact) {
@@ -62,23 +92,11 @@ export function PracticeView() {
     })
   }
 
-  // Handle answer selection
   const handleAnswer = (answer: number) => {
     if (!displayFact) return
+    if (showResult) return
 
-    // Don't allow re-answering after correct answer (will auto-advance)
-    if (showResult && selectedAnswer === displayFact.answer) return
-
-    // Capture hint state before potential reset (state updates are async)
     const wasHintShown = showHint
-
-    // If already showing result from a wrong answer, reset to allow retry
-    if (showResult && selectedAnswer !== displayFact.answer) {
-      setShowHint(false)
-      setMessage(null)
-      setAttemptStartTime(Date.now())
-      // Continue to process the new answer below
-    }
 
     setSelectedAnswer(answer)
     setShowResult(true)
@@ -87,7 +105,6 @@ export function PracticeView() {
     const responseTimeMs = Date.now() - attemptStartTime
     const inputMethod = shouldUseMultipleChoice(displayFact) ? 'multiple_choice' : 'number_pad'
 
-    // Record to progress store with rich data for confidence calculation
     recordAttempt({
       fact: displayFact.fact,
       correct: isCorrect,
@@ -95,7 +112,6 @@ export function PracticeView() {
       responseTimeMs,
     })
 
-    // Record attempt history for analytics/sync
     recordAttemptHistory({
       factKey: displayFact.fact,
       correct: isCorrect,
@@ -105,11 +121,12 @@ export function PracticeView() {
       profileId: currentProfile?.id,
     })
 
-    // Queue progress sync to server
     const syncPayload = toSyncPayload(displayFact.fact)
     if (syncPayload) {
       queueProgressSync(syncPayload)
     }
+
+    recordResult(isCorrect)
 
     if (isCorrect) {
       incrementStreak()
@@ -128,8 +145,8 @@ export function PracticeView() {
       }
 
       setMessage(reward.bonusMessage || getCelebrationMessage(streakCount + 1))
+      if (ttsEnabled) speakFact(displayFact.a, displayFact.b, displayFact.answer)
 
-      // Trigger celebration animation
       if (progress + 1 >= goal) {
         setCelebrationType('goal')
       } else if ((streakCount + 1) % 5 === 0) {
@@ -138,8 +155,7 @@ export function PracticeView() {
         setCelebrationType('correct')
       }
 
-      // Clear celebration and auto-advance
-      setTimeout(() => {
+      advanceTimerRef.current = setTimeout(() => {
         setCelebrationType(null)
         if (!isGoalComplete()) {
           nextProblem()
@@ -147,12 +163,16 @@ export function PracticeView() {
       }, 1200)
     } else {
       resetStreak()
-      setMessage(getEncouragingMessage())
+      setMessage(`${displayFact.a} × ${displayFact.b} = ${displayFact.answer}`)
+      if (ttsEnabled) speakFact(displayFact.a, displayFact.b, displayFact.answer)
       setShowHint(true)
+
+      advanceTimerRef.current = setTimeout(() => {
+        nextProblem()
+      }, 2500)
     }
   }
 
-  // Skip current problem
   const handleSkip = () => {
     resetStreak()
     nextProblem()
@@ -201,7 +221,6 @@ export function PracticeView() {
     <div className="flex-1 flex flex-col p-4">
       <Celebration show={celebrationType !== null} type={celebrationType || 'correct'} />
 
-      {/* Progress header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-gray-600">Today's Goal</span>
@@ -210,11 +229,9 @@ export function PracticeView() {
         <ProgressBar current={progress} total={goal} />
       </div>
 
-      {/* Problem */}
       <div className="flex-1 flex flex-col justify-center">
         <ProblemDisplay fact={displayFact} />
 
-        {/* Answer feedback */}
         <AnimatePresence>
           {message && (
             <motion.div
@@ -232,34 +249,25 @@ export function PracticeView() {
           )}
         </AnimatePresence>
 
-        {/* Answer input */}
         <div className="mb-6">
           <AnswerInput
             fact={displayFact}
             onAnswer={handleAnswer}
             selectedAnswer={selectedAnswer}
             showResult={showResult}
-            disabled={showResult && selectedAnswer === displayFact.answer}
+            disabled={showResult}
           />
         </div>
 
-        {/* Hint panel */}
         <HintPanel
           strategies={strategies}
           isOpen={showHint}
-          onClose={() => {
-            // Allow retry on the same problem
-            setShowHint(false)
-            setShowResult(false)
-            setSelectedAnswer(null)
-            setMessage(null)
-          }}
+          onClose={() => nextProblem()}
           rows={displayFact.a}
           cols={displayFact.b}
           resetKey={displayFact.fact}
         />
 
-        {/* Action buttons */}
         {!showResult && (
           <div className="flex justify-center gap-4 mt-4">
             <Button
