@@ -19,6 +19,7 @@
     "db:sync": "bash scripts/sync-from-prod.sh"
   },
   "dependencies": {
+    "@fontsource-variable/lexend": "^5.2.11",
     "@types/p5": "^1.7.7",
     "framer-motion": "^12.23.26",
     "lucide-react": "^0.562.0",
