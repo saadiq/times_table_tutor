@@ -2,18 +2,15 @@ import { useRef, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { TreeDeciduous } from 'lucide-react'
 import { useP5 } from './p5'
+import type { SceneState } from '../../types/scene'
 
 type ProgressSceneProps = {
-  revealedFacts: number
-  revealedTables: number[]
-  revealedTier: number
+  scene: SceneState
   animatingCharacter?: number | null
 }
 
 export function ProgressScene({
-  revealedFacts,
-  revealedTables,
-  revealedTier,
+  scene,
   animatingCharacter,
 }: ProgressSceneProps) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -36,9 +33,7 @@ export function ProgressScene({
   }, [])
 
   const { isReady, error } = useP5(containerRef, {
-    revealedFacts,
-    revealedTables,
-    revealedTier,
+    scene,
     animatingCharacter: animatingCharacter ?? null,
     width: dimensions.width,
     height: dimensions.height,
@@ -71,7 +66,6 @@ export function ProgressScene({
 }
 
 function CharacterSparkle({ tableNum }: { tableNum: number }) {
-  // Position sparkles based on animal positions (matching animals.ts order)
   const positions = [
     { top: '88%', left: '8%' },
     { top: '45%', left: '85%' },
