@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lightbulb, SkipForward, Flower2 } from 'lucide-react'
 import { useProgressStore, useSessionStore, useGardenStore, useFocusTablesStore, useProfileStore, useAttemptsStore, useSettingsStore } from '../stores'
+import { useProgressViewStore } from '../stores/progressViewStore'
 import { selectNextFact, shouldUseMultipleChoice } from '../lib/adaptive'
 import { getStrategiesForFact } from '../lib/strategies'
 import { calculateReward, getCelebrationMessage } from '../lib/rewards'
@@ -79,11 +80,10 @@ export function PracticeView() {
     }
   }, [facts, recentFacts, activeFocusTables, newFactsIntroduced, progress, goal, getSessionAccuracy, ttsEnabled])
 
-  const speakThenAdvance = (minDelayMs: number, onAdvance: () => void) => {
-    if (!displayFact) return
+  const speakThenAdvance = useCallback((fact: FactProgress, minDelayMs: number, onAdvance: () => void) => {
     const start = Date.now()
     const ttsPromise = ttsEnabled
-      ? speakFact(displayFact.a, displayFact.b, displayFact.answer)
+      ? speakFact(fact.a, fact.b, fact.answer)
       : Promise.resolve()
 
     ttsPromise.then(() => {
@@ -91,7 +91,7 @@ export function PracticeView() {
       const remaining = Math.max(0, minDelayMs - (Date.now() - start))
       advanceTimerRef.current = setTimeout(onAdvance, remaining)
     })
-  }
+  }, [ttsEnabled])
 
   // Compute display fact synchronously to avoid flicker on initial render
   const shouldInitialize = !currentFact && Object.keys(facts).length > 0
@@ -172,6 +172,7 @@ export function PracticeView() {
       setMessage(reward.bonusMessage || getCelebrationMessage(streakCount + 1))
 
       if (progress + 1 >= goal) {
+        useProgressViewStore.getState().incrementSessions()
         setCelebrationType('goal')
       } else if ((streakCount + 1) % 5 === 0) {
         setCelebrationType('streak')
@@ -179,7 +180,7 @@ export function PracticeView() {
         setCelebrationType('correct')
       }
 
-      speakThenAdvance(1200, () => {
+      speakThenAdvance(displayFact, 1200, () => {
         setCelebrationType(null)
         if (!isGoalComplete()) nextProblem()
       })
@@ -189,7 +190,7 @@ export function PracticeView() {
       setMessage(`${displayFact.a} × ${displayFact.b} = ${displayFact.answer}`)
       setShowHint(true)
 
-      speakThenAdvance(2500, () => nextProblem())
+      speakThenAdvance(displayFact, 2500, () => nextProblem())
     }
   }
 
