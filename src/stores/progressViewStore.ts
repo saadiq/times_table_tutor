@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { saveToStorage, loadFromStorage } from '../lib/storage'
 import { useProgressStore } from './progressStore'
+import { useAttemptsStore } from './attemptsStore'
+import type { SceneState, PendingReveals } from '../types/scene'
 
 // Character data for each times table
 export const TABLE_CHARACTERS = [
@@ -18,101 +20,186 @@ export const TABLE_CHARACTERS = [
   { table: 12, name: 'Cat', position: { top: '18%', left: '38%', width: '16%', height: '12%' } },
 ] as const
 
-export type PendingReveals = {
-  newFacts: number
-  newTables: number[]
-  newTier: number | null
+
+// Tier thresholds based on mastered fact count
+const TIER_THRESHOLDS = [0, 12, 36, 72, 108] as const
+const FOUNDATION_SESSIONS_TO_FULL = 25
+
+export function computeTier(masteredCount: number): number {
+  for (let i = TIER_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (masteredCount >= TIER_THRESHOLDS[i]) return i
+  }
+  return 0
 }
 
-// Shared type for reveal animation steps
-export type RevealStep =
-  | { type: 'facts'; count: number }
-  | { type: 'character'; table: number; name: string }
-  | { type: 'tier'; tier: number }
-
 type ProgressViewState = {
-  lastRevealedFactCount: number
-  revealedTables: number[]
-  lastRevealedTier: number // 0-4
+  peakRevealedCount: number // High-water mark of learning+ facts (never decreases)
+  lastRevealedCount: number // What user has seen (drives pending detection)
+  revealedTables: number[] // Animals revealed (permanent set)
+  peakTier: number // Highest tier reached (never decreases)
+  sessionsCompleted: number // Total sessions (drives foundation warmth)
+  lastSeenSessions: number // Sessions at last visit (drives pending foundation delta)
 }
 
 type ProgressViewActions = {
   initialize: () => void
   resync: () => void
+  computeSceneState: () => SceneState
   getPendingReveals: () => PendingReveals
-  markRevealed: (facts: number, tables: number[], tier: number) => void
+  markRevealed: (details: number, tables: number[], tier: number) => void
+  incrementSessions: () => void
   resetForTesting: () => void
 }
 
 const initialState: ProgressViewState = {
-  lastRevealedFactCount: 0,
+  peakRevealedCount: 0,
+  lastRevealedCount: 0,
   revealedTables: [],
-  lastRevealedTier: 0,
+  peakTier: 0,
+  sessionsCompleted: 0,
+  lastSeenSessions: 0,
 }
 
 const STORAGE_KEY = 'progressView'
+
+// Old state shape for migration
+type LegacyState = {
+  lastRevealedFactCount: number
+  revealedTables: number[]
+  lastRevealedTier: number
+}
+
+function isLegacyState(saved: unknown): saved is LegacyState {
+  return (
+    saved !== null &&
+    typeof saved === 'object' &&
+    'lastRevealedFactCount' in saved &&
+    !('peakRevealedCount' in saved)
+  )
+}
+
+function migrateLegacy(legacy: LegacyState): ProgressViewState {
+  return {
+    peakRevealedCount: legacy.lastRevealedFactCount,
+    lastRevealedCount: legacy.lastRevealedFactCount,
+    revealedTables: legacy.revealedTables,
+    peakTier: legacy.lastRevealedTier,
+    sessionsCompleted: 0,
+    lastSeenSessions: 0,
+  }
+}
 
 export const useProgressViewStore = create<ProgressViewState & ProgressViewActions>(
   (set, get) => ({
     ...initialState,
 
     initialize: () => {
-      const saved = loadFromStorage<ProgressViewState>(STORAGE_KEY)
+      const saved = loadFromStorage<ProgressViewState | LegacyState>(STORAGE_KEY)
       if (saved) {
-        set(saved)
+        const state = isLegacyState(saved) ? migrateLegacy(saved) : saved
+
+        // Recompute peak from actual learning+ count (may be higher than stored)
+        const progressStore = useProgressStore.getState()
+        const learningPlus = progressStore.getFactsAtOrAbove('learning').length
+        state.peakRevealedCount = Math.max(state.peakRevealedCount, learningPlus)
+
+        set(state)
+        saveToStorage(STORAGE_KEY, state)
       } else {
-        // Bootstrap from current progress so tree shows existing progress
         get().resync()
       }
     },
 
     resync: () => {
-      // Re-bootstrap from current progressStore state (used after cloud data loads)
       const progressStore = useProgressStore.getState()
-      const confidentFacts = progressStore.getFactsByConfidence('confident')
-      const masteredFacts = progressStore.getFactsByConfidence('mastered')
-      const currentCount = confidentFacts.length + masteredFacts.length
+      const learningPlusCount = progressStore.getFactsAtOrAbove('learning').length
       const completedTables = progressStore.getMasteredTables()
-      const currentTier = Math.min(4, Math.floor(currentCount / 36))
+      const masteredCount = progressStore.getFactsByConfidence('mastered').length
+      const currentTier = computeTier(masteredCount)
 
-      const synced = {
-        lastRevealedFactCount: currentCount,
-        revealedTables: completedTables,
-        lastRevealedTier: currentTier,
+      const current = get()
+      const synced: ProgressViewState = {
+        peakRevealedCount: Math.max(current.peakRevealedCount, learningPlusCount),
+        lastRevealedCount: learningPlusCount,
+        revealedTables: [...new Set([...current.revealedTables, ...completedTables])],
+        peakTier: Math.max(current.peakTier, currentTier),
+        sessionsCompleted: current.sessionsCompleted,
+        lastSeenSessions: current.sessionsCompleted,
       }
       set(synced)
       saveToStorage(STORAGE_KEY, synced)
     },
 
-    getPendingReveals: () => {
-      const { lastRevealedFactCount, revealedTables, lastRevealedTier } = get()
+    computeSceneState: (): SceneState => {
+      const state = get()
       const progressStore = useProgressStore.getState()
+      const attemptsStore = useAttemptsStore.getState()
 
-      // Count confident + mastered facts for scene progress
-      // (don't require full mastery to see the scene come alive)
-      const confidentFacts = progressStore.getFactsByConfidence('confident')
-      const masteredFacts = progressStore.getFactsByConfidence('mastered')
-      const currentProgressCount = confidentFacts.length + masteredFacts.length
+      const learningPlusCount = progressStore.getFactsAtOrAbove('learning').length
+      const confidentPlusMastered =
+        progressStore.getFactsByConfidence('confident').length +
+        progressStore.getFactsByConfidence('mastered').length
 
-      // Get completed tables (still requires full mastery for character unlocks)
-      const completedTables = progressStore.getMasteredTables()
-
-      // Calculate current tier (0-4 based on 36-fact increments)
-      const currentTier = Math.min(4, Math.floor(currentProgressCount / 36))
+      const vibrancy =
+        learningPlusCount > 0
+          ? Math.max(0.3, confidentPlusMastered / learningPlusCount)
+          : 0.3
 
       return {
-        newFacts: currentProgressCount - lastRevealedFactCount,
-        newTables: completedTables.filter((t) => !revealedTables.includes(t)),
-        newTier: currentTier > lastRevealedTier ? currentTier : null,
+        foundation: {
+          warmth: Math.min(1, state.sessionsCompleted / FOUNDATION_SESSIONS_TO_FULL),
+        },
+        details: {
+          revealedCount: Math.max(state.peakRevealedCount, learningPlusCount),
+          vibrancy,
+        },
+        landmarks: {
+          unlockedTables: state.revealedTables,
+        },
+        ambient: {
+          streakDays: attemptsStore.getStreakDays(),
+        },
+        tier: state.peakTier,
       }
     },
 
-    markRevealed: (facts, tables, tier) => {
+    getPendingReveals: (): PendingReveals => {
+      const state = get()
+      const progressStore = useProgressStore.getState()
+
+      const learningPlusCount = progressStore.getFactsAtOrAbove('learning').length
+      const masteredCount = progressStore.getFactsByConfidence('mastered').length
+      const completedTables = progressStore.getMasteredTables()
+      const currentTier = computeTier(masteredCount)
+
+      return {
+        newDetails: Math.max(0, learningPlusCount - state.lastRevealedCount),
+        newLandmarks: completedTables.filter((t) => !state.revealedTables.includes(t)),
+        newTier: currentTier > state.peakTier ? currentTier : null,
+        foundationDelta: state.sessionsCompleted - state.lastSeenSessions,
+      }
+    },
+
+    markRevealed: (detailCount, tables, tier) => {
+      set((state) => {
+        const newState: ProgressViewState = {
+          peakRevealedCount: Math.max(state.peakRevealedCount, detailCount),
+          lastRevealedCount: detailCount,
+          revealedTables: [...new Set([...state.revealedTables, ...tables])],
+          peakTier: Math.max(state.peakTier, tier),
+          sessionsCompleted: state.sessionsCompleted,
+          lastSeenSessions: state.sessionsCompleted,
+        }
+        saveToStorage(STORAGE_KEY, newState)
+        return newState
+      })
+    },
+
+    incrementSessions: () => {
       set((state) => {
         const newState = {
-          lastRevealedFactCount: facts,
-          revealedTables: [...new Set([...state.revealedTables, ...tables])],
-          lastRevealedTier: Math.max(state.lastRevealedTier, tier),
+          ...state,
+          sessionsCompleted: state.sessionsCompleted + 1,
         }
         saveToStorage(STORAGE_KEY, newState)
         return newState
