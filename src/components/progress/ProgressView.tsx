@@ -29,6 +29,7 @@ export function ProgressView() {
   } = useProgressViewStore()
 
   const [isRevealing, setIsRevealing] = useState(false)
+  const [revealPending, setRevealPending] = useState<PendingReveals | null>(null)
   const [animatingCharacter, setAnimatingCharacter] = useState<number | null>(null)
   const [overrides, setOverrides] = useState<AnimationOverrides>({ facts: null, tables: null, tier: null })
   const [debugMode, setDebugMode] = useState(false)
@@ -37,7 +38,7 @@ export function ProgressView() {
 
   useEffect(() => { initialize() }, [initialize])
 
-  const baseSceneState = computeSceneState()
+  const baseSceneState = useMemo(() => computeSceneState(), [computeSceneState])
 
   // Build live scene state: debug mode > overrides > base
   const liveScene = debugMode
@@ -54,7 +55,7 @@ export function ProgressView() {
         tier: overrides.tier ?? baseSceneState.tier,
       }
 
-  // Derive pending reveals (only when not revealing)
+  // Derive pending reveals (only when not in a reveal sequence)
   const pending = useMemo<PendingReveals | null>(() => {
     if (isRevealing) return null
     const p = getPendingReveals()
@@ -68,6 +69,9 @@ export function ProgressView() {
   // --- Reveal handlers ---
 
   const handleStartReveal = () => {
+    // Snapshot pending before setting isRevealing (which nullifies the memo)
+    const snapshot = getPendingReveals()
+    setRevealPending(snapshot)
     setOverrides({
       facts: lastRevealedCount,
       tables: [...revealedTables],
@@ -101,12 +105,14 @@ export function ProgressView() {
   const handleRevealComplete = useCallback(() => {
     const completedTables = getMasteredTables()
     const learningCount = getFactsAtOrAbove('learning').length
-    const currentTier = baseSceneState.tier
+    const masteredCount = useProgressStore.getState().getFactsByConfidence('mastered').length
+    const currentTier = computeTier(masteredCount)
     markRevealed(learningCount, completedTables, currentTier)
 
     setOverrides({ facts: null, tables: null, tier: null })
+    setRevealPending(null)
     setIsRevealing(false)
-  }, [getMasteredTables, getFactsAtOrAbove, markRevealed, baseSceneState.tier])
+  }, [getMasteredTables, getFactsAtOrAbove, markRevealed])
 
   const handleCharacterTap = (table: number) => {
     setAnimatingCharacter(table)
@@ -166,9 +172,9 @@ export function ProgressView() {
         </AnimatePresence>
 
         {/* Reveal sequence */}
-        {isRevealing && pending && (
+        {isRevealing && revealPending && (
           <RevealSequence
-            pending={pending}
+            pending={revealPending}
             onDetailsRevealed={handleDetailsRevealed}
             onTierRevealed={handleTierRevealed}
             onLandmarkRevealed={handleLandmarkRevealed}

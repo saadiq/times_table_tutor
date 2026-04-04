@@ -26,5 +26,4 @@ export type PendingReveals = {
   newDetails: number // New learning+ facts since last visit
   newLandmarks: number[] // Newly mastered tables
   newTier: number | null // Tier jump if any
-  foundationDelta: number // Sessions since last visit
 }

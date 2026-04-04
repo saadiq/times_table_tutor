@@ -38,7 +38,6 @@ type ProgressViewState = {
   revealedTables: number[] // Animals revealed (permanent set)
   peakTier: number // Highest tier reached (never decreases)
   sessionsCompleted: number // Total sessions (drives foundation warmth)
-  lastSeenSessions: number // Sessions at last visit (drives pending foundation delta)
 }
 
 type ProgressViewActions = {
@@ -57,7 +56,6 @@ const initialState: ProgressViewState = {
   revealedTables: [],
   peakTier: 0,
   sessionsCompleted: 0,
-  lastSeenSessions: 0,
 }
 
 const STORAGE_KEY = 'progressView'
@@ -85,7 +83,6 @@ function migrateLegacy(legacy: LegacyState): ProgressViewState {
     revealedTables: legacy.revealedTables,
     peakTier: legacy.lastRevealedTier,
     sessionsCompleted: 0,
-    lastSeenSessions: 0,
   }
 }
 
@@ -124,7 +121,6 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
         revealedTables: [...new Set([...current.revealedTables, ...completedTables])],
         peakTier: Math.max(current.peakTier, currentTier),
         sessionsCompleted: current.sessionsCompleted,
-        lastSeenSessions: current.sessionsCompleted,
       }
       set(synced)
       saveToStorage(STORAGE_KEY, synced)
@@ -176,7 +172,6 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
         newDetails: Math.max(0, learningPlusCount - state.lastRevealedCount),
         newLandmarks: completedTables.filter((t) => !state.revealedTables.includes(t)),
         newTier: currentTier > state.peakTier ? currentTier : null,
-        foundationDelta: state.sessionsCompleted - state.lastSeenSessions,
       }
     },
 
@@ -188,7 +183,6 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
           revealedTables: [...new Set([...state.revealedTables, ...tables])],
           peakTier: Math.max(state.peakTier, tier),
           sessionsCompleted: state.sessionsCompleted,
-          lastSeenSessions: state.sessionsCompleted,
         }
         saveToStorage(STORAGE_KEY, newState)
         return newState
