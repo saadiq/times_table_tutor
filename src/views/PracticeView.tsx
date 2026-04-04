@@ -51,6 +51,7 @@ export function PracticeView() {
   const cancelledRef = useRef(false)
 
   useEffect(() => {
+    cancelledRef.current = false
     return () => {
       cancelledRef.current = true
       if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current)
