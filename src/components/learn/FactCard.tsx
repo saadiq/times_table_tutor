@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import type { FactProgress, Confidence } from '../../types'
 import { Circle, CircleDot, CircleCheck, Star } from 'lucide-react'
+import { useActiveOperation } from '../../hooks'
 
 type FactCardProps = {
   fact: FactProgress
@@ -23,6 +24,7 @@ const confidenceColors: Record<Confidence, string> = {
 
 export function FactCard({ fact, onClick }: FactCardProps) {
   const Icon = confidenceIcons[fact.confidence]
+  const { left, symbol, right } = useActiveOperation().formatProblem(fact)
 
   return (
     <motion.button
@@ -32,7 +34,7 @@ export function FactCard({ fact, onClick }: FactCardProps) {
       className={`p-3 rounded-xl border-2 text-center transition-colors ${confidenceColors[fact.confidence]}`}
     >
       <div className="text-lg font-bold text-gray-800">
-        {fact.a} × {fact.b}
+        {left} {symbol} {right}
       </div>
       <div className="flex items-center justify-center gap-1 mt-1">
         <Icon size={12} className="text-gray-400" />
