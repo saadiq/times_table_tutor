@@ -4,6 +4,7 @@ import { TIMES_TABLES, REWARDS, CONFIDENCE_THRESHOLDS } from '../lib/constants'
 import { saveToStorage, loadFromStorage } from '../lib/storage'
 import { useGardenStore } from './gardenStore'
 import { getMasteryReward } from '../lib/rewards'
+import { multiplyOperation } from '../lib/operations'
 
 type RecordAttemptParams = {
   fact: string
@@ -27,31 +28,6 @@ type ProgressActions = {
   setPreferredStrategy: (fact: string, strategy: string) => void
   loadFromServer: (facts: FactProgressSync[]) => void
   toSyncPayload: (fact: string) => FactProgressSync | null
-}
-
-function generateAllFacts(): Record<string, FactProgress> {
-  const facts: Record<string, FactProgress> = {}
-
-  for (let a = TIMES_TABLES.min; a <= TIMES_TABLES.max; a++) {
-    for (let b = TIMES_TABLES.min; b <= TIMES_TABLES.max; b++) {
-      const fact = `${a}x${b}`
-      facts[fact] = {
-        fact,
-        a,
-        b,
-        answer: a * b,
-        confidence: 'new',
-        correctCount: 0,
-        incorrectCount: 0,
-        lastSeen: null,
-        lastCorrect: null,
-        recentAttempts: [],
-        preferredStrategy: null,
-      }
-    }
-  }
-
-  return facts
 }
 
 /**
@@ -180,7 +156,7 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
       set({ facts: migrated, initialized: true })
       saveToStorage('progress', migrated)
     } else {
-      const facts = generateAllFacts()
+      const facts = multiplyOperation.generateFacts()
       set({ facts, initialized: true })
       saveToStorage('progress', facts)
     }
@@ -312,7 +288,7 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
       factMap[f.fact] = factData
     }
     // Merge with defaults for any missing facts
-    const allFacts = generateAllFacts()
+    const allFacts = multiplyOperation.generateFacts()
     for (const factKey of Object.keys(allFacts)) {
       if (!factMap[factKey]) {
         factMap[factKey] = allFacts[factKey]
