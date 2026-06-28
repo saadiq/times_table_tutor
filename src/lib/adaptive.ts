@@ -148,47 +148,9 @@ function hoursSinceDate(isoDate: string): number {
   return (now - then) / (1000 * 60 * 60)
 }
 
-/**
- * Generate multiple choice options for a fact
- */
-export function generateChoices(fact: FactProgress, count: number = 4): number[] {
-  const correct = fact.answer
-  const choices = new Set<number>([correct])
-
-  // Common mistake patterns
-  const mistakes = [
-    correct + fact.a,      // Added one more group
-    correct - fact.a,      // One less group
-    correct + fact.b,      // Mixed up which to add
-    correct - fact.b,
-    fact.a + fact.b,       // Added instead of multiplied
-    correct + 1,
-    correct - 1,
-    correct + 10,
-    correct - 10,
-    (fact.a + 1) * fact.b, // Off by one on factor
-    fact.a * (fact.b + 1),
-  ].filter(n => n > 0 && n !== correct)
-
-  // Shuffle mistakes and pick unique ones
-  const shuffled = mistakes.sort(() => Math.random() - 0.5)
-
-  for (const mistake of shuffled) {
-    if (choices.size >= count) break
-    choices.add(mistake)
-  }
-
-  // Fill with random if needed
-  while (choices.size < count) {
-    const random = Math.floor(Math.random() * 144) + 1
-    if (random !== correct) {
-      choices.add(random)
-    }
-  }
-
-  // Shuffle final choices
-  return Array.from(choices).sort(() => Math.random() - 0.5)
-}
+// generateChoices now lives in the multiply operation; re-exported here for the
+// existing AnswerInput import. Removed in Phase 1, Task 4 once AnswerInput uses the operation.
+export { generateChoices } from './operations/multiply'
 
 /**
  * Determine if user should type answer or use multiple choice.
