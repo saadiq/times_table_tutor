@@ -4,9 +4,9 @@ import { Lightbulb, SkipForward, Flower2 } from 'lucide-react'
 import { useProgressStore, useSessionStore, useGardenStore, useFocusTablesStore, useProfileStore, useAttemptsStore, useSettingsStore } from '../stores'
 import { useProgressViewStore } from '../stores/progressViewStore'
 import { selectNextFact, shouldUseMultipleChoice } from '../lib/adaptive'
-import { getStrategiesForFact } from '../lib/strategies'
 import { calculateReward, getCelebrationMessage } from '../lib/rewards'
-import { speakProblem, speakFact } from '../lib/speech'
+import { useActiveOperation } from '../hooks'
+import { formatEquation } from '../lib/operations'
 import { ProblemDisplay, AnswerInput, HintPanel } from '../components/practice'
 import { ProgressBar, Button, Celebration } from '../components/common'
 import type { FactProgress } from '../types'
@@ -34,6 +34,7 @@ export function PracticeView() {
   const { addCoins, addItem } = useGardenStore()
   const ttsEnabled = useSettingsStore((s) => s.ttsEnabled)
   const { focusTables, isEnabled } = useFocusTablesStore()
+  const operation = useActiveOperation()
   const activeFocusTables = useMemo(
     () => (isEnabled ? focusTables : []),
     [isEnabled, focusTables]
@@ -76,14 +77,14 @@ export function PracticeView() {
       setShowHint(false)
       setMessage(null)
       setAttemptStartTime(Date.now())
-      if (ttsEnabled) speakProblem(next.a, next.b)
+      if (ttsEnabled) operation.speakProblem(next)
     }
-  }, [facts, recentFacts, activeFocusTables, newFactsIntroduced, progress, goal, getSessionAccuracy, ttsEnabled])
+  }, [facts, recentFacts, activeFocusTables, newFactsIntroduced, progress, goal, getSessionAccuracy, ttsEnabled, operation])
 
   const speakThenAdvance = useCallback((fact: FactProgress, minDelayMs: number, onAdvance: () => void) => {
     const start = Date.now()
     const ttsPromise = ttsEnabled
-      ? speakFact(fact.a, fact.b, fact.answer)
+      ? operation.speakFact(fact)
       : Promise.resolve()
 
     ttsPromise.then(() => {
@@ -91,7 +92,7 @@ export function PracticeView() {
       const remaining = Math.max(0, minDelayMs - (Date.now() - start))
       advanceTimerRef.current = setTimeout(onAdvance, remaining)
     })
-  }, [ttsEnabled])
+  }, [ttsEnabled, operation])
 
   // Compute display fact synchronously to avoid flicker on initial render
   const shouldInitialize = !currentFact && Object.keys(facts).length > 0
@@ -187,7 +188,7 @@ export function PracticeView() {
     } else {
       resetStreak()
       setRecentlyFailed(prev => new Set(prev).add(displayFact.fact))
-      setMessage(`${displayFact.a} × ${displayFact.b} = ${displayFact.answer}`)
+      setMessage(formatEquation(operation, displayFact))
       setShowHint(true)
 
       speakThenAdvance(displayFact, 2500, () => nextProblem())
@@ -200,8 +201,8 @@ export function PracticeView() {
   }
 
   const strategies = useMemo(
-    () => (displayFact ? getStrategiesForFact(displayFact) : []),
-    [displayFact]
+    () => (displayFact ? operation.getStrategies(displayFact) : []),
+    [displayFact, operation]
   )
 
   if (isGoalComplete()) {

@@ -148,10 +148,6 @@ function hoursSinceDate(isoDate: string): number {
   return (now - then) / (1000 * 60 * 60)
 }
 
-// generateChoices now lives in the multiply operation; re-exported here for the
-// existing AnswerInput import. Removed in Phase 1, Task 4 once AnswerInput uses the operation.
-export { generateChoices } from './operations/multiply'
-
 /**
  * Determine if user should type answer or use multiple choice.
  * Includes regression logic: if struggling on number pad, go back to multiple choice.
