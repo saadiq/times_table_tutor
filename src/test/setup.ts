@@ -1,3 +1,5 @@
+import { beforeEach } from 'vitest'
+
 // Provide a deterministic, in-memory localStorage for tests. Node's experimental
 // global localStorage is gated behind --localstorage-file (so it's undefined here),
 // and jsdom's storage depends on document origin. An in-memory Storage polyfill is
@@ -19,3 +21,8 @@ if (typeof globalThis.localStorage === 'undefined') {
     writable: true,
   })
 }
+
+// Give every test a clean storage slate so persisted state never bleeds across tests.
+beforeEach(() => {
+  localStorage.clear()
+})
