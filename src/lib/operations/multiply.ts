@@ -5,6 +5,8 @@ import { getStrategiesForFact } from '../strategies'
 import { speakProblem, speakFact } from '../speech'
 import { TIMES_TABLES } from '../constants'
 
+const MULTIPLY_SYMBOL = '×'
+
 function factId(a: number, b: number): string {
   return `${a}x${b}`
 }
@@ -32,7 +34,7 @@ function generateFacts(): Record<string, FactProgress> {
   return facts
 }
 
-export function generateChoices(fact: FactProgress, count: number = 4): number[] {
+function generateChoices(fact: FactProgress, count: number = 4): number[] {
   const correct = fact.answer
   const choices = new Set<number>([correct])
 
@@ -66,11 +68,11 @@ export function generateChoices(fact: FactProgress, count: number = 4): number[]
 
 export const multiplyOperation: Operation = {
   id: 'multiply',
-  symbol: '×',
+  symbol: MULTIPLY_SYMBOL,
   label: 'Multiplication',
   generateFacts,
   factId,
-  formatProblem: (fact) => ({ left: fact.a, symbol: '×', right: fact.b }),
+  formatProblem: (fact) => ({ left: fact.a, symbol: MULTIPLY_SYMBOL, right: fact.b }),
   generateChoices,
   getStrategies: (fact): StrategyHint[] => getStrategiesForFact(fact),
   speakProblem: (fact) => speakProblem(fact.a, fact.b),
