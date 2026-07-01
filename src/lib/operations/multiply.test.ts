@@ -1,14 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { multiplyOperation } from './multiply'
-import type { FactProgress } from '../../types'
-
-function makeFact(a: number, b: number): FactProgress {
-  return {
-    fact: `${a}x${b}`, a, b, answer: a * b, confidence: 'new',
-    correctCount: 0, incorrectCount: 0, lastSeen: null, lastCorrect: null,
-    recentAttempts: [], preferredStrategy: null,
-  }
-}
+import { makeFact } from '../../test/factories'
 
 describe('multiplyOperation', () => {
   it('generates all 144 facts', () => {
