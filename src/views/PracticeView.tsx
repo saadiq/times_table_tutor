@@ -109,6 +109,15 @@ export function PracticeView() {
     })
   }
 
+  // Decide the input widget once per served problem, so the rendered widget and
+  // the recorded inputMethod always agree, and a recentlyFailed update can't
+  // swap the widget mid-answer (recentlyFailed is read at serve time only).
+  const useMultipleChoice = useMemo(
+    () => (displayFact ? shouldUseMultipleChoice(displayFact, recentlyFailed) : false),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [displayFact]
+  )
+
   const handleAnswer = (answer: number) => {
     if (!displayFact) return
     if (showResult) return
@@ -125,7 +134,7 @@ export function PracticeView() {
 
     const isCorrect = answer === displayFact.answer
     const responseTimeMs = Date.now() - attemptStartTime
-    const inputMethod = shouldUseMultipleChoice(displayFact, recentlyFailed) ? 'multiple_choice' : 'number_pad'
+    const inputMethod = useMultipleChoice ? 'multiple_choice' : 'number_pad'
 
     recordAttempt({
       fact: displayFact.fact,
@@ -274,6 +283,7 @@ export function PracticeView() {
         <div className="mb-6">
           <AnswerInput
             fact={displayFact}
+            useMultipleChoice={useMultipleChoice}
             onAnswer={handleAnswer}
             selectedAnswer={selectedAnswer}
             showResult={showResult}
