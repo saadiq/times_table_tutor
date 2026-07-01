@@ -1,5 +1,4 @@
 import type { FactProgress } from '../../types'
-import type { StrategyHint } from '../strategies'
 import type { Operation } from './types'
 import { getStrategiesForFact } from '../strategies'
 import { speakProblem, speakFact } from '../speech'
@@ -85,7 +84,7 @@ export const multiplyOperation: Operation = {
   factId,
   formatProblem: (fact) => ({ left: fact.a, symbol: MULTIPLY_SYMBOL, right: fact.b }),
   generateChoices,
-  getStrategies: (fact): StrategyHint[] => getStrategiesForFact(fact),
+  getStrategies: getStrategiesForFact,
   speakProblem: (fact) => speakProblem(fact.a, fact.b),
   speakFact: (fact) => speakFact(fact.a, fact.b, fact.answer),
 }
