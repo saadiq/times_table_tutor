@@ -9,6 +9,7 @@ bun install
 bun run dev      # Start dev server
 bun run build    # Build for production
 bun run lint     # Run ESLint
+bun run test     # Run unit tests (Vitest)
 ```
 
 ## Tech Stack
@@ -64,7 +65,9 @@ src/
 ├── views/            # PracticeView, LearnView, ProgressViewPage
 ├── stores/           # Zustand stores (progress, progressView, garden, session, focusTables)
 ├── lib/              # Core logic (adaptive, strategies, rewards, sounds, storage)
-├── hooks/            # useSound
+│   └── operations/   # Operation descriptor per curriculum (multiply today)
+├── hooks/            # useSound, useActiveOperation
+├── test/             # Vitest setup (localStorage polyfill) and shared fixtures
 └── types/            # TypeScript types
 ```
 
@@ -89,6 +92,11 @@ src/
 - Prioritizes: learning facts > trouble spots > spaced review > new facts
 - Multiple choice for new facts, number pad for confident facts
 - Supports focus tables filter (Settings → select specific tables to practice)
+
+### Operation Abstraction (`src/lib/operations/`)
+- An `Operation` descriptor holds everything curriculum-specific: fact generation, problem formatting, answer choices, strategies, speech
+- UI components resolve the active operation via `useActiveOperation()` — the seam where the division curriculum plugs in
+- The engine (`adaptive.ts`, confidence logic, stores) stays operation-agnostic
 
 ### Strategy Hints (`src/lib/strategies.ts`)
 Nine strategies: visual_array, skip_counting, break_apart, use_neighbor, nines_trick, fives_trick, doubles, tens_trick, ones_zeros
