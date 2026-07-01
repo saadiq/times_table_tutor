@@ -34,6 +34,16 @@ function generateFacts(): Record<string, FactProgress> {
   return facts
 }
 
+/** Unbiased Fisher-Yates shuffle; a random sort comparator skews positions. */
+function shuffle<T>(items: T[]): T[] {
+  const result = [...items]
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[result[i], result[j]] = [result[j], result[i]]
+  }
+  return result
+}
+
 function generateChoices(fact: FactProgress, count: number = 4): number[] {
   const correct = fact.answer
   const choices = new Set<number>([correct])
@@ -52,7 +62,7 @@ function generateChoices(fact: FactProgress, count: number = 4): number[] {
     fact.a * (fact.b + 1),
   ].filter((n) => n > 0 && n !== correct)
 
-  const shuffled = mistakes.sort(() => Math.random() - 0.5)
+  const shuffled = shuffle(mistakes)
   for (const mistake of shuffled) {
     if (choices.size >= count) break
     choices.add(mistake)
@@ -63,7 +73,7 @@ function generateChoices(fact: FactProgress, count: number = 4): number[] {
     if (random !== correct) choices.add(random)
   }
 
-  return Array.from(choices).sort(() => Math.random() - 0.5)
+  return shuffle(Array.from(choices))
 }
 
 export const multiplyOperation: Operation = {
