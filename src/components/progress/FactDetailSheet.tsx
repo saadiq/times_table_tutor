@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, TrendingUp, Clock, Target } from 'lucide-react'
 import { useAttemptsStore } from '../../stores/attemptsStore'
+import { useActiveOperation } from '../../hooks'
+import { formatEquation } from '../../lib/operations'
 import type { FactProgress, Confidence } from '../../types'
 
 type FactDetailSheetProps = {
@@ -46,6 +48,7 @@ function formatResponseTime(ms: number): string {
 }
 
 export function FactDetailSheet({ fact, onClose }: FactDetailSheetProps) {
+  const operation = useActiveOperation()
   // Subscribe to raw data so the component re-renders when attempts change
   useAttemptsStore(state => state.attempts)
   useAttemptsStore(state => state.currentProfileId)
@@ -106,7 +109,7 @@ export function FactDetailSheet({ fact, onClose }: FactDetailSheetProps) {
           <div className="flex items-start justify-between mb-6">
             <div>
               <h2 className="text-3xl font-bold text-gray-800">
-                {fact.a} x {fact.b} = {fact.answer}
+                {formatEquation(operation, fact)}
               </h2>
               <span className={`inline-block mt-2 px-3 py-1 rounded-full text-sm font-medium ${confidenceColors[fact.confidence]}`}>
                 {confidenceLabels[fact.confidence]}
