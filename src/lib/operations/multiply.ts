@@ -78,10 +78,7 @@ function generateChoices(fact: FactProgress, count: number = 4): number[] {
 
 export const multiplyOperation: Operation = {
   id: 'multiply',
-  symbol: MULTIPLY_SYMBOL,
-  label: 'Multiplication',
   generateFacts,
-  factId,
   formatProblem: (fact) => ({ left: fact.a, symbol: MULTIPLY_SYMBOL, right: fact.b }),
   generateChoices,
   getStrategies: getStrategiesForFact,

@@ -21,8 +21,8 @@ describe('multiplyOperation', () => {
     })
   })
 
-  it('factId uses the x separator', () => {
-    expect(multiplyOperation.factId(7, 8)).toBe('7x8')
+  it('keys facts with the x separator', () => {
+    expect(multiplyOperation.generateFacts()['7x8']?.fact).toBe('7x8')
   })
 
   it('formats the problem with the times symbol', () => {

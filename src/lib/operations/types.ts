@@ -12,14 +12,12 @@ export type FormattedProblem = {
 /**
  * Everything that differs between curricula (multiplication, division, ...).
  * The generic engine (adaptive scoring, confidence, stores) is operation-agnostic
- * and receives the facts this descriptor produces.
+ * and receives the facts this descriptor produces. Holds only fields with
+ * consumers today; the display symbol reaches the UI via formatProblem.
  */
 export type Operation = {
   id: CurriculumId
-  symbol: string
-  label: string
   generateFacts: () => Record<string, FactProgress>
-  factId: (a: number, b: number) => string
   formatProblem: (fact: FactProgress) => FormattedProblem
   generateChoices: (fact: FactProgress, count?: number) => number[]
   getStrategies: (fact: FactProgress) => StrategyHint[]
