@@ -1,14 +1,13 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Lightbulb, SkipForward, Flower2 } from 'lucide-react'
 import { useProgressStore, useSessionStore, useGardenStore, useFocusTablesStore, useProfileStore, useAttemptsStore, useSettingsStore } from '../stores'
 import { useProgressViewStore } from '../stores/progressViewStore'
 import { selectNextFact, shouldUseMultipleChoice } from '../lib/adaptive'
 import { calculateReward, getCelebrationMessage } from '../lib/rewards'
 import { useActiveOperation } from '../hooks'
 import { formatEquation } from '../lib/operations'
-import { ProblemDisplay, AnswerInput, HintPanel } from '../components/practice'
-import { ProgressBar, Button, Celebration } from '../components/common'
+import { ProblemDisplay, AnswerInput, HintPanel, GoalComplete, PracticeActions } from '../components/practice'
+import { ProgressBar, Celebration } from '../components/common'
 import type { FactProgress } from '../types'
 
 function getRandomPosition() {
@@ -216,27 +215,10 @@ export function PracticeView() {
 
   if (isGoalComplete()) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="mb-4"
-        >
-          <Flower2 size={80} className="text-garden-500 mx-auto" />
-        </motion.div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Goal Complete!</h2>
-        <p className="text-gray-600 mb-6">
-          Amazing work! Your scene is coming to life.
-        </p>
-        <div className="flex gap-3">
-          <Button onClick={() => { resetProgress(); nextProblem(); }}>
-            Keep Going
-          </Button>
-          <Button variant="secondary" onClick={() => setMode('garden')}>
-            View Progress
-          </Button>
-        </div>
-      </div>
+      <GoalComplete
+        onKeepGoing={() => { resetProgress(); nextProblem(); }}
+        onViewProgress={() => setMode('garden')}
+      />
     )
   }
 
@@ -301,24 +283,7 @@ export function PracticeView() {
         />
 
         {!showResult && (
-          <div className="flex justify-center gap-4 mt-4">
-            <Button
-              variant="ghost"
-              onClick={() => setShowHint(true)}
-              className="flex items-center gap-2"
-            >
-              <Lightbulb size={18} />
-              Hint
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={handleSkip}
-              className="flex items-center gap-2"
-            >
-              <SkipForward size={18} />
-              Skip
-            </Button>
-          </div>
+          <PracticeActions onHint={() => setShowHint(true)} onSkip={handleSkip} />
         )}
       </div>
     </div>
