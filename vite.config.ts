@@ -4,8 +4,10 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Default node environment: the setup file polyfills localStorage, and no
+  // test needs a DOM. Component tests can opt in per-file with
+  // `// @vitest-environment jsdom` once jsdom is added back.
   test: {
-    environment: 'jsdom',
     globals: false,
     setupFiles: ['./src/test/setup.ts'],
   },
