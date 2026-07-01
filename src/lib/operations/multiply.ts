@@ -69,7 +69,8 @@ function generateChoices(fact: FactProgress, count: number = 4): number[] {
   }
 
   while (choices.size < count) {
-    const random = Math.floor(Math.random() * 144) + 1
+    const maxAnswer = TIMES_TABLES.max * TIMES_TABLES.max
+    const random = Math.floor(Math.random() * maxAnswer) + 1
     if (random !== correct) choices.add(random)
   }
 
