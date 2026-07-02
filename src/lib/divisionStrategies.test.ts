@@ -45,4 +45,10 @@ describe('getStrategiesForDivisionFact', () => {
   it('offers the tens trick for divisor 10', () => {
     expect(getStrategiesForDivisionFact(makeDivisionFact(7, 10)).map((s) => s.id)).toContain('tens_trick')
   })
+
+  it('caps the skip-count preview at the quotient', () => {
+    const strategies = getStrategiesForDivisionFact(makeDivisionFact(1, 5))
+    const skip = strategies.find((s) => s.id === 'skip_counting')
+    expect(skip?.steps[0]).toBe('Count by 5s: 5...')
+  })
 })

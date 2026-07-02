@@ -39,7 +39,8 @@ export function getStrategiesForDivisionFact(fact: FactProgress): StrategyHint[]
   }
 
   if (divisor <= 6) {
-    const preview = [divisor, divisor * 2, divisor * 3]
+    const previewCount = Math.min(3, quotient)
+    const preview = Array.from({ length: previewCount }, (_, i) => divisor * (i + 1))
     strategies.push({
       id: 'skip_counting',
       name: 'Skip Count',
