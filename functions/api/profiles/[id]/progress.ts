@@ -4,6 +4,7 @@ interface Env {
 
 interface FactSync {
   fact: string;
+  curriculum?: string;
   confidence: string;
   correctCount: number;
   incorrectCount: number;
@@ -18,12 +19,23 @@ export const onRequestPut: PagesFunction<Env> = async ({ params, request, env })
   const { facts } = await request.json<{ facts: FactSync[] }>();
   const stmt = env.DB.prepare(
     `INSERT OR REPLACE INTO fact_progress
-     (profile_id, fact, confidence, correct_count, incorrect_count, last_seen, last_correct, recent_attempts, preferred_strategy)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+     (profile_id, fact, curriculum, confidence, correct_count, incorrect_count, last_seen, last_correct, recent_attempts, preferred_strategy)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const batch = facts.map((f) =>
-    stmt.bind(profileId, f.fact, f.confidence, f.correctCount, f.incorrectCount,
-      f.lastSeen, f.lastCorrect, JSON.stringify(f.recentAttempts), f.preferredStrategy)
+    stmt.bind(
+      profileId,
+      f.fact,
+      // Older cached PWA clients omit curriculum; anything unrecognized is multiply.
+      f.curriculum === 'divide' ? 'divide' : 'multiply',
+      f.confidence,
+      f.correctCount,
+      f.incorrectCount,
+      f.lastSeen,
+      f.lastCorrect,
+      JSON.stringify(f.recentAttempts),
+      f.preferredStrategy
+    )
   );
   await env.DB.batch(batch);
   return new Response(null, { status: 204 });
