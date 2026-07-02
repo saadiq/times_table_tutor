@@ -6,6 +6,8 @@ export type StrategyHint = {
   description: string
   steps: string[]
   visual?: 'array' | 'number_line' | 'groups'
+  /** Caption under the array visual; defaults to the multiplication rows x columns text. */
+  arrayCaption?: string
 }
 
 /**
