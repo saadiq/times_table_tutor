@@ -4,7 +4,7 @@ import { CONFIDENCE_THRESHOLDS, TIMES_TABLES, REWARDS } from '../lib/constants'
 import { saveToStorage, loadFromStorage } from '../lib/storage'
 import { useGardenStore } from './gardenStore'
 import { getMasteryReward } from '../lib/rewards'
-import { getOperation, multiplyOperation } from '../lib/operations'
+import { getOperation, multiplyOperation, divideOperation } from '../lib/operations'
 import type { CurriculumId } from '../lib/operations'
 import { useCurriculumStore } from './curriculumStore'
 import { calculateConfidence, migrateRecentAttempts, migrateFacts } from '../lib/factConfidence'
@@ -181,19 +181,20 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
   },
 
   loadFromServer: (facts) => {
-    const factMap: Record<string, FactProgress> = {}
+    // Start each slice from generated defaults and overlay the server rows.
+    // Looking a row's fact key up in its curriculum's defaults (instead of
+    // parsing the key) keeps corrupt or mis-tagged rows out of the slices.
+    const slices: Record<CurriculumId, Record<string, FactProgress>> = {
+      multiply: multiplyOperation.generateFacts(),
+      divide: divideOperation.generateFacts(),
+    }
     for (const f of facts) {
-      const [aStr, bStr] = f.fact.split('x')
-      const a = parseInt(aStr)
-      const b = parseInt(bStr)
-      // Migrate recentAttempts to new format
+      const curriculum: CurriculumId = f.curriculum === 'divide' ? 'divide' : 'multiply'
+      const defaults = slices[curriculum][f.fact]
+      if (!defaults) continue
       const migratedAttempts = migrateRecentAttempts(f.recentAttempts as unknown[])
       const factData: FactProgress = {
-        fact: f.fact,
-        a,
-        b,
-        answer: a * b,
-        confidence: 'new', // Will be recalculated
+        ...defaults,
         correctCount: f.correctCount,
         incorrectCount: f.incorrectCount,
         lastSeen: f.lastSeen ? new Date(f.lastSeen).toISOString() : null,
@@ -201,23 +202,12 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
         recentAttempts: migratedAttempts,
         preferredStrategy: f.preferredStrategy,
       }
-      // Recalculate confidence with new algorithm
       factData.confidence = calculateConfidence(factData)
-      factMap[f.fact] = factData
+      slices[curriculum][f.fact] = factData
     }
-    // Merge with defaults for any missing facts
-    const allFacts = multiplyOperation.generateFacts()
-    for (const factKey of Object.keys(allFacts)) {
-      if (!factMap[factKey]) {
-        factMap[factKey] = allFacts[factKey]
-      }
-    }
-    // Server data is multiply-only in Phase 2: always persist it to the multiply
-    // key; only swap it into memory when multiply is the active slice.
-    saveToStorage('progress', factMap)
-    if (get().curriculum === 'multiply') {
-      set({ facts: factMap, initialized: true })
-    }
+    saveToStorage('progress', slices.multiply)
+    saveToStorage('progressDivide', slices.divide)
+    set({ facts: slices[get().curriculum], initialized: true })
   },
 
   toSyncPayload: (factKey) => {

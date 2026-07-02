@@ -15,9 +15,10 @@ export function resetStoresForProfileSwitch(): void {
   useAttemptsStore.getState().clearForProfileSwitch()
   useProgressViewStore.getState().reset()
 
-  // Division progress is device-local until Phase 3 sync; drop it so it
-  // cannot leak into the next profile. (Multiply is replaced by
-  // loadFromServer after the next profile verifies.)
+  // Division facts are server-backed and restored by loadFromServer after
+  // the next profile verifies — but they linger in storage after logout,
+  // so drop them (and the divide reveal slice, which never leaves this
+  // device) rather than let them leak into the next profile.
   clearFromStorage('progressDivide')
   clearFromStorage('progressViewDivide')
 

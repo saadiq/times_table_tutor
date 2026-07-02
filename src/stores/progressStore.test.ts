@@ -76,4 +76,70 @@ describe('progressStore', () => {
     const payload = useProgressStore.getState().toSyncPayload('7x8')
     expect(payload?.curriculum).toBe('multiply')
   })
+
+  it('partitions server rows into per-curriculum slices', () => {
+    useProgressStore.getState().initialize()
+    useProgressStore.getState().loadFromServer([
+      {
+        fact: '7x8', curriculum: 'multiply', confidence: 'confident',
+        correctCount: 5, incorrectCount: 1, lastSeen: 1750000000000,
+        lastCorrect: 1750000000000, recentAttempts: [], preferredStrategy: null,
+      },
+      {
+        fact: '56÷7', curriculum: 'divide', confidence: 'confident',
+        correctCount: 3, incorrectCount: 0, lastSeen: 1750000000000,
+        lastCorrect: 1750000000000, recentAttempts: [], preferredStrategy: null,
+      },
+    ])
+    const multiply = JSON.parse(localStorage.getItem('ttt_progress') as string)
+    const divide = JSON.parse(localStorage.getItem('ttt_progress_divide') as string)
+    expect(multiply['7x8'].correctCount).toBe(5)
+    expect(multiply['56÷7']).toBeUndefined()
+    expect(divide['56÷7'].correctCount).toBe(3)
+    expect(Object.keys(divide)).toHaveLength(144)
+    // multiply is active, so memory holds the multiply slice
+    expect(useProgressStore.getState().facts['7x8'].correctCount).toBe(5)
+  })
+
+  it('treats server rows without a curriculum as multiplication', () => {
+    useProgressStore.getState().loadFromServer([
+      {
+        fact: '7x8', confidence: 'confident', correctCount: 5,
+        incorrectCount: 1, lastSeen: null, lastCorrect: null,
+        recentAttempts: [], preferredStrategy: null,
+      },
+    ])
+    const multiply = JSON.parse(localStorage.getItem('ttt_progress') as string)
+    expect(multiply['7x8'].correctCount).toBe(5)
+  })
+
+  it('drops rows whose fact key is unknown to their curriculum', () => {
+    // A division key mis-tagged 'multiply' (e.g. synced through a
+    // pre-migration server, then backfilled by the column default).
+    useProgressStore.getState().loadFromServer([
+      {
+        fact: '56÷7', curriculum: 'multiply', confidence: 'confident',
+        correctCount: 9, incorrectCount: 0, lastSeen: null, lastCorrect: null,
+        recentAttempts: [], preferredStrategy: null,
+      },
+    ])
+    const multiply = JSON.parse(localStorage.getItem('ttt_progress') as string)
+    const divide = JSON.parse(localStorage.getItem('ttt_progress_divide') as string)
+    expect(multiply['56÷7']).toBeUndefined()
+    expect(divide['56÷7'].correctCount).toBe(0)
+  })
+
+  it('loads the divide slice into memory when divide is active', () => {
+    useCurriculumStore.setState({ active: 'divide' })
+    useProgressStore.getState().initialize()
+    useProgressStore.getState().loadFromServer([
+      {
+        fact: '56÷7', curriculum: 'divide', confidence: 'confident',
+        correctCount: 3, incorrectCount: 0, lastSeen: null, lastCorrect: null,
+        recentAttempts: [], preferredStrategy: null,
+      },
+    ])
+    expect(useProgressStore.getState().facts['56÷7'].correctCount).toBe(3)
+    expect(useProgressStore.getState().facts['7x8']).toBeUndefined()
+  })
 })
