@@ -17,6 +17,7 @@ function App() {
   const setProfileId = useAttemptsStore((s) => s.setProfileId)
   const { mode } = useSessionStore()
   const { initialize: initCurriculum } = useCurriculumStore()
+  const activeCurriculum = useCurriculumStore((s) => s.active)
 
   useEffect(() => {
     initCurriculum()
@@ -56,9 +57,9 @@ function App() {
 
   return (
     <Layout>
-      {mode === 'learn' && <LearnView />}
-      {mode === 'practice' && <PracticeView />}
-      {mode === 'garden' && <GardenViewPage />}
+      {mode === 'learn' && <LearnView key={activeCurriculum} />}
+      {mode === 'practice' && <PracticeView key={activeCurriculum} />}
+      {mode === 'garden' && <GardenViewPage key={activeCurriculum} />}
     </Layout>
   )
 }
