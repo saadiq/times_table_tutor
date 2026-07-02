@@ -23,13 +23,14 @@ export function selectNextFact(
   facts: Record<string, FactProgress>,
   recentFacts: string[] = [],
   focusTables: number[] = [],
-  context: SelectionContext = {}
+  context: SelectionContext = {},
+  matchesTable: (fact: FactProgress, table: number) => boolean = (f, t) => f.a === t || f.b === t
 ): FactProgress | null {
   const allFacts = Object.values(facts)
 
   // Filter to focus tables if specified
   const eligibleFacts = focusTables.length > 0
-    ? allFacts.filter(f => focusTables.includes(f.a) || focusTables.includes(f.b))
+    ? allFacts.filter(f => focusTables.some(t => matchesTable(f, t)))
     : allFacts
 
   // Exclude very recently shown facts (last 3)

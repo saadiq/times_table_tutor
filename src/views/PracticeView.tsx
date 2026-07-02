@@ -67,7 +67,7 @@ export function PracticeView() {
       sessionAccuracy: getSessionAccuracy(),
       consecutiveWrong: countConsecutiveWrong(),
       nearGoalEnd: progress >= goal - 1,
-    })
+    }, operation.matchesTable)
     if (next) {
       setCurrentFact(next)
       setRecentFacts(prev => [...prev.slice(-10), next.fact])
@@ -98,7 +98,7 @@ export function PracticeView() {
   const initialFact = shouldInitialize ? selectNextFact(facts, recentFacts, activeFocusTables, {
     newFactsIntroduced,
     sessionAccuracy: getSessionAccuracy(),
-  }) : null
+  }, operation.matchesTable) : null
   const displayFact = currentFact || initialFact
 
   if (initialFact && !currentFact) {
