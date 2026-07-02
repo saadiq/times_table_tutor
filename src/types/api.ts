@@ -37,6 +37,12 @@ export interface RecentAttemptSync {
 
 export interface FactProgressSync {
   fact: string;
+  /**
+   * Matches CurriculumId in src/lib/operations (kept inline so this
+   * wire-format file stays import-free). Omitted by pre-division clients
+   * and servers; readers treat a missing value as 'multiply'.
+   */
+  curriculum?: 'multiply' | 'divide';
   confidence: string;
   correctCount: number;
   incorrectCount: number;

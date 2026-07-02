@@ -62,9 +62,18 @@ describe('progressStore', () => {
     expect(useProgressStore.getState().getMasteredTables()).toEqual([7])
   })
 
-  it('refuses to build sync payloads for division facts', () => {
+  it('builds division sync payloads tagged with the divide curriculum', () => {
     useCurriculumStore.setState({ active: 'divide' })
     useProgressStore.getState().initialize()
-    expect(useProgressStore.getState().toSyncPayload('56÷7')).toBeNull()
+    const payload = useProgressStore.getState().toSyncPayload('56÷7')
+    expect(payload).not.toBeNull()
+    expect(payload?.fact).toBe('56÷7')
+    expect(payload?.curriculum).toBe('divide')
+  })
+
+  it('tags multiplication sync payloads with the multiply curriculum', () => {
+    useProgressStore.getState().initialize()
+    const payload = useProgressStore.getState().toSyncPayload('7x8')
+    expect(payload?.curriculum).toBe('multiply')
   })
 })

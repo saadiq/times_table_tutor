@@ -221,12 +221,11 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
   },
 
   toSyncPayload: (factKey) => {
-    // Division sync lands in Phase 3 (needs the curriculum column in D1).
-    if (get().curriculum !== 'multiply') return null
     const fact = get().facts[factKey]
     if (!fact) return null
     return {
       fact: fact.fact,
+      curriculum: get().curriculum,
       confidence: fact.confidence,
       correctCount: fact.correctCount,
       incorrectCount: fact.incorrectCount,
