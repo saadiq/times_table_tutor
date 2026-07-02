@@ -5,16 +5,22 @@ import {
   Rabbit,
   Squirrel,
   Cat,
-  Flower2,
+  Feather,
   Fish,
+  Flower2,
   Egg,
   Leaf,
+  Moon,
+  Rat,
   Shell,
   Snail,
+  Sparkles,
+  Turtle,
+  Waves,
 } from 'lucide-react'
 import type { CurriculumId } from '../../lib/operations'
 import type { SceneVisuals } from './p5/types'
-import { PALETTE } from './p5/colors'
+import { PALETTE, TWILIGHT_PALETTE } from './p5/colors'
 
 export type SceneCharacter = {
   table: number
@@ -78,8 +84,57 @@ const MULTIPLY_THEME: SceneTheme = {
   },
 }
 
+const DIVIDE_THEME: SceneTheme = {
+  visuals: {
+    palette: TWILIGHT_PALETTE,
+    animals: [
+      { type: 'frog', scale: 1 },
+      { type: 'dragonfly', scale: 1.1 },
+      { type: 'turtle', scale: 1.2 },
+      { type: 'duck', scale: 1.1 },
+      { type: 'mouse', scale: 0.9 },
+      { type: 'raccoon', scale: 1.3 },
+      { type: 'heron', scale: 1.4 },
+      { type: 'otter', scale: 1.3 },
+      { type: 'snail', scale: 0.9 },
+      { type: 'moth', scale: 1 },
+      { type: 'beaver', scale: 1.2 },
+      { type: 'bat', scale: 1 },
+    ],
+  },
+  characters: [
+    { table: 1, name: 'Frog', icon: Leaf },
+    { table: 2, name: 'Dragonfly', icon: Bug },
+    { table: 3, name: 'Turtle', icon: Turtle },
+    { table: 4, name: 'Duck', icon: Feather },
+    { table: 5, name: 'Mouse', icon: Rat },
+    { table: 6, name: 'Raccoon', icon: Cat },
+    { table: 7, name: 'Heron', icon: Bird },
+    { table: 8, name: 'Otter', icon: Fish },
+    { table: 9, name: 'Snail', icon: Snail },
+    { table: 10, name: 'Moth', icon: Sparkles },
+    { table: 11, name: 'Beaver', icon: Waves },
+    { table: 12, name: 'Bat', icon: Moon },
+  ],
+  tierMessages: [
+    '',
+    'Dusk settles over your pond!',
+    'Twilight deepens - the pond glimmers!',
+    'Moonlight spills across the water!',
+    'Starlight! Your twilight pond is complete!',
+  ],
+  landmarkJoinText: 'pond',
+  emptyState: {
+    title: 'Your pond is waiting for dusk!',
+    subtitle: 'Practice division to bring the twilight to life.',
+  },
+}
+
+const THEMES: Record<CurriculumId, SceneTheme> = {
+  multiply: MULTIPLY_THEME,
+  divide: DIVIDE_THEME,
+}
+
 export function getSceneTheme(id: CurriculumId): SceneTheme {
-  // Task 11 gives division its own twilight theme; until then it shares the meadow.
-  void id
-  return MULTIPLY_THEME
+  return THEMES[id]
 }

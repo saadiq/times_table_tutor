@@ -78,7 +78,7 @@ export type AnimalData = {
   scale: number
 }
 
-export type AnimalType =
+export type ForestAnimalType =
   | 'ladybug'
   | 'butterfly'
   | 'robin'
@@ -91,6 +91,22 @@ export type AnimalType =
   | 'bluebird'
   | 'badger'
   | 'cat'
+
+export type TwilightAnimalType =
+  | 'frog'
+  | 'dragonfly'
+  | 'turtle'
+  | 'duck'
+  | 'mouse'
+  | 'raccoon'
+  | 'heron'
+  | 'otter'
+  | 'snail'
+  | 'moth'
+  | 'beaver'
+  | 'bat'
+
+export type AnimalType = ForestAnimalType | TwilightAnimalType
 
 export type AmbientCreature = {
   baseX: number

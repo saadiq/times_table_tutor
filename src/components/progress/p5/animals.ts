@@ -1,5 +1,5 @@
 import type p5 from 'p5'
-import type { AnimalType, AnimalDrawer } from './types'
+import type { ForestAnimalType, AnimalDrawer } from './types'
 
 function drawLadybug(p: p5, s: number, sat: number): void {
   p.fill(5, sat * 0.9, 55)
@@ -257,7 +257,7 @@ function drawCat(p: p5, s: number, sat: number): void {
   p.ellipse(-s * 0.75, 0, s * 0.25, s * 0.2)
 }
 
-export const FOREST_DRAWERS: Record<AnimalType, AnimalDrawer> = {
+export const FOREST_DRAWERS: Record<ForestAnimalType, AnimalDrawer> = {
   ladybug: drawLadybug,
   butterfly: drawButterfly,
   robin: drawRobin,

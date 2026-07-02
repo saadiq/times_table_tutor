@@ -3,10 +3,11 @@ import type { AnimalData, AnimalType, AnimalDrawer, SceneVisuals } from './types
 import { getVibrancySaturation } from './colors'
 import type { DrawContext } from './elements'
 import { FOREST_DRAWERS } from './animals'
+import { TWILIGHT_DRAWERS } from './animalsTwilight'
 
-// Task 11 merges TWILIGHT_DRAWERS into this map.
 const DRAWERS: Record<AnimalType, AnimalDrawer> = {
   ...FOREST_DRAWERS,
+  ...TWILIGHT_DRAWERS,
 }
 
 /** Canvas positions for the 12 character slots (slot i unlocks with table i+1). */

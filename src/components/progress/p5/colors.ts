@@ -26,6 +26,30 @@ export const PALETTE: ScenePalette = {
   ground: { h: 100, s: 55, b: 50 },
 }
 
+/** Division track: a pond at dusk. Same tier mechanics, cooler light. */
+export const TWILIGHT_PALETTE: ScenePalette = {
+  sky: [
+    { h: 285, s: 30, b: 82 }, // Tier 0: Early dusk
+    { h: 272, s: 45, b: 72 }, // Tier 1: Lavender twilight
+    { h: 260, s: 55, b: 62 }, // Tier 2: Deep twilight
+    { h: 248, s: 62, b: 52 }, // Tier 3: Moonrise
+    { h: 238, s: 68, b: 45 }, // Tier 4: Starlight
+  ],
+  tree: {
+    trunk: { h: 20, s: 45, b: 28 },
+    canopy: { h: 160, s: 55, b: 42 },
+  },
+  grass: { h: 150, s: 55, b: 42 },
+  flowers: [
+    { h: 200, s: 70, b: 85 }, // Blue moonflower
+    { h: 280, s: 65, b: 82 }, // Violet
+    { h: 320, s: 60, b: 85 }, // Evening pink
+    { h: 180, s: 60, b: 88 }, // Pale cyan
+    { h: 55, s: 70, b: 90 }, // Evening primrose
+  ],
+  ground: { h: 140, s: 45, b: 45 },
+}
+
 /**
  * Calculate saturation for sky/ground using warmth (effort-based).
  * Color spreads radially outward as warmth increases.
