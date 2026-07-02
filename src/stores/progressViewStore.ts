@@ -3,6 +3,8 @@ import { saveToStorage, loadFromStorage } from '../lib/storage'
 import { useProgressStore } from './progressStore'
 import { useAttemptsStore } from './attemptsStore'
 import type { SceneState, PendingReveals } from '../types/scene'
+import type { CurriculumId } from '../lib/operations'
+import { useCurriculumStore } from './curriculumStore'
 
 // Character data for each times table
 export const TABLE_CHARACTERS = [
@@ -38,10 +40,12 @@ type ProgressViewState = {
   revealedTables: number[] // Animals revealed (permanent set)
   peakTier: number // Highest tier reached (never decreases)
   sessionsCompleted: number // Total sessions (drives foundation warmth)
+  curriculum: CurriculumId // Which curriculum this reveal state belongs to
 }
 
 type ProgressViewActions = {
   initialize: () => void
+  loadCurriculum: (id: CurriculumId) => void
   resync: () => void
   computeSceneState: () => SceneState
   getPendingReveals: () => PendingReveals
@@ -57,9 +61,12 @@ const initialState: ProgressViewState = {
   revealedTables: [],
   peakTier: 0,
   sessionsCompleted: 0,
+  curriculum: 'multiply' as CurriculumId,
 }
 
-const STORAGE_KEY = 'progressView'
+function progressViewKeyFor(id: CurriculumId): 'progressView' | 'progressViewDivide' {
+  return id === 'divide' ? 'progressViewDivide' : 'progressView'
+}
 
 // Old state shape for migration
 type LegacyState = {
@@ -77,7 +84,7 @@ function isLegacyState(saved: unknown): saved is LegacyState {
   )
 }
 
-function migrateLegacy(legacy: LegacyState): ProgressViewState {
+function migrateLegacy(legacy: LegacyState): Omit<ProgressViewState, 'curriculum'> {
   return {
     peakRevealedCount: legacy.lastRevealedFactCount,
     lastRevealedCount: legacy.lastRevealedFactCount,
@@ -92,9 +99,13 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
     ...initialState,
 
     initialize: () => {
-      const saved = loadFromStorage<ProgressViewState | LegacyState>(STORAGE_KEY)
+      get().loadCurriculum(useCurriculumStore.getState().active)
+    },
+
+    loadCurriculum: (id) => {
+      const saved = loadFromStorage<ProgressViewState | LegacyState>(progressViewKeyFor(id))
       if (saved) {
-        const state = isLegacyState(saved) ? migrateLegacy(saved) : saved
+        const state = { ...(isLegacyState(saved) ? migrateLegacy(saved) : saved), curriculum: id }
 
         // Recompute peak from actual learning+ count (may be higher than stored)
         const progressStore = useProgressStore.getState()
@@ -102,8 +113,9 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
         state.peakRevealedCount = Math.max(state.peakRevealedCount, learningPlus)
 
         set(state)
-        saveToStorage(STORAGE_KEY, state)
+        saveToStorage(progressViewKeyFor(id), state)
       } else {
+        set({ ...initialState, curriculum: id })
         get().resync()
       }
     },
@@ -122,9 +134,10 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
         revealedTables: [...new Set([...current.revealedTables, ...completedTables])],
         peakTier: Math.max(current.peakTier, currentTier),
         sessionsCompleted: current.sessionsCompleted,
+        curriculum: current.curriculum,
       }
       set(synced)
-      saveToStorage(STORAGE_KEY, synced)
+      saveToStorage(progressViewKeyFor(current.curriculum), synced)
     },
 
     computeSceneState: (): SceneState => {
@@ -184,8 +197,9 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
           revealedTables: [...new Set([...state.revealedTables, ...tables])],
           peakTier: Math.max(state.peakTier, tier),
           sessionsCompleted: state.sessionsCompleted,
+          curriculum: state.curriculum,
         }
-        saveToStorage(STORAGE_KEY, newState)
+        saveToStorage(progressViewKeyFor(state.curriculum), newState)
         return newState
       })
     },
@@ -196,14 +210,17 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
           ...state,
           sessionsCompleted: state.sessionsCompleted + 1,
         }
-        saveToStorage(STORAGE_KEY, newState)
+        saveToStorage(progressViewKeyFor(state.curriculum), newState)
         return newState
       })
     },
 
     reset: () => {
-      set(initialState)
-      saveToStorage(STORAGE_KEY, initialState)
+      set(state => {
+        const fresh = { ...initialState, curriculum: state.curriculum }
+        saveToStorage(progressViewKeyFor(state.curriculum), fresh)
+        return fresh
+      })
     },
 
     resetForTesting: () => {

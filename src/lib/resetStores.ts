@@ -19,7 +19,9 @@ export function resetStoresForProfileSwitch(): void {
   // cannot leak into the next profile. (Multiply is replaced by
   // loadFromServer after the next profile verifies.)
   clearFromStorage('progressDivide')
+  clearFromStorage('progressViewDivide')
   if (useCurriculumStore.getState().active === 'divide') {
     useProgressStore.getState().loadCurriculum('divide')
+    useProgressViewStore.getState().loadCurriculum('divide')
   }
 }

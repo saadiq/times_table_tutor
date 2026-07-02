@@ -1,26 +1,37 @@
 import { create } from 'zustand'
+import type { CurriculumId } from '../lib/operations'
 import { saveToStorage, loadFromStorage } from '../lib/storage'
+import { useCurriculumStore } from './curriculumStore'
 
 type FocusTablesState = {
   focusTables: number[]
   isEnabled: boolean
+  /** Which curriculum the in-memory selection belongs to. */
+  curriculum: CurriculumId
 }
+
+type PersistedFocusTables = Pick<FocusTablesState, 'focusTables' | 'isEnabled'>
 
 type FocusTablesActions = {
   initialize: () => void
+  loadCurriculum: (id: CurriculumId) => void
   toggleTable: (table: number) => void
   setTables: (tables: number[]) => void
   clearTables: () => void
   setEnabled: (enabled: boolean) => void
 }
 
-const initialState: FocusTablesState = {
+const initialState: PersistedFocusTables = {
   focusTables: [],
   isEnabled: true,
 }
 
-function saveState(state: FocusTablesState & FocusTablesActions): void {
-  saveToStorage('focusTables', {
+function focusKeyFor(id: CurriculumId): 'focusTables' | 'focusTablesDivide' {
+  return id === 'divide' ? 'focusTablesDivide' : 'focusTables'
+}
+
+function saveState(state: FocusTablesState): void {
+  saveToStorage(focusKeyFor(state.curriculum), {
     focusTables: state.focusTables,
     isEnabled: state.isEnabled,
   })
@@ -28,12 +39,17 @@ function saveState(state: FocusTablesState & FocusTablesActions): void {
 
 export const useFocusTablesStore = create<FocusTablesState & FocusTablesActions>((set) => ({
   ...initialState,
+  curriculum: 'multiply',
 
   initialize: () => {
-    const saved = loadFromStorage<FocusTablesState>('focusTables')
-    if (saved) {
-      set(saved)
-    }
+    const id = useCurriculumStore.getState().active
+    const saved = loadFromStorage<PersistedFocusTables>(focusKeyFor(id))
+    set({ ...(saved ?? initialState), curriculum: id })
+  },
+
+  loadCurriculum: (id) => {
+    const saved = loadFromStorage<PersistedFocusTables>(focusKeyFor(id))
+    set({ ...(saved ?? initialState), curriculum: id })
   },
 
   toggleTable: (table) => {
