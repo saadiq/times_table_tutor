@@ -61,7 +61,7 @@ export function VisualExplainer({ fact, onClose }: VisualExplainerProps) {
 
             {currentStrategy.visual === 'array' && (
               <div className="bg-white rounded-2xl border-2 border-gray-100 p-4">
-                <VisualArray rows={fact.a} cols={fact.b} />
+                <VisualArray rows={fact.a} cols={fact.b} caption={currentStrategy.arrayCaption} />
               </div>
             )}
 

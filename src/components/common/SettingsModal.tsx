@@ -6,6 +6,7 @@ import { Toggle } from './Toggle'
 import { FocusTablePicker } from './FocusTablePicker'
 import { SciencePage } from './SciencePage'
 import { useFocusTablesStore, useSettingsStore } from '../../stores'
+import { useActiveOperation } from '../../hooks'
 
 type SettingsModalProps = {
   isOpen: boolean
@@ -15,6 +16,7 @@ type SettingsModalProps = {
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { focusTables, toggleTable, clearTables, isEnabled, setEnabled } = useFocusTablesStore()
   const { ttsEnabled, setTtsEnabled } = useSettingsStore()
+  const operation = useActiveOperation()
   const [showScience, setShowScience] = useState(false)
 
   const hasSelection = focusTables.length > 0
@@ -34,7 +36,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-base font-medium text-gray-800">
-                Focus Tables
+                {operation.copy.focusTitle}
               </h3>
               {hasSelection && (
                 <button
@@ -47,8 +49,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
             <p className="text-sm text-gray-500 mb-3">
               {hasSelection
-                ? `Practicing: ${focusTables.join(', ')} times tables`
-                : 'Select tables to focus on, or practice all'}
+                ? operation.copy.focusSummary(focusTables)
+                : 'Select numbers to focus on, or practice all'}
             </p>
             <FocusTablePicker
               selectedTables={focusTables}

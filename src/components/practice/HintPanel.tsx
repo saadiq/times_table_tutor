@@ -50,7 +50,7 @@ function HintPanelContent({ strategies, onClose, rows, cols }: ContentProps) {
           <p className="text-sm text-gray-600 mt-1">{strategy.description}</p>
 
           {strategy.visual === 'array' && rows && cols && (
-            <VisualArray rows={rows} cols={cols} />
+            <VisualArray rows={rows} cols={cols} caption={strategy.arrayCaption} />
           )}
 
           <ul className="mt-3 space-y-2">
