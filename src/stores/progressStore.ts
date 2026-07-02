@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { FactProgress, Confidence, FactProgressSync, RecentAttempt, InputMethod } from '../types'
-import { TIMES_TABLES, REWARDS } from '../lib/constants'
+import { CONFIDENCE_THRESHOLDS, TIMES_TABLES, REWARDS } from '../lib/constants'
 import { saveToStorage, loadFromStorage } from '../lib/storage'
 import { useGardenStore } from './gardenStore'
 import { getMasteryReward } from '../lib/rewards'
@@ -106,10 +106,8 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
         responseTimeMs,
         timestamp: now,
       }
-      // Window size mirrors CONFIDENCE_THRESHOLDS.recentAttemptsWindow (see lib/constants.ts);
-      // hardcoded here so this file doesn't need to import CONFIDENCE_THRESHOLDS.
       const recentAttempts = [...current.recentAttempts, newAttempt]
-        .slice(-8)
+        .slice(-CONFIDENCE_THRESHOLDS.recentAttemptsWindow)
 
       const updated: FactProgress = {
         ...current,
