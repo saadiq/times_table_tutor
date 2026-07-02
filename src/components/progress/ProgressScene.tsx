@@ -2,6 +2,8 @@ import { useRef, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { TreeDeciduous } from 'lucide-react'
 import { useP5 } from './p5'
+import { useActiveOperation } from '../../hooks'
+import { getSceneTheme } from './sceneThemes'
 import type { SceneState } from '../../types/scene'
 
 type ProgressSceneProps = {
@@ -15,6 +17,7 @@ export function ProgressScene({
 }: ProgressSceneProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+  const theme = getSceneTheme(useActiveOperation().id)
 
   // Observe container size for responsive canvas
   useEffect(() => {
@@ -37,6 +40,7 @@ export function ProgressScene({
     animatingCharacter: animatingCharacter ?? null,
     width: dimensions.width,
     height: dimensions.height,
+    visuals: theme.visuals,
   })
 
   // Fallback UI when canvas fails

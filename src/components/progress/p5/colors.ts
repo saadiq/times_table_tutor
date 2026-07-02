@@ -1,7 +1,9 @@
+import type { ScenePalette } from './types'
+
 /**
  * Color palette matching app theme (HSB: 360, 100, 100)
  */
-export const PALETTE = {
+export const PALETTE: ScenePalette = {
   sky: [
     { h: 220, s: 40, b: 85 }, // Tier 0: Dawn
     { h: 210, s: 55, b: 90 }, // Tier 1: Morning

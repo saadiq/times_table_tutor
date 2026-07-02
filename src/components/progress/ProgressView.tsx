@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Star, BarChart3 } from 'lucide-react'
 import { useProgressStore } from '../../stores'
 import { useProgressViewStore, computeTier } from '../../stores/progressViewStore'
+import { useActiveOperation } from '../../hooks'
+import { getSceneTheme } from './sceneThemes'
 import type { PendingReveals } from '../../types/scene'
 import { ProgressScene } from './ProgressScene'
 import { RevealSequence } from './RevealSequence'
@@ -17,6 +19,7 @@ type AnimationOverrides = {
 }
 
 export function ProgressView() {
+  const theme = getSceneTheme(useActiveOperation().id)
   const { getFactsAtOrAbove, getMasteredTables } = useProgressStore()
   const {
     lastRevealedCount,
@@ -190,8 +193,8 @@ export function ProgressView() {
             className="absolute inset-0 flex items-center justify-center"
           >
             <div className="text-center p-6 bg-white/90 backdrop-blur-sm rounded-2xl max-w-xs mx-4">
-              <p className="text-gray-600">Your tree is waiting to grow!</p>
-              <p className="text-sm text-gray-500 mt-2">Practice your times tables to bring it to life.</p>
+              <p className="text-gray-600">{theme.emptyState.title}</p>
+              <p className="text-sm text-gray-500 mt-2">{theme.emptyState.subtitle}</p>
             </div>
           </motion.div>
         )}

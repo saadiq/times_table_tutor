@@ -1,6 +1,12 @@
 import type p5 from 'p5'
-import { REF_WIDTH, REF_HEIGHT, type SceneElements, type SketchParams, type TreeData } from './types'
-import { PALETTE } from './colors'
+import {
+  REF_WIDTH,
+  REF_HEIGHT,
+  type SceneElements,
+  type SketchParams,
+  type TreeData,
+  type SceneVisuals,
+} from './types'
 import { createSeededRandom } from './seededRandom'
 import {
   drawSky,
@@ -11,12 +17,12 @@ import {
   drawFlower,
   drawLeaf,
 } from './elements'
-import { drawAnimal, getAnimalPositions } from './animals'
+import { drawAnimal, getAnimalPositions } from './drawAnimal'
 import { drawAmbient } from './ambient'
 
 const SCENE_SEED = 12345
 
-export function generateScene(width: number, height: number): SceneElements {
+export function generateScene(width: number, height: number, visuals: SceneVisuals): SceneElements {
   const rand = createSeededRandom(SCENE_SEED)
 
   const scaleX = width / REF_WIDTH
@@ -64,7 +70,7 @@ export function generateScene(width: number, height: number): SceneElements {
       y: height * 0.75 + rand() * height * 0.22,
       size: (6 + rand() * 10) * scale,
       petals: 5 + Math.floor(rand() * 3),
-      hue: PALETTE.flowers[Math.floor(rand() * PALETTE.flowers.length)].h,
+      hue: visuals.palette.flowers[Math.floor(rand() * visuals.palette.flowers.length)].h,
       revealIdx: 51 + Math.floor((i * 45) / 40),
       sway: rand() * Math.PI * 2,
     })
@@ -81,7 +87,7 @@ export function generateScene(width: number, height: number): SceneElements {
       y: tree.baseY + c.y + Math.sin(angle) * dist,
       size: (10 + rand() * 8) * scale,
       rotation: rand() * Math.PI * 2,
-      hue: 90 + rand() * 50,
+      hue: visuals.palette.tree.canopy.h - 25 + rand() * 50,
       revealIdx: 96 + Math.floor((i * 49) / 70),
       sway: rand() * Math.PI * 2,
     })
@@ -132,7 +138,7 @@ export function generateScene(width: number, height: number): SceneElements {
     flowers,
     leaves,
     clouds,
-    animals: getAnimalPositions(width, height),
+    animals: getAnimalPositions(width, height, visuals.animals),
     ambient: { butterflies, birds, fireflies },
   }
 }
@@ -151,6 +157,7 @@ export function drawScene(
 
   const ctx = {
     p,
+    palette: params.visuals.palette,
     warmth: scene.foundation.warmth,
     vibrancy: scene.details.vibrancy,
     tier: scene.tier,

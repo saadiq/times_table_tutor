@@ -1,8 +1,27 @@
+import type p5 from 'p5'
 import type { SceneState } from '../../../types/scene'
 
 // Reference canvas size for proportional scaling
 export const REF_WIDTH = 400
 export const REF_HEIGHT = 500
+
+export type HSB = { h: number; s: number; b: number }
+
+export type ScenePalette = {
+  sky: HSB[] // one entry per tier (5)
+  tree: { trunk: HSB; canopy: HSB }
+  grass: HSB
+  flowers: HSB[]
+  ground: HSB
+}
+
+export type AnimalDrawer = (p: p5, s: number, sat: number, time: number) => void
+
+export type SceneVisuals = {
+  palette: ScenePalette
+  /** 12 entries, one per character slot (slot i unlocks with table i+1). */
+  animals: Array<{ type: AnimalType; scale: number }>
+}
 
 export type CanopyCircle = {
   x: number
@@ -103,4 +122,5 @@ export type SketchParams = {
   animatingCharacter: number | null
   width: number
   height: number
+  visuals: SceneVisuals
 }

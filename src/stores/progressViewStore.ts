@@ -6,23 +6,6 @@ import type { SceneState, PendingReveals } from '../types/scene'
 import type { CurriculumId } from '../lib/operations'
 import { useCurriculumStore } from './curriculumStore'
 
-// Character data for each times table
-export const TABLE_CHARACTERS = [
-  { table: 1, name: 'Ladybug', position: { top: '88%', left: '8%', width: '12%', height: '10%' } },
-  { table: 2, name: 'Butterfly', position: { top: '68%', left: '42%', width: '10%', height: '10%' } },
-  { table: 3, name: 'Robin', position: { top: '35%', left: '73%', width: '12%', height: '10%' } },
-  { table: 4, name: 'Squirrel', position: { top: '42%', left: '38%', width: '12%', height: '14%' } },
-  { table: 5, name: 'Rabbit', position: { top: '68%', left: '68%', width: '15%', height: '15%' } },
-  { table: 6, name: 'Fox', position: { top: '62%', left: '5%', width: '16%', height: '14%' } },
-  { table: 7, name: 'Owl', position: { top: '26%', left: '34%', width: '12%', height: '12%' } },
-  { table: 8, name: 'Deer', position: { top: '52%', left: '75%', width: '18%', height: '22%' } },
-  { table: 9, name: 'Hedgehog', position: { top: '75%', left: '38%', width: '14%', height: '10%' } },
-  { table: 10, name: 'Bluebird', position: { top: '16%', left: '6%', width: '12%', height: '12%' } },
-  { table: 11, name: 'Badger', position: { top: '52%', left: '5%', width: '18%', height: '14%' } },
-  { table: 12, name: 'Cat', position: { top: '18%', left: '38%', width: '16%', height: '12%' } },
-] as const
-
-
 // Tier thresholds based on mastered fact count
 const TIER_THRESHOLDS = [0, 12, 36, 72, 108] as const
 const FOUNDATION_SESSIONS_TO_FULL = 25

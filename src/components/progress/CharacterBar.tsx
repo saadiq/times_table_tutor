@@ -1,36 +1,7 @@
 import { motion } from 'framer-motion'
-import {
-  Bug,
-  Bird,
-  Rabbit,
-  Squirrel,
-  Cat,
-  CircleDashed,
-  Flower2,
-  Fish,
-  Egg,
-  Leaf,
-  Shell,
-  Snail,
-} from 'lucide-react'
-import { TABLE_CHARACTERS } from '../../stores/progressViewStore'
-
-// Map table numbers to distinct icons for visual variety
-// Using nature-themed icons where exact animals aren't available
-const CHARACTER_ICONS: Record<number, React.ComponentType<{ className?: string; size?: number }>> = {
-  1: Bug,        // Ladybug
-  2: Flower2,    // Butterfly -> flower (attracts butterflies)
-  3: Bird,       // Robin
-  4: Squirrel,   // Squirrel
-  5: Rabbit,     // Rabbit
-  6: Leaf,       // Fox -> leaf (forest creature)
-  7: Egg,        // Owl -> egg (bird family)
-  8: Fish,       // Deer -> fish (different animal)
-  9: Snail,      // Hedgehog -> snail (small garden creature)
-  10: Shell,     // Bluebird -> shell (nature theme)
-  11: Cat,       // Badger -> cat (similar shape)
-  12: Cat,       // Cat
-}
+import { CircleDashed } from 'lucide-react'
+import { useActiveOperation } from '../../hooks'
+import { getSceneTheme } from './sceneThemes'
 
 type CharacterBarProps = {
   revealedTables: number[]
@@ -38,6 +9,7 @@ type CharacterBarProps = {
 }
 
 export function CharacterBar({ revealedTables, onCharacterTap }: CharacterBarProps) {
+  const theme = getSceneTheme(useActiveOperation().id)
   const discoveredCount = revealedTables.length
 
   return (
@@ -48,9 +20,9 @@ export function CharacterBar({ revealedTables, onCharacterTap }: CharacterBarPro
     >
       {/* Character icons row */}
       <div className="flex justify-center gap-1.5 mb-2" role="list" aria-label="Character collection">
-        {TABLE_CHARACTERS.map((char) => {
+        {theme.characters.map((char) => {
           const isRevealed = revealedTables.includes(char.table)
-          const Icon = CHARACTER_ICONS[char.table] || CircleDashed
+          const Icon = char.icon
 
           return (
             <motion.button

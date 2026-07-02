@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PartyPopper } from 'lucide-react'
-import { TABLE_CHARACTERS } from '../../stores/progressViewStore'
+import { useActiveOperation } from '../../hooks'
+import { getSceneTheme } from './sceneThemes'
 import type { PendingReveals } from '../../types/scene'
 
 type RevealPhase = 'details' | 'tier' | 'landmark' | 'done'
@@ -14,14 +15,6 @@ type RevealSequenceProps = {
   onComplete: () => void
 }
 
-const TIER_MESSAGES = [
-  '',
-  'Dawn breaks over your meadow!',
-  'The morning sun warms your tree!',
-  'Afternoon light fills the clearing!',
-  'Golden hour arrives - your tree is complete!',
-]
-
 const DETAIL_ANIM_MS = 2500
 const TIER_ANIM_MS = 3000
 const TOAST_FADE_MS = 4000
@@ -33,6 +26,8 @@ export function RevealSequence({
   onLandmarkRevealed,
   onComplete,
 }: RevealSequenceProps) {
+  const operation = useActiveOperation()
+  const theme = getSceneTheme(operation.id)
   const [phase, setPhase] = useState<RevealPhase>('details')
   const [landmarkIdx, setLandmarkIdx] = useState(0)
   const [showToast, setShowToast] = useState(false)
@@ -146,7 +141,7 @@ export function RevealSequence({
               exit={{ opacity: 0 }}
               className="text-xl font-bold text-white drop-shadow-lg text-center px-6"
             >
-              {TIER_MESSAGES[pending.newTier]}
+              {theme.tierMessages[pending.newTier]}
             </motion.p>
           </motion.div>
         )}
@@ -157,6 +152,9 @@ export function RevealSequence({
         {phase === 'landmark' && pending.newLandmarks[landmarkIdx] != null && (
           <LandmarkModal
             table={pending.newLandmarks[landmarkIdx]}
+            character={theme.characters.find((c) => c.table === pending.newLandmarks[landmarkIdx])}
+            joinText={theme.landmarkJoinText}
+            masteryText={operation.copy.tableMasteryText(pending.newLandmarks[landmarkIdx])}
             onDismiss={handleLandmarkDismiss}
           />
         )}
@@ -165,9 +163,21 @@ export function RevealSequence({
   )
 }
 
-function LandmarkModal({ table, onDismiss }: { table: number; onDismiss: () => void }) {
-  const char = TABLE_CHARACTERS.find((c) => c.table === table)
-  if (!char) return null
+function LandmarkModal({
+  table,
+  character,
+  joinText,
+  masteryText,
+  onDismiss,
+}: {
+  table: number
+  character: { table: number; name: string } | undefined
+  joinText: string
+  masteryText: string
+  onDismiss: () => void
+}) {
+  void table
+  if (!character) return null
 
   return (
     <motion.div
@@ -184,9 +194,9 @@ function LandmarkModal({ table, onDismiss }: { table: number; onDismiss: () => v
         </div>
         <h3 className="text-lg font-bold text-gray-800">New Friend!</h3>
         <p className="text-gray-600 mt-1">
-          <span className="font-bold text-garden-600">{char.name}</span> joins your tree!
+          <span className="font-bold text-garden-600">{character.name}</span> joins your {joinText}!
         </p>
-        <p className="text-sm text-gray-500 mt-1">You mastered your {table}s!</p>
+        <p className="text-sm text-gray-500 mt-1">{masteryText}</p>
 
         <button
           onClick={onDismiss}
