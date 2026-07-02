@@ -1,10 +1,13 @@
-import { multiplyOperation } from '../lib/operations'
+import { useCurriculumStore } from '../stores/curriculumStore'
+import { getOperation } from '../lib/operations'
 import type { Operation } from '../lib/operations'
 
 /**
- * Returns the operation for the active curriculum.
- * Phase 1: multiplication is the only curriculum. Phase 2 reads the active-curriculum store.
+ * Returns the operation for the active curriculum. Operations are module
+ * singletons, so the returned reference is stable per curriculum and safe
+ * in useMemo/useCallback dependency arrays.
  */
 export function useActiveOperation(): Operation {
-  return multiplyOperation
+  const active = useCurriculumStore((s) => s.active)
+  return getOperation(active)
 }
