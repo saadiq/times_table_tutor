@@ -9,7 +9,8 @@ type CharacterBarProps = {
 }
 
 export function CharacterBar({ revealedTables, onCharacterTap }: CharacterBarProps) {
-  const theme = getSceneTheme(useActiveOperation().id)
+  const operation = useActiveOperation()
+  const theme = getSceneTheme(operation.id)
   const discoveredCount = revealedTables.length
 
   return (
@@ -36,7 +37,7 @@ export function CharacterBar({ revealedTables, onCharacterTap }: CharacterBarPro
               }`}
               whileTap={isRevealed ? { scale: 0.9 } : undefined}
               title={isRevealed ? `${char.name} (${char.table}s)` : `??? (${char.table}s)`}
-              aria-label={isRevealed ? `${char.name} - ${char.table} times table mastered` : `Undiscovered character for ${char.table} times table`}
+              aria-label={isRevealed ? `${char.name} - ${operation.copy.tableLabel(char.table)} mastered` : `Undiscovered character for ${operation.copy.tableLabel(char.table)}`}
               role="listitem"
             >
               {isRevealed ? (
