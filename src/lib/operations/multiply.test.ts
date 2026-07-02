@@ -35,4 +35,26 @@ describe('multiplyOperation', () => {
     const ids = multiplyOperation.getStrategies(makeFact(7, 8)).map((s) => s.id)
     expect(ids).toContain('visual_array')
   })
+
+  it('exposes the times symbol and labels', () => {
+    expect(multiplyOperation.symbol).toBe('×')
+    expect(multiplyOperation.copy.label).toBe('Multiplication')
+    expect(multiplyOperation.copy.tableLabel(7)).toBe('7 Times Table')
+    expect(multiplyOperation.copy.tableMasteryText(7)).toBe('You mastered your 7s!')
+    expect(multiplyOperation.copy.focusSummary([3, 5])).toBe('Practicing: 3, 5 times tables')
+  })
+
+  it('keys facts by factId', () => {
+    expect(multiplyOperation.factId(7, 8)).toBe('7x8')
+  })
+
+  it('groups a fact under its a-factor table for Learn', () => {
+    expect(multiplyOperation.tableOf(makeFact(7, 8))).toBe(7)
+  })
+
+  it('matches a table when either factor equals it', () => {
+    expect(multiplyOperation.matchesTable(makeFact(7, 8), 7)).toBe(true)
+    expect(multiplyOperation.matchesTable(makeFact(7, 8), 8)).toBe(true)
+    expect(multiplyOperation.matchesTable(makeFact(7, 8), 3)).toBe(false)
+  })
 })

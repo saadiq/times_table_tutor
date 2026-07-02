@@ -9,14 +9,31 @@ export type FormattedProblem = {
   right: number
 }
 
+/** Learner-facing wording that differs between curricula. */
+export type OperationCopy = {
+  label: string
+  tablePickerTitle: string
+  focusTitle: string
+  tableLabel: (table: number) => string
+  tableMasteryText: (table: number) => string
+  focusSummary: (tables: number[]) => string
+}
+
 /**
  * Everything that differs between curricula (multiplication, division, ...).
  * The generic engine (adaptive scoring, confidence, stores) is operation-agnostic
- * and receives the facts this descriptor produces. Holds only fields with
- * consumers today; the display symbol reaches the UI via formatProblem.
+ * and receives the facts this descriptor produces.
+ * - tableOf: the table a fact is listed under in Learn (multiply: a; divide: the divisor b)
+ * - matchesTable: table membership for the focus filter and mastery checks
+ *   (multiply: a or b; divide: divisor b only)
  */
 export type Operation = {
   id: CurriculumId
+  symbol: string
+  copy: OperationCopy
+  factId: (a: number, b: number) => string
+  tableOf: (fact: FactProgress) => number
+  matchesTable: (fact: FactProgress, table: number) => boolean
   generateFacts: () => Record<string, FactProgress>
   formatProblem: (fact: FactProgress) => FormattedProblem
   generateChoices: (fact: FactProgress, count?: number) => number[]

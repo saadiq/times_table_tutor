@@ -3,6 +3,7 @@ import type { Operation } from './types'
 import { getStrategiesForFact } from '../strategies'
 import { speakProblem, speakFact } from '../speech'
 import { TIMES_TABLES } from '../constants'
+import { shuffle } from './shuffle'
 
 const MULTIPLY_SYMBOL = '×'
 
@@ -31,16 +32,6 @@ function generateFacts(): Record<string, FactProgress> {
     }
   }
   return facts
-}
-
-/** Unbiased Fisher-Yates shuffle; a random sort comparator skews positions. */
-function shuffle<T>(items: T[]): T[] {
-  const result = [...items]
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[result[i], result[j]] = [result[j], result[i]]
-  }
-  return result
 }
 
 function generateChoices(fact: FactProgress, count: number = 4): number[] {
@@ -78,6 +69,18 @@ function generateChoices(fact: FactProgress, count: number = 4): number[] {
 
 export const multiplyOperation: Operation = {
   id: 'multiply',
+  symbol: MULTIPLY_SYMBOL,
+  copy: {
+    label: 'Multiplication',
+    tablePickerTitle: 'Choose a Times Table',
+    focusTitle: 'Focus Tables',
+    tableLabel: (table) => `${table} Times Table`,
+    tableMasteryText: (table) => `You mastered your ${table}s!`,
+    focusSummary: (tables) => `Practicing: ${tables.join(', ')} times tables`,
+  },
+  factId,
+  tableOf: (fact) => fact.a,
+  matchesTable: (fact, table) => fact.a === table || fact.b === table,
   generateFacts,
   formatProblem: (fact) => ({ left: fact.a, symbol: MULTIPLY_SYMBOL, right: fact.b }),
   generateChoices,
