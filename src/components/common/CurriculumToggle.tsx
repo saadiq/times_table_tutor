@@ -23,7 +23,7 @@ export function CurriculumToggle() {
             onClick={() => switchCurriculum(id)}
             aria-pressed={isActive}
             aria-label={operation.copy.label}
-            className={`w-14 h-10 rounded-lg text-xl font-bold transition-colors ${
+            className={`w-14 h-12 rounded-lg text-xl font-bold transition-colors ${
               isActive
                 ? 'bg-white text-garden-600 shadow-sm'
                 : 'text-gray-400 hover:text-gray-600'
