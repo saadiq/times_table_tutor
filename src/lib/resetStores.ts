@@ -1,6 +1,9 @@
 import { useSessionStore } from '../stores/sessionStore'
 import { useAttemptsStore } from '../stores/attemptsStore'
 import { useProgressViewStore } from '../stores/progressViewStore'
+import { useProgressStore } from '../stores/progressStore'
+import { useCurriculumStore } from '../stores/curriculumStore'
+import { clearFromStorage } from './storage'
 
 /**
  * Reset all per-user stores when switching profiles.
@@ -11,4 +14,12 @@ export function resetStoresForProfileSwitch(): void {
   useSessionStore.getState().resetProgress()
   useAttemptsStore.getState().clearForProfileSwitch()
   useProgressViewStore.getState().reset()
+
+  // Division progress is device-local until Phase 3 sync; drop it so it
+  // cannot leak into the next profile. (Multiply is replaced by
+  // loadFromServer after the next profile verifies.)
+  clearFromStorage('progressDivide')
+  if (useCurriculumStore.getState().active === 'divide') {
+    useProgressStore.getState().loadCurriculum('divide')
+  }
 }
