@@ -1,14 +1,15 @@
 import type { FactProgress } from '../../types'
 import type { CurriculumId, Operation } from './types'
 import { multiplyOperation } from './multiply'
+import { divideOperation } from './divide'
 
 export { multiplyOperation }
+export { divideOperation }
 export type { Operation, OperationCopy, CurriculumId, FormattedProblem } from './types'
 
 const OPERATIONS: Record<CurriculumId, Operation> = {
   multiply: multiplyOperation,
-  // Task 3 registers divideOperation here.
-  divide: multiplyOperation,
+  divide: divideOperation,
 }
 
 /** Resolve the operation descriptor for a curriculum. */
