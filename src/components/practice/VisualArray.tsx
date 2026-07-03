@@ -3,9 +3,11 @@ import { motion } from 'framer-motion'
 type VisualArrayProps = {
   rows: number
   cols: number
+  /** Overrides the default multiplication rows x columns caption. */
+  caption?: string
 }
 
-export function VisualArray({ rows, cols }: VisualArrayProps) {
+export function VisualArray({ rows, cols, caption }: VisualArrayProps) {
   // Limit display size for large numbers
   const displayRows = Math.min(rows, 10)
   const displayCols = Math.min(cols, 10)
@@ -33,7 +35,11 @@ export function VisualArray({ rows, cols }: VisualArrayProps) {
         </p>
       )}
       <p className="text-sm text-gray-600 mt-2">
-        {rows} rows × {cols} columns = <span className="font-bold text-garden-600">?</span>
+        {caption ?? (
+          <>
+            {rows} rows × {cols} columns = <span className="font-bold text-garden-600">?</span>
+          </>
+        )}
       </p>
     </div>
   )

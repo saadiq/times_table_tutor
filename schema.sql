@@ -10,10 +10,12 @@ CREATE TABLE IF NOT EXISTS profiles (
 
 CREATE INDEX IF NOT EXISTS idx_profiles_last_active ON profiles(last_active DESC);
 
--- Learning progress (one row per fact per profile)
+-- Learning progress (one row per fact per profile; fact keys are unique per
+-- curriculum — multiply "7x8", divide "56÷7" — so the PK needs no change)
 CREATE TABLE IF NOT EXISTS fact_progress (
   profile_id        TEXT NOT NULL,
   fact              TEXT NOT NULL,
+  curriculum        TEXT NOT NULL DEFAULT 'multiply',
   confidence        TEXT NOT NULL DEFAULT 'new',
   correct_count     INTEGER NOT NULL DEFAULT 0,
   incorrect_count   INTEGER NOT NULL DEFAULT 0,

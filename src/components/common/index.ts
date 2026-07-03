@@ -1,5 +1,6 @@
 export { Button } from './Button'
 export { Celebration } from './Celebration'
+export { CurriculumToggle } from './CurriculumToggle'
 export { FocusTablePicker } from './FocusTablePicker'
 export { Layout } from './Layout'
 export { Modal } from './Modal'

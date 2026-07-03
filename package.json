@@ -10,6 +10,8 @@
     "cleanup": "bash scripts/cleanup-dev.sh",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "vite preview",
     "db:create": "wrangler d1 create ttt-db",
     "db:migrate": "wrangler d1 execute ttt-db --file=schema.sql",
@@ -47,6 +49,7 @@
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4",
     "vite-plugin-pwa": "^1.2.0",
+    "vitest": "^4.1.9",
     "wrangler": "^4.54.0"
   }
 }

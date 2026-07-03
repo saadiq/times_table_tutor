@@ -3,23 +3,8 @@ import { saveToStorage, loadFromStorage } from '../lib/storage'
 import { useProgressStore } from './progressStore'
 import { useAttemptsStore } from './attemptsStore'
 import type { SceneState, PendingReveals } from '../types/scene'
-
-// Character data for each times table
-export const TABLE_CHARACTERS = [
-  { table: 1, name: 'Ladybug', position: { top: '88%', left: '8%', width: '12%', height: '10%' } },
-  { table: 2, name: 'Butterfly', position: { top: '68%', left: '42%', width: '10%', height: '10%' } },
-  { table: 3, name: 'Robin', position: { top: '35%', left: '73%', width: '12%', height: '10%' } },
-  { table: 4, name: 'Squirrel', position: { top: '42%', left: '38%', width: '12%', height: '14%' } },
-  { table: 5, name: 'Rabbit', position: { top: '68%', left: '68%', width: '15%', height: '15%' } },
-  { table: 6, name: 'Fox', position: { top: '62%', left: '5%', width: '16%', height: '14%' } },
-  { table: 7, name: 'Owl', position: { top: '26%', left: '34%', width: '12%', height: '12%' } },
-  { table: 8, name: 'Deer', position: { top: '52%', left: '75%', width: '18%', height: '22%' } },
-  { table: 9, name: 'Hedgehog', position: { top: '75%', left: '38%', width: '14%', height: '10%' } },
-  { table: 10, name: 'Bluebird', position: { top: '16%', left: '6%', width: '12%', height: '12%' } },
-  { table: 11, name: 'Badger', position: { top: '52%', left: '5%', width: '18%', height: '14%' } },
-  { table: 12, name: 'Cat', position: { top: '18%', left: '38%', width: '16%', height: '12%' } },
-] as const
-
+import type { CurriculumId } from '../lib/operations'
+import { useCurriculumStore } from './curriculumStore'
 
 // Tier thresholds based on mastered fact count
 const TIER_THRESHOLDS = [0, 12, 36, 72, 108] as const
@@ -38,10 +23,12 @@ type ProgressViewState = {
   revealedTables: number[] // Animals revealed (permanent set)
   peakTier: number // Highest tier reached (never decreases)
   sessionsCompleted: number // Total sessions (drives foundation warmth)
+  curriculum: CurriculumId // Which curriculum this reveal state belongs to
 }
 
 type ProgressViewActions = {
   initialize: () => void
+  loadCurriculum: (id: CurriculumId) => void
   resync: () => void
   computeSceneState: () => SceneState
   getPendingReveals: () => PendingReveals
@@ -57,9 +44,12 @@ const initialState: ProgressViewState = {
   revealedTables: [],
   peakTier: 0,
   sessionsCompleted: 0,
+  curriculum: 'multiply' as CurriculumId,
 }
 
-const STORAGE_KEY = 'progressView'
+function progressViewKeyFor(id: CurriculumId): 'progressView' | 'progressViewDivide' {
+  return id === 'divide' ? 'progressViewDivide' : 'progressView'
+}
 
 // Old state shape for migration
 type LegacyState = {
@@ -77,7 +67,7 @@ function isLegacyState(saved: unknown): saved is LegacyState {
   )
 }
 
-function migrateLegacy(legacy: LegacyState): ProgressViewState {
+function migrateLegacy(legacy: LegacyState): Omit<ProgressViewState, 'curriculum'> {
   return {
     peakRevealedCount: legacy.lastRevealedFactCount,
     lastRevealedCount: legacy.lastRevealedFactCount,
@@ -92,9 +82,13 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
     ...initialState,
 
     initialize: () => {
-      const saved = loadFromStorage<ProgressViewState | LegacyState>(STORAGE_KEY)
+      get().loadCurriculum(useCurriculumStore.getState().active)
+    },
+
+    loadCurriculum: (id) => {
+      const saved = loadFromStorage<ProgressViewState | LegacyState>(progressViewKeyFor(id))
       if (saved) {
-        const state = isLegacyState(saved) ? migrateLegacy(saved) : saved
+        const state = { ...(isLegacyState(saved) ? migrateLegacy(saved) : saved), curriculum: id }
 
         // Recompute peak from actual learning+ count (may be higher than stored)
         const progressStore = useProgressStore.getState()
@@ -102,8 +96,9 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
         state.peakRevealedCount = Math.max(state.peakRevealedCount, learningPlus)
 
         set(state)
-        saveToStorage(STORAGE_KEY, state)
+        saveToStorage(progressViewKeyFor(id), state)
       } else {
+        set({ ...initialState, curriculum: id })
         get().resync()
       }
     },
@@ -122,9 +117,10 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
         revealedTables: [...new Set([...current.revealedTables, ...completedTables])],
         peakTier: Math.max(current.peakTier, currentTier),
         sessionsCompleted: current.sessionsCompleted,
+        curriculum: current.curriculum,
       }
       set(synced)
-      saveToStorage(STORAGE_KEY, synced)
+      saveToStorage(progressViewKeyFor(current.curriculum), synced)
     },
 
     computeSceneState: (): SceneState => {
@@ -184,8 +180,9 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
           revealedTables: [...new Set([...state.revealedTables, ...tables])],
           peakTier: Math.max(state.peakTier, tier),
           sessionsCompleted: state.sessionsCompleted,
+          curriculum: state.curriculum,
         }
-        saveToStorage(STORAGE_KEY, newState)
+        saveToStorage(progressViewKeyFor(state.curriculum), newState)
         return newState
       })
     },
@@ -196,14 +193,17 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
           ...state,
           sessionsCompleted: state.sessionsCompleted + 1,
         }
-        saveToStorage(STORAGE_KEY, newState)
+        saveToStorage(progressViewKeyFor(state.curriculum), newState)
         return newState
       })
     },
 
     reset: () => {
-      set(initialState)
-      saveToStorage(STORAGE_KEY, initialState)
+      set(state => {
+        const fresh = { ...initialState, curriculum: state.curriculum }
+        saveToStorage(progressViewKeyFor(state.curriculum), fresh)
+        return fresh
+      })
     },
 
     resetForTesting: () => {

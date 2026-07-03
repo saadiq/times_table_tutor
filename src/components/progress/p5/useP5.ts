@@ -38,7 +38,7 @@ export function useP5(
         p.noStroke()
         p.frameRate(30)
 
-        elementsRef.current = generateScene(width, height)
+        elementsRef.current = generateScene(width, height, paramsRef.current.visuals)
         if (mounted) setIsReady(true)
       }
 
@@ -78,7 +78,7 @@ export function useP5(
     const { width, height } = params
     if (p5Instance.width !== width || p5Instance.height !== height) {
       p5Instance.resizeCanvas(width, height)
-      elementsRef.current = generateScene(width, height)
+      elementsRef.current = generateScene(width, height, params.visuals)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.width, params.height, isReady])

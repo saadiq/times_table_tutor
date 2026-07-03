@@ -1,11 +1,12 @@
 import { useMemo } from 'react'
 import type { FactProgress } from '../../types'
-import { shouldUseMultipleChoice, generateChoices } from '../../lib/adaptive'
+import { useActiveOperation } from '../../hooks'
 import { MultipleChoice } from './MultipleChoice'
 import { NumberPad } from './NumberPad'
 
 type AnswerInputProps = {
   fact: FactProgress
+  useMultipleChoice: boolean
   onAnswer: (answer: number) => void
   selectedAnswer: number | null
   showResult: boolean
@@ -14,19 +15,20 @@ type AnswerInputProps = {
 
 export function AnswerInput({
   fact,
+  useMultipleChoice,
   onAnswer,
   selectedAnswer,
   showResult,
   disabled,
 }: AnswerInputProps) {
-  const useMultipleChoice = shouldUseMultipleChoice(fact)
+  const operation = useActiveOperation()
 
   const choices = useMemo(() => {
     if (useMultipleChoice) {
-      return generateChoices(fact, 4)
+      return operation.generateChoices(fact, 4)
     }
     return []
-  }, [fact, useMultipleChoice])
+  }, [fact, useMultipleChoice, operation])
 
   if (useMultipleChoice) {
     return (

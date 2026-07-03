@@ -4,9 +4,11 @@ import { useProgressStore } from '../stores'
 import { FactCard, VisualExplainer } from '../components/learn'
 import type { FactProgress } from '../types'
 import { TIMES_TABLES } from '../lib/constants'
+import { useActiveOperation } from '../hooks'
 
 export function LearnView() {
   const { facts } = useProgressStore()
+  const operation = useActiveOperation()
 
   const [selectedTable, setSelectedTable] = useState<number | null>(null)
   const [selectedFact, setSelectedFact] = useState<FactProgress | null>(null)
@@ -17,7 +19,7 @@ export function LearnView() {
   )
 
   const getTableFacts = (table: number) =>
-    Object.values(facts).filter(f => f.a === table)
+    Object.values(facts).filter(f => operation.tableOf(f) === table)
 
   const getTableMastery = (table: number) => {
     const tableFacts = getTableFacts(table)
@@ -30,7 +32,7 @@ export function LearnView() {
       {/* Table selector */}
       <div className="p-4 bg-white border-b border-gray-100">
         <h2 className="text-lg font-semibold text-gray-800 mb-3">
-          Choose a Times Table
+          {operation.copy.tablePickerTitle}
         </h2>
         <div className="flex gap-2 overflow-x-auto pb-2">
           {tables.map(table => {
@@ -61,7 +63,7 @@ export function LearnView() {
           <>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-800">
-                {selectedTable} Times Table
+                {operation.copy.tableLabel(selectedTable)}
               </h3>
               <span className="text-sm text-gray-500">
                 {getTableMastery(selectedTable)}% mastered
@@ -79,7 +81,7 @@ export function LearnView() {
           </>
         ) : (
           <div className="text-center text-gray-500 py-8">
-            Select a times table above to see its facts
+            Pick a number above to see its facts
           </div>
         )}
       </div>

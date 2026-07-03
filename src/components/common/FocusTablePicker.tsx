@@ -1,4 +1,5 @@
 import { TIMES_TABLES } from '../../lib/constants'
+import { useActiveOperation } from '../../hooks'
 
 type FocusTablePickerProps = {
   selectedTables: number[]
@@ -11,6 +12,7 @@ export function FocusTablePicker({
   onToggle,
   compact = false,
 }: FocusTablePickerProps) {
+  const operation = useActiveOperation()
   const tables = Array.from(
     { length: TIMES_TABLES.max - TIMES_TABLES.min + 1 },
     (_, i) => i + TIMES_TABLES.min
@@ -27,7 +29,7 @@ export function FocusTablePicker({
           <button
             key={table}
             aria-pressed={isSelected}
-            aria-label={`${table} times table`}
+            aria-label={operation.copy.tableLabel(table)}
             onClick={() => onToggle(table)}
             className={`flex-shrink-0 ${buttonSize} rounded-xl font-bold transition-colors ${
               isSelected

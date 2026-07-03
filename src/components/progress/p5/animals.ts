@@ -1,59 +1,5 @@
 import type p5 from 'p5'
-import { REF_WIDTH, REF_HEIGHT, type AnimalData } from './types'
-import { getVibrancySaturation } from './colors'
-import type { DrawContext } from './elements'
-
-export function drawAnimal(ctx: DrawContext, animal: AnimalData): void {
-  const { p, warmth, vibrancy, time, centerX, centerY, width, height } = ctx
-  const sat = getVibrancySaturation(animal.x, animal.y, centerX, centerY, width, height, warmth, vibrancy)
-  // Scale animal size proportionally to canvas
-  const canvasScale = Math.min(width / REF_WIDTH, height / REF_HEIGHT)
-  const s = animal.scale * 18 * canvasScale
-
-  p.push()
-  p.translate(animal.x, animal.y)
-
-  switch (animal.type) {
-    case 'ladybug':
-      drawLadybug(p, s, sat)
-      break
-    case 'butterfly':
-      drawButterfly(p, s, sat, time)
-      break
-    case 'robin':
-      drawRobin(p, s, sat)
-      break
-    case 'squirrel':
-      drawSquirrel(p, s, sat)
-      break
-    case 'rabbit':
-      drawRabbit(p, s, sat)
-      break
-    case 'fox':
-      drawFox(p, s, sat)
-      break
-    case 'owl':
-      drawOwl(p, s, sat)
-      break
-    case 'deer':
-      drawDeer(p, s, sat)
-      break
-    case 'hedgehog':
-      drawHedgehog(p, s, sat)
-      break
-    case 'bluebird':
-      drawBluebird(p, s, sat, time)
-      break
-    case 'badger':
-      drawBadger(p, s, sat)
-      break
-    case 'cat':
-      drawCat(p, s, sat)
-      break
-  }
-
-  p.pop()
-}
+import type { ForestAnimalType, AnimalDrawer } from './types'
 
 function drawLadybug(p: p5, s: number, sat: number): void {
   p.fill(5, sat * 0.9, 55)
@@ -311,22 +257,17 @@ function drawCat(p: p5, s: number, sat: number): void {
   p.ellipse(-s * 0.75, 0, s * 0.25, s * 0.2)
 }
 
-/**
- * Get animal positions that match the TABLE_CHARACTERS layout
- */
-export function getAnimalPositions(width: number, height: number): AnimalData[] {
-  return [
-    { x: width * 0.08, y: height * 0.88, type: 'ladybug', scale: 1 },
-    { x: width * 0.85, y: height * 0.45, type: 'butterfly', scale: 1.2 },
-    { x: width * 0.62, y: height * 0.32, type: 'robin', scale: 1 },
-    { x: width * 0.38, y: height * 0.5, type: 'squirrel', scale: 1.1 },
-    { x: width * 0.88, y: height * 0.85, type: 'rabbit', scale: 1.2 },
-    { x: width * 0.15, y: height * 0.82, type: 'fox', scale: 1.3 },
-    { x: width * 0.5, y: height * 0.22, type: 'owl', scale: 1.2 },
-    { x: width * 0.78, y: height * 0.8, type: 'deer', scale: 1.5 },
-    { x: width * 0.25, y: height * 0.9, type: 'hedgehog', scale: 1 },
-    { x: width * 0.3, y: height * 0.28, type: 'bluebird', scale: 0.9 },
-    { x: width * 0.7, y: height * 0.88, type: 'badger', scale: 1.1 },
-    { x: width * 0.55, y: height * 0.78, type: 'cat', scale: 1.2 },
-  ]
+export const FOREST_DRAWERS: Record<ForestAnimalType, AnimalDrawer> = {
+  ladybug: drawLadybug,
+  butterfly: drawButterfly,
+  robin: drawRobin,
+  squirrel: drawSquirrel,
+  rabbit: drawRabbit,
+  fox: drawFox,
+  owl: drawOwl,
+  deer: drawDeer,
+  hedgehog: drawHedgehog,
+  bluebird: drawBluebird,
+  badger: drawBadger,
+  cat: drawCat,
 }

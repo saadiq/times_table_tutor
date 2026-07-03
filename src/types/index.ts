@@ -66,6 +66,9 @@ export type Strategy =
   | 'nines_trick'
   | 'fives_trick'
   | 'ones_zeros'
+  | 'inverse_multiplication'
+  | 'fact_family'
+  | 'halving'
 
 export type AttemptRecord = {
   id: string

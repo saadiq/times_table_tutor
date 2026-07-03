@@ -2,6 +2,8 @@ import { motion } from 'framer-motion'
 import { useProgressStore } from '../../stores/progressStore'
 import type { Confidence, FactProgress } from '../../types'
 import { TIMES_TABLES } from '../../lib/constants'
+import { useActiveOperation } from '../../hooks'
+import { formatEquation } from '../../lib/operations'
 
 type MasteryGridProps = {
   onFactSelect: (fact: FactProgress) => void
@@ -23,6 +25,7 @@ const confidenceLabels: Record<Confidence, string> = {
 
 export function MasteryGrid({ onFactSelect }: MasteryGridProps) {
   const facts = useProgressStore(state => state.facts)
+  const operation = useActiveOperation()
 
   const tables = Array.from(
     { length: TIMES_TABLES.max - TIMES_TABLES.min + 1 },
@@ -81,7 +84,7 @@ export function MasteryGrid({ onFactSelect }: MasteryGridProps) {
               </div>
               {/* Fact cells */}
               {tables.map(col => {
-                const factKey = `${row}x${col}`
+                const factKey = operation.factId(row, col)
                 const fact = facts[factKey]
                 if (!fact) return null
 
@@ -90,7 +93,7 @@ export function MasteryGrid({ onFactSelect }: MasteryGridProps) {
                     key={factKey}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => onFactSelect(fact)}
-                    aria-label={`${row} times ${col} equals ${fact.answer}, ${confidenceLabels[fact.confidence]}`}
+                    aria-label={`${formatEquation(operation, fact)}, ${confidenceLabels[fact.confidence]}`}
                     className={`w-8 h-8 m-0.5 rounded-md ${confidenceColors[fact.confidence]}
                       hover:ring-2 hover:ring-garden-500 hover:ring-offset-1
                       focus:outline-none focus:ring-2 focus:ring-garden-500 focus:ring-offset-1

@@ -1,9 +1,16 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Default node environment: the setup file polyfills localStorage, and no
+  // test needs a DOM. Component tests can opt in per-file with
+  // `// @vitest-environment jsdom` once jsdom is added back.
+  test: {
+    globals: false,
+    setupFiles: ['./src/test/setup.ts'],
+  },
   server: {
     allowedHosts: ['proof.local'],
     proxy: {

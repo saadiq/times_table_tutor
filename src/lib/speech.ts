@@ -21,6 +21,16 @@ export function speakFact(a: number, b: number, answer: number): Promise<void> {
   return speak(`${numberToWords(a)} times ${numberToWords(b)} equals ${numberToWords(answer)}`)
 }
 
+export function speakDivisionProblem(dividend: number, divisor: number): Promise<void> {
+  return speak(`${numberToWords(dividend)} divided by ${numberToWords(divisor)}`)
+}
+
+export function speakDivisionFact(dividend: number, divisor: number, quotient: number): Promise<void> {
+  return speak(
+    `${numberToWords(dividend)} divided by ${numberToWords(divisor)} equals ${numberToWords(quotient)}`
+  )
+}
+
 const MAX_SPEECH_MS = 5000
 
 function speak(text: string): Promise<void> {

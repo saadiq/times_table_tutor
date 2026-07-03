@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { FactProgress } from '../../types'
-import { getStrategiesForFact } from '../../lib/strategies'
+import { useActiveOperation } from '../../hooks'
+import { formatEquation } from '../../lib/operations'
 import { VisualArray } from '../practice/VisualArray'
 
 type VisualExplainerProps = {
@@ -11,7 +12,8 @@ type VisualExplainerProps = {
 }
 
 export function VisualExplainer({ fact, onClose }: VisualExplainerProps) {
-  const strategies = getStrategiesForFact(fact)
+  const operation = useActiveOperation()
+  const strategies = operation.getStrategies(fact)
   const [currentIndex, setCurrentIndex] = useState(0)
   const currentStrategy = strategies[currentIndex]
 
@@ -28,7 +30,7 @@ export function VisualExplainer({ fact, onClose }: VisualExplainerProps) {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-100">
         <h2 className="text-xl font-bold text-gray-800">
-          {fact.a} × {fact.b} = {fact.answer}
+          {formatEquation(operation, fact)}
         </h2>
         <button
           onClick={onClose}
@@ -59,7 +61,7 @@ export function VisualExplainer({ fact, onClose }: VisualExplainerProps) {
 
             {currentStrategy.visual === 'array' && (
               <div className="bg-white rounded-2xl border-2 border-gray-100 p-4">
-                <VisualArray rows={fact.a} cols={fact.b} />
+                <VisualArray rows={fact.a} cols={fact.b} caption={currentStrategy.arrayCaption} />
               </div>
             )}
 

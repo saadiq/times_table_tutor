@@ -5,11 +5,13 @@ import type {
   FlowerElement,
   LeafElement,
   CloudElement,
+  ScenePalette,
 } from './types'
-import { PALETTE, getWarmthSaturation, getVibrancySaturation, applyWarmth } from './colors'
+import { getWarmthSaturation, getVibrancySaturation, applyWarmth } from './colors'
 
 export type DrawContext = {
   p: p5
+  palette: ScenePalette
   warmth: number // 0-1, effort-based (sky/ground saturation)
   vibrancy: number // 0.3-1.0, confidence-based (element saturation)
   tier: number
@@ -21,8 +23,8 @@ export type DrawContext = {
 }
 
 export function drawSky(ctx: DrawContext): void {
-  const { p, warmth, tier, height, width } = ctx
-  const skyColor = PALETTE.sky[tier]
+  const { p, palette, warmth, tier, height, width } = ctx
+  const skyColor = palette.sky[tier]
   const skyHeight = height * 0.72
 
   for (let y = 0; y < skyHeight; y++) {
@@ -45,8 +47,8 @@ export function drawClouds(ctx: DrawContext, clouds: CloudElement[]): void {
 }
 
 export function drawGround(ctx: DrawContext): void {
-  const { p, warmth, tier, width, height, centerX, centerY } = ctx
-  const hue = applyWarmth(PALETTE.ground.h, tier)
+  const { p, palette, warmth, tier, width, height, centerX, centerY } = ctx
+  const hue = applyWarmth(palette.ground.h, tier)
   const sat =
     getWarmthSaturation(width / 2, height, centerX, centerY, width, height, warmth) * 0.55
 
@@ -78,11 +80,11 @@ export function drawGround(ctx: DrawContext): void {
 }
 
 export function drawTree(ctx: DrawContext, tree: TreeData): void {
-  const { p, warmth, vibrancy, tier, centerX, centerY, width, height } = ctx
-  const trunkHue = applyWarmth(PALETTE.tree.trunk.h, tier)
+  const { p, palette, warmth, vibrancy, tier, centerX, centerY, width, height } = ctx
+  const trunkHue = applyWarmth(palette.tree.trunk.h, tier)
   const trunkSat =
     getWarmthSaturation(tree.x, tree.baseY, centerX, centerY, width, height, warmth) * 0.55
-  const canopyHue = applyWarmth(PALETTE.tree.canopy.h, tier)
+  const canopyHue = applyWarmth(palette.tree.canopy.h, tier)
   const canopySat =
     getVibrancySaturation(tree.x, tree.baseY - 180, centerX, centerY, width, height, warmth, vibrancy) * 0.65
 
@@ -133,8 +135,8 @@ export function drawTree(ctx: DrawContext, tree: TreeData): void {
 }
 
 export function drawGrass(ctx: DrawContext, g: GrassElement): void {
-  const { p, warmth, vibrancy, tier, time, centerX, centerY, width, height } = ctx
-  const hue = applyWarmth(105 + ((g.sway * 10) % 20), tier)
+  const { p, palette, warmth, vibrancy, tier, time, centerX, centerY, width, height } = ctx
+  const hue = applyWarmth(palette.grass.h + ((g.sway * 10) % 20), tier)
   const sat = getVibrancySaturation(g.x, g.y, centerX, centerY, width, height, warmth, vibrancy) * 0.65
   const sway = Math.sin(time * 2.5 + g.sway) * 0.08
 

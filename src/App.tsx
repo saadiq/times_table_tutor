@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useProgressStore, useGardenStore, useSessionStore, useFocusTablesStore, useAttemptsStore, useProgressViewStore, useSettingsStore } from './stores'
+import { useProgressStore, useGardenStore, useSessionStore, useFocusTablesStore, useAttemptsStore, useProgressViewStore, useSettingsStore, useCurriculumStore } from './stores'
 import { useProfileStore } from './stores/profileStore'
 import { Layout } from './components/common'
 import { ProfilePicker } from './components/common/ProfilePicker'
@@ -16,15 +16,18 @@ function App() {
   const fetchFromCloud = useAttemptsStore((s) => s.fetchFromCloud)
   const setProfileId = useAttemptsStore((s) => s.setProfileId)
   const { mode } = useSessionStore()
+  const { initialize: initCurriculum } = useCurriculumStore()
+  const activeCurriculum = useCurriculumStore((s) => s.active)
 
   useEffect(() => {
+    initCurriculum()
     initProgress()
     initGarden()
     initFocusTables()
     initProgressView()
     initializeAttempts()
     initSettings()
-  }, [initProgress, initGarden, initFocusTables, initProgressView, initializeAttempts, initSettings])
+  }, [initCurriculum, initProgress, initGarden, initFocusTables, initProgressView, initializeAttempts, initSettings])
 
   // Sync attempts when profile is selected
   useEffect(() => {
@@ -54,9 +57,9 @@ function App() {
 
   return (
     <Layout>
-      {mode === 'learn' && <LearnView />}
-      {mode === 'practice' && <PracticeView />}
-      {mode === 'garden' && <GardenViewPage />}
+      {mode === 'learn' && <LearnView key={activeCurriculum} />}
+      {mode === 'practice' && <PracticeView key={activeCurriculum} />}
+      {mode === 'garden' && <GardenViewPage key={activeCurriculum} />}
     </Layout>
   )
 }
