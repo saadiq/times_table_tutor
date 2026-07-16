@@ -10,10 +10,47 @@ export type StrategyHint = {
   arrayCaption?: string
 }
 
+export type KnownFacts = {
+  isKnown: (a: number, b: number) => boolean
+}
+
+export function makeKnownFacts(facts: Record<string, FactProgress>): KnownFacts {
+  return {
+    isKnown: (a, b) => {
+      const fact = facts[`${a}x${b}`]
+      return !!fact && (fact.confidence === 'confident' || fact.confidence === 'mastered')
+    },
+  }
+}
+
+const STRATEGY_ORDER: Strategy[] = [
+  'fact_family', 'known_anchor', 'nines_trick', 'fives_trick', 'tens_trick',
+  'ones_zeros', 'doubles', 'use_neighbor', 'skip_counting', 'break_apart', 'visual_array',
+]
+
+function sortByStrategyOrder(list: StrategyHint[]): StrategyHint[] {
+  return [...list].sort((x, y) => STRATEGY_ORDER.indexOf(x.id) - STRATEGY_ORDER.indexOf(y.id))
+}
+
+function getCommutedStrategy(fact: FactProgress, known: KnownFacts): StrategyHint | null {
+  const { a, b, answer } = fact
+  if (a === b || !known.isKnown(b, a)) return null
+  return {
+    id: 'fact_family',
+    name: 'Flip It',
+    description: `${a} × ${b} is ${b} × ${a} flipped — same answer`,
+    steps: [
+      `You already know ${b} × ${a} = ${answer}!`,
+      `${a} × ${b} is the same problem, just flipped.`,
+      `So ${a} × ${b} = ?`,
+    ],
+  }
+}
+
 /**
  * Get applicable strategies for a given multiplication fact
  */
-export function getStrategiesForFact(fact: FactProgress): StrategyHint[] {
+export function getStrategiesForFact(fact: FactProgress, known?: KnownFacts): StrategyHint[] {
   const { a, b } = fact
   const strategies: StrategyHint[] = []
 
@@ -164,6 +201,11 @@ export function getStrategiesForFact(fact: FactProgress): StrategyHint[] {
     })
   }
 
+  if (known) {
+    const commuted = getCommutedStrategy(fact, known)
+    if (commuted) strategies.push(commuted)
+    return sortByStrategyOrder(strategies)
+  }
   return strategies
 }
 

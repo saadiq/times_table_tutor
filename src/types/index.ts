@@ -73,6 +73,7 @@ export type Strategy =
   | 'nines_trick'
   | 'fives_trick'
   | 'ones_zeros'
+  | 'known_anchor'
   | 'inverse_multiplication'
   | 'fact_family'
   | 'halving'
