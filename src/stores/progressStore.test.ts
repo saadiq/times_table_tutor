@@ -17,6 +17,15 @@ describe('progressStore', () => {
     expect(facts['12x12'].answer).toBe(144)
   })
 
+  it('stores hintShown on the recorded attempt', () => {
+    useProgressStore.getState().initialize()
+    useProgressStore.getState().recordAttempt({
+      fact: '7x8', correct: true, inputMethod: 'number_pad', responseTimeMs: 3000, hintShown: true,
+    })
+    const attempts = useProgressStore.getState().facts['7x8'].recentAttempts
+    expect(attempts[0].hintShown).toBe(true)
+  })
+
   it('loads a legacy ttt_progress payload as the multiply slice', () => {
     useProgressStore.getState().initialize()
     const saved = localStorage.getItem('ttt_progress')

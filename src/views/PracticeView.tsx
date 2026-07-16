@@ -140,6 +140,7 @@ export function PracticeView() {
       correct: isCorrect,
       inputMethod,
       responseTimeMs,
+      hintShown: wasHintShown,
     })
 
     recordAttemptHistory({

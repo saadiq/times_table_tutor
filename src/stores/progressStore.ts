@@ -14,6 +14,7 @@ type RecordAttemptParams = {
   correct: boolean
   inputMethod: InputMethod
   responseTimeMs: number
+  hintShown?: boolean
 }
 
 type ProgressState = {
@@ -94,7 +95,7 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
     }
   },
 
-  recordAttempt: ({ fact, correct, inputMethod, responseTimeMs }) => {
+  recordAttempt: ({ fact, correct, inputMethod, responseTimeMs, hintShown }) => {
     set(state => {
       const current = state.facts[fact]
       if (!current) return state
@@ -105,6 +106,7 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
         inputMethod,
         responseTimeMs,
         timestamp: now,
+        hintShown: hintShown ?? false,
       }
       const recentAttempts = [...current.recentAttempts, newAttempt]
         .slice(-CONFIDENCE_THRESHOLDS.recentAttemptsWindow)
