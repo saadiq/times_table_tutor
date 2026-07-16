@@ -4,6 +4,7 @@ import { useProgressStore, useSessionStore, useFocusTablesStore, useProfileStore
 import { selectNextFact, shouldUseMultipleChoice } from '../lib/adaptive'
 import { decideNextProblem, type ServeKind } from '../lib/practiceFlow'
 import { SESSION_DEFAULTS } from '../lib/constants'
+import { makeKnownFacts } from '../lib/strategies'
 import { useActiveOperation, useSpeakThenAdvance } from '../hooks'
 import { grantCorrectRewards } from '../lib/practiceRewards'
 import { formatEquation } from '../lib/operations'
@@ -193,8 +194,8 @@ export function PracticeView() {
   }
 
   const strategies = useMemo(
-    () => (displayFact ? operation.getStrategies(displayFact) : []),
-    [displayFact, operation]
+    () => (displayFact ? operation.getStrategies(displayFact, makeKnownFacts(facts)) : []),
+    [displayFact, operation, facts]
   )
 
   if (isGoalComplete()) {

@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { FactProgress } from '../../types'
 import { useActiveOperation } from '../../hooks'
 import { formatEquation } from '../../lib/operations'
 import { VisualArray } from '../practice/VisualArray'
+import { useProgressStore } from '../../stores'
+import { makeKnownFacts } from '../../lib/strategies'
 
 type VisualExplainerProps = {
   fact: FactProgress
@@ -13,7 +15,11 @@ type VisualExplainerProps = {
 
 export function VisualExplainer({ fact, onClose }: VisualExplainerProps) {
   const operation = useActiveOperation()
-  const strategies = operation.getStrategies(fact)
+  const facts = useProgressStore((state) => state.facts)
+  const strategies = useMemo(
+    () => operation.getStrategies(fact, makeKnownFacts(facts)),
+    [operation, fact, facts]
+  )
   const [currentIndex, setCurrentIndex] = useState(0)
   const currentStrategy = strategies[currentIndex]
 

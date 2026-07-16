@@ -1,5 +1,5 @@
 import type { FactProgress } from '../../types'
-import type { StrategyHint } from '../strategies'
+import type { StrategyHint, KnownFacts } from '../strategies'
 
 export type CurriculumId = 'multiply' | 'divide'
 
@@ -37,7 +37,7 @@ export type Operation = {
   generateFacts: () => Record<string, FactProgress>
   formatProblem: (fact: FactProgress) => FormattedProblem
   generateChoices: (fact: FactProgress, count?: number) => number[]
-  getStrategies: (fact: FactProgress) => StrategyHint[]
+  getStrategies: (fact: FactProgress, known?: KnownFacts) => StrategyHint[]
   speakProblem: (fact: FactProgress) => Promise<void>
   speakFact: (fact: FactProgress) => Promise<void>
 }
