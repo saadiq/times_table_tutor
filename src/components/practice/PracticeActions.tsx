@@ -4,18 +4,19 @@ import { Button } from '../common'
 type PracticeActionsProps = {
   onHint: () => void
   onSkip: () => void
+  canSkip: boolean
 }
 
-export function PracticeActions({ onHint, onSkip }: PracticeActionsProps) {
+export function PracticeActions({ onHint, onSkip, canSkip }: PracticeActionsProps) {
   return (
     <div className="flex justify-center gap-4 mt-4">
       <Button variant="ghost" onClick={onHint} className="flex items-center gap-2">
         <Lightbulb size={18} />
         Hint
       </Button>
-      <Button variant="ghost" onClick={onSkip} className="flex items-center gap-2">
+      <Button variant="ghost" onClick={onSkip} disabled={!canSkip} className="flex items-center gap-2">
         <SkipForward size={18} />
-        Skip
+        {canSkip ? 'Skip' : 'Skip used'}
       </Button>
     </div>
   )

@@ -2,6 +2,8 @@ import { useState, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useProgressStore, useSessionStore, useFocusTablesStore, useProfileStore, useAttemptsStore, useSettingsStore } from '../stores'
 import { selectNextFact, shouldUseMultipleChoice } from '../lib/adaptive'
+import { decideNextProblem, type ServeKind } from '../lib/practiceFlow'
+import { SESSION_DEFAULTS } from '../lib/constants'
 import { useActiveOperation, useSpeakThenAdvance } from '../hooks'
 import { grantCorrectRewards } from '../lib/practiceRewards'
 import { formatEquation } from '../lib/operations'
@@ -20,7 +22,7 @@ function countConsecutiveWrong(): number {
 }
 
 export function PracticeView() {
-  const { facts, recordAttempt, toSyncPayload } = useProgressStore()
+  const { facts, recordAttempt, toSyncPayload, recordSkip: recordFactSkip } = useProgressStore()
   const queueProgressSync = useProfileStore((s) => s.queueProgressSync)
   const recordAttemptHistory = useAttemptsStore((s) => s.recordAttempt)
   const currentProfile = useProfileStore((s) => s.currentProfile)
@@ -28,6 +30,8 @@ export function PracticeView() {
   const ttsEnabled = useSettingsStore((s) => s.ttsEnabled)
   const { focusTables, isEnabled } = useFocusTablesStore()
   const operation = useActiveOperation()
+  const skipsUsed = useSessionStore(s => s.skipsUsed)
+  const canSkip = skipsUsed < SESSION_DEFAULTS.skipsPerBlock
   const activeFocusTables = useMemo(
     () => (isEnabled ? focusTables : []),
     [isEnabled, focusTables]
@@ -42,18 +46,36 @@ export function PracticeView() {
   const [celebrationType, setCelebrationType] = useState<'correct' | 'streak' | 'goal' | null>(null)
   const [attemptStartTime, setAttemptStartTime] = useState<number>(() => Date.now())
   const [recentlyFailed, setRecentlyFailed] = useState<Set<string>>(new Set())
+  const [servedKind, setServedKind] = useState<ServeKind>('adaptive')
   const { speakThenAdvance, clearAdvanceTimer } = useSpeakThenAdvance(ttsEnabled, operation)
 
   const nextProblem = useCallback(() => {
     clearAdvanceTimer()
 
-    const next = selectNextFact(facts, recentFacts, activeFocusTables, {
-      newFactsIntroduced,
-      sessionAccuracy: getSessionAccuracy(),
-      consecutiveWrong: countConsecutiveWrong(),
-      nearGoalEnd: progress >= goal - 1,
-    }, operation.matchesTable)
+    const session = useSessionStore.getState()
+    const result = decideNextProblem({
+      facts: useProgressStore.getState().facts,
+      recentFacts,
+      focusTables: activeFocusTables,
+      context: {
+        newFactsIntroduced: session.newFactsIntroduced,
+        sessionAccuracy: session.getSessionAccuracy(),
+        consecutiveWrong: countConsecutiveWrong(),
+        nearGoalEnd: session.progress >= session.goal - 1,
+      },
+      matchesTable: operation.matchesTable,
+      pendingComeback: session.pendingComeback,
+      comebackDelay: session.comebackDelay,
+      progress: session.progress,
+      goal: session.goal,
+    })
+
+    if (result.comeback === 'served' || result.comeback === 'dropped') session.clearComeback()
+    else if (result.comeback === 'deferred') session.tickComebackDelay()
+
+    const next = result.next
     if (next) {
+      setServedKind(result.kind)
       setCurrentFact(next)
       setRecentFacts(prev => [...prev.slice(-10), next.fact])
       setSelectedAnswer(null)
@@ -63,7 +85,7 @@ export function PracticeView() {
       setAttemptStartTime(Date.now())
       if (ttsEnabled) operation.speakProblem(next)
     }
-  }, [facts, recentFacts, activeFocusTables, newFactsIntroduced, progress, goal, getSessionAccuracy, ttsEnabled, operation, clearAdvanceTimer])
+  }, [recentFacts, activeFocusTables, ttsEnabled, operation, clearAdvanceTimer])
 
   // Compute display fact synchronously to avoid flicker on initial render
   const shouldInitialize = !currentFact && Object.keys(facts).length > 0
@@ -80,13 +102,11 @@ export function PracticeView() {
     })
   }
 
-  // Decide the input widget once per served problem, so the rendered widget and
-  // the recorded inputMethod always agree, and a recentlyFailed update can't
-  // swap the widget mid-answer (recentlyFailed is read at serve time only).
+  // Lock the input widget for the currently served problem.
   const useMultipleChoice = useMemo(
-    () => (displayFact ? shouldUseMultipleChoice(displayFact, recentlyFailed) : false),
+    () => (displayFact ? servedKind === 'comeback' || shouldUseMultipleChoice(displayFact, recentlyFailed) : false),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [displayFact]
+    [displayFact, servedKind]
   )
 
   const handleAnswer = (answer: number) => {
@@ -159,6 +179,15 @@ export function PracticeView() {
   }
 
   const handleSkip = () => {
+    if (!displayFact) return
+    const session = useSessionStore.getState()
+    if (!session.canSkip()) return
+
+    session.recordSkip(displayFact.fact)
+    recordFactSkip(displayFact.fact)
+    const syncPayload = toSyncPayload(displayFact.fact)
+    if (syncPayload) queueProgressSync(syncPayload)
+
     resetStreak()
     nextProblem()
   }
@@ -238,7 +267,7 @@ export function PracticeView() {
         />
 
         {!showResult && (
-          <PracticeActions onHint={() => setShowHint(true)} onSkip={handleSkip} />
+          <PracticeActions onHint={() => setShowHint(true)} onSkip={handleSkip} canSkip={canSkip} />
         )}
       </div>
     </div>
