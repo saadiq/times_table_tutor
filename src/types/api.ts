@@ -33,6 +33,7 @@ export interface RecentAttemptSync {
   inputMethod: 'multiple_choice' | 'number_pad';
   responseTimeMs: number;
   timestamp: string;
+  hintShown?: boolean;
 }
 
 export interface FactProgressSync {

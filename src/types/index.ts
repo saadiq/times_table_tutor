@@ -8,6 +8,8 @@ export type RecentAttempt = {
   inputMethod: InputMethod
   responseTimeMs: number
   timestamp: string
+  /** True when the hint panel was open before answering. Absent = unaided legacy data. */
+  hintShown?: boolean
 }
 
 export type FactProgress = {

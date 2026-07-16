@@ -3,7 +3,7 @@ import { CONFIDENCE_THRESHOLDS } from './constants'
 
 /**
  * Calculate confidence based on number pad performance.
- * Multiple choice can only get you to 'learning' - number pad is required for confident/mastered.
+ * Multiple choice and hint-assisted answers can only get you to 'learning' — unaided number pad is required for confident/mastered.
  */
 export function calculateConfidence(fact: FactProgress): Confidence {
   const recent = fact.recentAttempts.slice(-CONFIDENCE_THRESHOLDS.recentAttemptsWindow)
@@ -11,8 +11,8 @@ export function calculateConfidence(fact: FactProgress): Confidence {
   // No attempts = new
   if (recent.length === 0) return 'new'
 
-  // Filter to number pad attempts only for confident/mastered evaluation
-  const recentNP = recent.filter(a => a.inputMethod === 'number_pad')
+  // Filter to unaided number pad attempts only for confident/mastered evaluation
+  const recentNP = recent.filter(a => a.inputMethod === 'number_pad' && !a.hintShown)
   const correctNP = recentNP.filter(a => a.correct)
 
   // Calculate NP metrics
