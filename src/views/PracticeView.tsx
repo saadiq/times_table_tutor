@@ -1,18 +1,13 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useProgressStore, useSessionStore, useGardenStore, useFocusTablesStore, useProfileStore, useAttemptsStore, useSettingsStore } from '../stores'
-import { useProgressViewStore } from '../stores/progressViewStore'
+import { useProgressStore, useSessionStore, useFocusTablesStore, useProfileStore, useAttemptsStore, useSettingsStore } from '../stores'
 import { selectNextFact, shouldUseMultipleChoice } from '../lib/adaptive'
-import { calculateReward, getCelebrationMessage } from '../lib/rewards'
-import { useActiveOperation } from '../hooks'
+import { useActiveOperation, useSpeakThenAdvance } from '../hooks'
+import { grantCorrectRewards } from '../lib/practiceRewards'
 import { formatEquation } from '../lib/operations'
 import { ProblemDisplay, AnswerInput, HintPanel, GoalComplete, PracticeActions } from '../components/practice'
 import { ProgressBar, Celebration } from '../components/common'
 import type { FactProgress } from '../types'
-
-function getRandomPosition() {
-  return { x: Math.random() * 200 + 50, y: Math.random() * 200 + 50 }
-}
 
 function countConsecutiveWrong(): number {
   const results = useSessionStore.getState().recentResults
@@ -30,7 +25,6 @@ export function PracticeView() {
   const recordAttemptHistory = useAttemptsStore((s) => s.recordAttempt)
   const currentProfile = useProfileStore((s) => s.currentProfile)
   const { goal, progress, streakCount, newFactsIntroduced, incrementProgress, incrementStreak, resetStreak, isGoalComplete, resetProgress, setMode, incrementNewFacts, recordResult, getSessionAccuracy } = useSessionStore()
-  const { addCoins, addItem } = useGardenStore()
   const ttsEnabled = useSettingsStore((s) => s.ttsEnabled)
   const { focusTables, isEnabled } = useFocusTablesStore()
   const operation = useActiveOperation()
@@ -48,19 +42,10 @@ export function PracticeView() {
   const [celebrationType, setCelebrationType] = useState<'correct' | 'streak' | 'goal' | null>(null)
   const [attemptStartTime, setAttemptStartTime] = useState<number>(() => Date.now())
   const [recentlyFailed, setRecentlyFailed] = useState<Set<string>>(new Set())
-  const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const cancelledRef = useRef(false)
-
-  useEffect(() => {
-    cancelledRef.current = false
-    return () => {
-      cancelledRef.current = true
-      if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current)
-    }
-  }, [])
+  const { speakThenAdvance, clearAdvanceTimer } = useSpeakThenAdvance(ttsEnabled, operation)
 
   const nextProblem = useCallback(() => {
-    if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current)
+    clearAdvanceTimer()
 
     const next = selectNextFact(facts, recentFacts, activeFocusTables, {
       newFactsIntroduced,
@@ -78,20 +63,7 @@ export function PracticeView() {
       setAttemptStartTime(Date.now())
       if (ttsEnabled) operation.speakProblem(next)
     }
-  }, [facts, recentFacts, activeFocusTables, newFactsIntroduced, progress, goal, getSessionAccuracy, ttsEnabled, operation])
-
-  const speakThenAdvance = useCallback((fact: FactProgress, minDelayMs: number, onAdvance: () => void) => {
-    const start = Date.now()
-    const ttsPromise = ttsEnabled
-      ? operation.speakFact(fact)
-      : Promise.resolve()
-
-    ttsPromise.then(() => {
-      if (cancelledRef.current) return
-      const remaining = Math.max(0, minDelayMs - (Date.now() - start))
-      advanceTimerRef.current = setTimeout(onAdvance, remaining)
-    })
-  }, [ttsEnabled, operation])
+  }, [facts, recentFacts, activeFocusTables, newFactsIntroduced, progress, goal, getSessionAccuracy, ttsEnabled, operation, clearAdvanceTimer])
 
   // Compute display fact synchronously to avoid flicker on initial render
   const shouldInitialize = !currentFact && Object.keys(facts).length > 0
@@ -167,28 +139,10 @@ export function PracticeView() {
       incrementStreak()
       incrementProgress()
 
-      const reward = calculateReward(streakCount + 1, progress, goal)
-      addCoins(reward.coins)
-
-      if (reward.item) {
-        addItem({
-          type: reward.item.type,
-          itemId: reward.item.itemId,
-          position: getRandomPosition(),
-          earnedFor: `practice_${displayFact.fact}`,
-        })
-      }
-
-      setMessage(reward.bonusMessage || getCelebrationMessage(streakCount + 1))
-
-      if (progress + 1 >= goal) {
-        useProgressViewStore.getState().incrementSessions()
-        setCelebrationType('goal')
-      } else if ((streakCount + 1) % 5 === 0) {
-        setCelebrationType('streak')
-      } else {
-        setCelebrationType('correct')
-      }
+      const { message: rewardMessage, celebrationType: celebration } =
+        grantCorrectRewards(displayFact.fact, streakCount + 1, progress, goal)
+      setMessage(rewardMessage)
+      setCelebrationType(celebration)
 
       speakThenAdvance(displayFact, 1200, () => {
         setCelebrationType(null)
