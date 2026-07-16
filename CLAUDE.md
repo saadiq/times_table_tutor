@@ -64,7 +64,7 @@ src/
 │   └── garden/       # (legacy) GardenItem, GardenView
 ├── views/            # PracticeView, LearnView, ProgressViewPage
 ├── stores/           # Zustand stores (progress, progressView, garden, session, focusTables)
-├── lib/              # Core logic (adaptive, strategies, ladders, practiceFlow, rewards, sounds, storage)
+├── lib/              # Core logic (adaptive, strategies, ladders.ts, practiceFlow.ts, rewards, sounds, storage)
 │   └── operations/   # Operation descriptor per curriculum (multiply today)
 ├── hooks/            # useSound, useActiveOperation
 ├── test/             # Vitest setup (localStorage polyfill) and shared fixtures
@@ -92,7 +92,7 @@ src/
 - Prioritizes: learning facts > trouble spots > spaced review > new facts
 - Multiple choice for new facts, number pad for confident facts
 - Supports focus tables filter (Settings → select specific tables to practice)
-- Allows one skip per goal block; the skipped fact is guaranteed to return in the same block because `skippedCount` boosts its priority
+- Allows one skip per goal block; `pendingComeback` and `decideNextProblem` guarantee the skipped fact returns in the same block, while `skippedCount` separately boosts its adaptive priority
 - Confident/mastered progress requires unaided number-pad answers; attempts after `hintShown` count toward learning only
 - Correct answers can queue the commuted fact as the next problem
 
