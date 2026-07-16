@@ -26,7 +26,7 @@ export type ServeParams = {
 const defaultMatchesTable = (fact: FactProgress, table: number) =>
   fact.a === table || fact.b === table
 
-/** Decide whether adaptive selection or a guaranteed skipped-fact comeback is next. */
+/** Choose adaptive selection, a guaranteed skipped-fact comeback, or a queued follow-up. */
 export function decideNextProblem(params: ServeParams): ServeResult {
   const {
     facts, recentFacts, focusTables, context,
