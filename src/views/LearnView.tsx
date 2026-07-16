@@ -62,7 +62,9 @@ export function LearnView() {
             )
           })}
         </div>
-        <StrategyLadders onSelect={setSelectedLadder} />
+        {operation.id === 'multiply' && (
+          <StrategyLadders onSelect={setSelectedLadder} />
+        )}
       </div>
 
       {/* Facts grid */}
@@ -104,8 +106,12 @@ export function LearnView() {
         )}
       </AnimatePresence>
       <AnimatePresence>
-        {selectedLadder && (
-          <LadderModal ladder={selectedLadder} onClose={() => setSelectedLadder(null)} />
+        {operation.id === 'multiply' && selectedLadder && (
+          <LadderModal
+            key={selectedLadder.id}
+            ladder={selectedLadder}
+            onClose={() => setSelectedLadder(null)}
+          />
         )}
       </AnimatePresence>
     </div>
