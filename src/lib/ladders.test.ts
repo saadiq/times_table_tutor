@@ -7,7 +7,7 @@ describe('LADDERS', () => {
     expect(new Set(LADDERS.map(l => l.id)).size).toBe(6)
   })
 
-  it('every ladder ends each example with a try step', () => {
+  it('ends every ladder with a try step', () => {
     for (const ladder of LADDERS) {
       const lastStep = ladder.steps[ladder.steps.length - 1]
       expect(lastStep.kind).toBe('try')
