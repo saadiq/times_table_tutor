@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
+import { TrendingUp } from 'lucide-react'
 import { useProgressStore } from '../stores'
-import { FactCard, VisualExplainer } from '../components/learn'
+import { FactCard, VisualExplainer, LadderModal } from '../components/learn'
 import type { FactProgress } from '../types'
 import { TIMES_TABLES } from '../lib/constants'
+import { LADDERS, type Ladder } from '../lib/ladders'
 import { useActiveOperation } from '../hooks'
 
 export function LearnView() {
@@ -12,6 +14,7 @@ export function LearnView() {
 
   const [selectedTable, setSelectedTable] = useState<number | null>(null)
   const [selectedFact, setSelectedFact] = useState<FactProgress | null>(null)
+  const [selectedLadder, setSelectedLadder] = useState<Ladder | null>(null)
 
   const tables = Array.from(
     { length: TIMES_TABLES.max - TIMES_TABLES.min + 1 },
@@ -55,6 +58,20 @@ export function LearnView() {
             )
           })}
         </div>
+        <h2 className="text-lg font-semibold text-gray-800 mt-4 mb-3">Strategy Ladders</h2>
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {LADDERS.map(ladder => (
+            <button
+              key={ladder.id}
+              onClick={() => setSelectedLadder(ladder)}
+              className="flex-shrink-0 w-40 text-left bg-sky-50 hover:bg-sky-100 rounded-xl p-3 transition-colors"
+            >
+              <TrendingUp size={18} className="text-sky-600 mb-1" />
+              <div className="font-semibold text-gray-800 text-sm">{ladder.title}</div>
+              <div className="text-xs text-gray-500 mt-0.5">{ladder.subtitle}</div>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Facts grid */}
@@ -93,6 +110,11 @@ export function LearnView() {
             fact={selectedFact}
             onClose={() => setSelectedFact(null)}
           />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {selectedLadder && (
+          <LadderModal ladder={selectedLadder} onClose={() => setSelectedLadder(null)} />
         )}
       </AnimatePresence>
     </div>
