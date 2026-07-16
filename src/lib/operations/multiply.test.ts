@@ -58,3 +58,13 @@ describe('multiplyOperation', () => {
     expect(multiplyOperation.matchesTable(makeFact(7, 8), 3)).toBe(false)
   })
 })
+
+describe('familyFollowUp', () => {
+  it('returns the commuted fact key', () => {
+    expect(multiplyOperation.familyFollowUp?.(makeFact(7, 8))).toBe('8x7')
+  })
+
+  it('returns null for squares', () => {
+    expect(multiplyOperation.familyFollowUp?.(makeFact(6, 6))).toBeNull()
+  })
+})

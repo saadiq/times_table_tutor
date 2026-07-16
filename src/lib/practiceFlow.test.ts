@@ -10,6 +10,7 @@ const base = {
   focusTables: [] as number[],
   context: {},
   pendingComeback: null as string | null,
+  pendingFollowUp: null as string | null,
   comebackDelay: 0,
   progress: 0,
   goal: 5,
@@ -48,5 +49,35 @@ describe('decideNextProblem comeback handling', () => {
     expect(result.comeback).toBe('dropped')
     expect(result.kind).toBe('adaptive')
     expect(result.next && (result.next.a === 3 || result.next.b === 3)).toBe(true)
+  })
+})
+
+describe('decideNextProblem follow-up handling', () => {
+  const withFollowUp = { ...base, pendingFollowUp: '8x7' }
+
+  it('serves an eligible follow-up', () => {
+    const result = decideNextProblem(withFollowUp)
+    expect(result.kind).toBe('followUp')
+    expect(result.next?.fact).toBe('8x7')
+  })
+
+  it('skips a follow-up that is already confident', () => {
+    const facts = { ...base.facts, '8x7': { ...base.facts['8x7'], confidence: 'confident' as const } }
+    expect(decideNextProblem({ ...withFollowUp, facts }).kind).toBe('adaptive')
+  })
+
+  it('skips the follow-up when one correct answer remains', () => {
+    expect(decideNextProblem({ ...withFollowUp, progress: 4, goal: 5 }).kind).toBe('adaptive')
+  })
+
+  it('skips a follow-up in the recent window', () => {
+    const result = decideNextProblem({ ...withFollowUp, recentFacts: ['3x3', '8x7', '2x2'] })
+    expect(result.kind).toBe('adaptive')
+  })
+
+  it('a due comeback beats the follow-up', () => {
+    const result = decideNextProblem({ ...withFollowUp, pendingComeback: '9x6', comebackDelay: 0 })
+    expect(result.kind).toBe('comeback')
+    expect(result.next?.fact).toBe('9x6')
   })
 })

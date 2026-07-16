@@ -60,6 +60,7 @@ export type Session = {
   recentResults: boolean[]          // Rolling window of correct/incorrect for accuracy targeting
   skipsUsed: number
   pendingComeback: string | null
+  pendingFollowUp: string | null    // Commuted fact queued after a correct answer
   comebackDelay: number
 }
 

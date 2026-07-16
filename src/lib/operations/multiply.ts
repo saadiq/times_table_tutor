@@ -85,6 +85,7 @@ export const multiplyOperation: Operation = {
   formatProblem: (fact) => ({ left: fact.a, symbol: MULTIPLY_SYMBOL, right: fact.b }),
   generateChoices,
   getStrategies: getStrategiesForFact,
+  familyFollowUp: (fact) => (fact.a === fact.b ? null : factId(fact.b, fact.a)),
   speakProblem: (fact) => speakProblem(fact.a, fact.b),
   speakFact: (fact) => speakFact(fact.a, fact.b, fact.answer),
 }

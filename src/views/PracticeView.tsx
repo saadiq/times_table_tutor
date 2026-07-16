@@ -66,6 +66,7 @@ export function PracticeView() {
       },
       matchesTable: operation.matchesTable,
       pendingComeback: session.pendingComeback,
+      pendingFollowUp: session.pendingFollowUp,
       comebackDelay: session.comebackDelay,
       progress: session.progress,
       goal: session.goal,
@@ -73,6 +74,7 @@ export function PracticeView() {
 
     if (result.comeback === 'served' || result.comeback === 'dropped') session.clearComeback()
     else if (result.comeback === 'deferred') session.tickComebackDelay()
+    session.setPendingFollowUp(null)
 
     const next = result.next
     if (next) {
@@ -164,6 +166,10 @@ export function PracticeView() {
         grantCorrectRewards(displayFact.fact, streakCount + 1, progress, goal)
       setMessage(rewardMessage)
       setCelebrationType(celebration)
+
+      if (servedKind !== 'followUp' && operation.familyFollowUp) {
+        useSessionStore.getState().setPendingFollowUp(operation.familyFollowUp(displayFact))
+      }
 
       speakThenAdvance(displayFact, 1200, () => {
         setCelebrationType(null)

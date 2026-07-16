@@ -15,6 +15,7 @@ type SessionActions = {
   recordResult: (correct: boolean) => void
   getSessionAccuracy: () => number
   recordSkip: (fact: string) => void
+  setPendingFollowUp: (fact: string | null) => void
   tickComebackDelay: () => void
   clearComeback: () => void
   canSkip: () => boolean
@@ -33,6 +34,7 @@ const initialState: Session = {
   recentResults: [],
   skipsUsed: 0,
   pendingComeback: null,
+  pendingFollowUp: null,
   comebackDelay: 0,
 }
 
@@ -49,7 +51,7 @@ export const useSessionStore = create<Session & SessionActions>((set, get) => ({
 
   resetProgress: () => set({
     progress: 0, streakCount: 0, newFactsIntroduced: 0, recentResults: [],
-    skipsUsed: 0, pendingComeback: null, comebackDelay: 0,
+    skipsUsed: 0, pendingComeback: null, pendingFollowUp: null, comebackDelay: 0,
   }),
 
   setCurrentFact: (fact) => set({ currentFact: fact }),
@@ -77,6 +79,8 @@ export const useSessionStore = create<Session & SessionActions>((set, get) => ({
     pendingComeback: fact,
     comebackDelay: SESSION_DEFAULTS.comebackDelay,
   })),
+
+  setPendingFollowUp: (fact) => set({ pendingFollowUp: fact }),
 
   tickComebackDelay: () => set(state => ({
     comebackDelay: Math.max(0, state.comebackDelay - 1),

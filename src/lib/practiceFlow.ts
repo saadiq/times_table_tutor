@@ -1,7 +1,7 @@
 import type { FactProgress } from '../types'
 import { selectNextFact, type SelectionContext } from './adaptive'
 
-export type ServeKind = 'adaptive' | 'comeback'
+export type ServeKind = 'adaptive' | 'comeback' | 'followUp'
 export type ComebackOutcome = 'none' | 'served' | 'deferred' | 'dropped'
 
 export type ServeResult = {
@@ -17,6 +17,7 @@ export type ServeParams = {
   context: SelectionContext
   matchesTable?: (fact: FactProgress, table: number) => boolean
   pendingComeback: string | null
+  pendingFollowUp: string | null
   comebackDelay: number
   progress: number
   goal: number
@@ -29,7 +30,7 @@ const defaultMatchesTable = (fact: FactProgress, table: number) =>
 export function decideNextProblem(params: ServeParams): ServeResult {
   const {
     facts, recentFacts, focusTables, context,
-    pendingComeback, comebackDelay, progress, goal,
+    pendingComeback, pendingFollowUp, comebackDelay, progress, goal,
   } = params
   const matchesTable = params.matchesTable ?? defaultMatchesTable
 
@@ -46,6 +47,16 @@ export function decideNextProblem(params: ServeParams): ServeResult {
     } else {
       comeback = 'deferred'
     }
+  }
+
+  if (pendingFollowUp) {
+    const followUp = facts[pendingFollowUp]
+    const eligible = !!followUp
+      && (followUp.confidence === 'new' || followUp.confidence === 'learning')
+      && progress < goal - 1
+      && !recentFacts.slice(-3).includes(followUp.fact)
+      && (focusTables.length === 0 || focusTables.some(t => matchesTable(followUp, t)))
+    if (eligible) return { next: followUp, kind: 'followUp', comeback }
   }
 
   const next = selectNextFact(facts, recentFacts, focusTables, context, matchesTable)

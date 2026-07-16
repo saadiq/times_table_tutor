@@ -38,6 +38,8 @@ export type Operation = {
   formatProblem: (fact: FactProgress) => FormattedProblem
   generateChoices: (fact: FactProgress, count?: number) => number[]
   getStrategies: (fact: FactProgress, known?: KnownFacts) => StrategyHint[]
+  /** Key of the fact-family sibling to serve right after a correct answer (e.g. the commuted fact). */
+  familyFollowUp?: (fact: FactProgress) => string | null
   speakProblem: (fact: FactProgress) => Promise<void>
   speakFact: (fact: FactProgress) => Promise<void>
 }
