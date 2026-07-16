@@ -20,6 +20,8 @@ export type FactProgress = {
   confidence: Confidence
   correctCount: number
   incorrectCount: number
+  /** Times the learner skipped this fact in Practice. Absent = 0 (legacy data). */
+  skippedCount?: number
   lastSeen: string | null   // ISO date string
   lastCorrect: string | null
   recentAttempts: RecentAttempt[] // Last 8 attempts with rich data

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { selectNextFact } from './adaptive'
+import { calculateFactScore, selectNextFact } from './adaptive'
 import { divideOperation, multiplyOperation } from './operations'
+import { makeFact } from '../test/factories'
 
 describe('selectNextFact focus filter', () => {
   it('defaults to multiplication table membership', () => {
@@ -17,5 +18,15 @@ describe('selectNextFact focus filter', () => {
       const next = selectNextFact(facts, [], [7], {}, divideOperation.matchesTable)
       expect(next?.b).toBe(7)
     }
+  })
+})
+
+describe('skippedCount scoring', () => {
+  it('boosts skipped facts, capped at 3 skips', () => {
+    const base = makeFact(7, 8)
+    const skipped = { ...makeFact(7, 8), skippedCount: 2 }
+    const heavilySkipped = { ...makeFact(7, 8), skippedCount: 10 }
+    expect(calculateFactScore(skipped) - calculateFactScore(base)).toBe(30)
+    expect(calculateFactScore(heavilySkipped) - calculateFactScore(base)).toBe(45)
   })
 })

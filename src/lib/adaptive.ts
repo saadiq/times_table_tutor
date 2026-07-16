@@ -56,7 +56,7 @@ export function selectNextFact(
   return topCandidates[randomIndex]
 }
 
-function calculateFactScore(fact: FactProgress, context: SelectionContext = {}): number {
+export function calculateFactScore(fact: FactProgress, context: SelectionContext = {}): number {
   const { newFactsIntroduced = 0, sessionAccuracy = 0.85, consecutiveWrong = 0, nearGoalEnd = false } = context
   let score = 0
 
@@ -95,6 +95,9 @@ function calculateFactScore(fact: FactProgress, context: SelectionContext = {}):
     const errorRate = fact.incorrectCount / (fact.correctCount + fact.incorrectCount)
     score += errorRate * 50
   }
+
+  // Skipped facts are avoidance signals — treat like trouble spots (bounded)
+  score += Math.min(fact.skippedCount ?? 0, 3) * 15
 
   // Spaced repetition for mastered facts
   if (fact.confidence === 'mastered' && fact.lastSeen) {

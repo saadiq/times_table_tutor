@@ -47,6 +47,7 @@ export interface FactProgressSync {
   confidence: string;
   correctCount: number;
   incorrectCount: number;
+  skippedCount?: number;
   lastSeen: number | null;
   lastCorrect: number | null;
   recentAttempts: RecentAttemptSync[];

@@ -26,6 +26,23 @@ describe('progressStore', () => {
     expect(attempts[0].hintShown).toBe(true)
   })
 
+  it('recordSkip increments skippedCount and includes it in the sync payload', () => {
+    useProgressStore.getState().initialize()
+    useProgressStore.getState().recordSkip('7x8')
+    useProgressStore.getState().recordSkip('7x8')
+    expect(useProgressStore.getState().facts['7x8'].skippedCount).toBe(2)
+    expect(useProgressStore.getState().toSyncPayload('7x8')?.skippedCount).toBe(2)
+  })
+
+  it('recordSkip does not touch lastSeen or attempt counts', () => {
+    useProgressStore.getState().initialize()
+    useProgressStore.getState().recordSkip('7x8')
+    const fact = useProgressStore.getState().facts['7x8']
+    expect(fact.lastSeen).toBeNull()
+    expect(fact.correctCount).toBe(0)
+    expect(fact.incorrectCount).toBe(0)
+  })
+
   it('loads a legacy ttt_progress payload as the multiply slice', () => {
     useProgressStore.getState().initialize()
     const saved = localStorage.getItem('ttt_progress')

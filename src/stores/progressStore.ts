@@ -28,6 +28,7 @@ type ProgressActions = {
   initialize: () => void
   loadCurriculum: (id: CurriculumId) => void
   recordAttempt: (params: RecordAttemptParams) => void
+  recordSkip: (fact: string) => void
   getFactProgress: (fact: string) => FactProgress | undefined
   getFactsByConfidence: (confidence: Confidence) => FactProgress[]
   getFactsAtOrAbove: (minLevel: Confidence) => FactProgress[]
@@ -151,6 +152,19 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
     })
   },
 
+  recordSkip: (fact) => {
+    set(state => {
+      const current = state.facts[fact]
+      if (!current) return state
+      const facts = {
+        ...state.facts,
+        [fact]: { ...current, skippedCount: (current.skippedCount ?? 0) + 1 },
+      }
+      saveToStorage(progressKeyFor(state.curriculum), facts)
+      return { facts }
+    })
+  },
+
   getFactProgress: (fact) => get().facts[fact],
 
   getFactsByConfidence: (confidence) =>
@@ -199,6 +213,7 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
         ...defaults,
         correctCount: f.correctCount,
         incorrectCount: f.incorrectCount,
+        skippedCount: f.skippedCount ?? 0,
         lastSeen: f.lastSeen ? new Date(f.lastSeen).toISOString() : null,
         lastCorrect: f.lastCorrect ? new Date(f.lastCorrect).toISOString() : null,
         recentAttempts: migratedAttempts,
@@ -221,6 +236,7 @@ export const useProgressStore = create<ProgressState & ProgressActions>((set, ge
       confidence: fact.confidence,
       correctCount: fact.correctCount,
       incorrectCount: fact.incorrectCount,
+      skippedCount: fact.skippedCount ?? 0,
       lastSeen: fact.lastSeen ? new Date(fact.lastSeen).getTime() : null,
       lastCorrect: fact.lastCorrect ? new Date(fact.lastCorrect).getTime() : null,
       recentAttempts: fact.recentAttempts,
