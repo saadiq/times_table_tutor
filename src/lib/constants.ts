@@ -33,6 +33,8 @@ export const SESSION_DEFAULTS = {
   defaultGoal: 5,
   minGoal: 3,
   maxGoal: 20,
+  skipsPerBlock: 1,
+  comebackDelay: 2,
 } as const
 
 export const REWARDS = {

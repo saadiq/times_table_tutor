@@ -58,6 +58,9 @@ export type Session = {
   streakCount: number
   newFactsIntroduced: number       // Count of "new" confidence facts shown this session
   recentResults: boolean[]          // Rolling window of correct/incorrect for accuracy targeting
+  skipsUsed: number
+  pendingComeback: string | null
+  comebackDelay: number
 }
 
 export type Strategy =

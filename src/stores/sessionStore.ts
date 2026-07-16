@@ -14,6 +14,10 @@ type SessionActions = {
   incrementNewFacts: () => void
   recordResult: (correct: boolean) => void
   getSessionAccuracy: () => number
+  recordSkip: (fact: string) => void
+  tickComebackDelay: () => void
+  clearComeback: () => void
+  canSkip: () => boolean
 }
 
 const ACCURACY_WINDOW = 20
@@ -27,6 +31,9 @@ const initialState: Session = {
   streakCount: 0,
   newFactsIntroduced: 0,
   recentResults: [],
+  skipsUsed: 0,
+  pendingComeback: null,
+  comebackDelay: 0,
 }
 
 export const useSessionStore = create<Session & SessionActions>((set, get) => ({
@@ -40,7 +47,10 @@ export const useSessionStore = create<Session & SessionActions>((set, get) => ({
 
   incrementProgress: () => set(state => ({ progress: state.progress + 1 })),
 
-  resetProgress: () => set({ progress: 0, streakCount: 0, newFactsIntroduced: 0, recentResults: [] }),
+  resetProgress: () => set({
+    progress: 0, streakCount: 0, newFactsIntroduced: 0, recentResults: [],
+    skipsUsed: 0, pendingComeback: null, comebackDelay: 0,
+  }),
 
   setCurrentFact: (fact) => set({ currentFact: fact }),
 
@@ -61,4 +71,18 @@ export const useSessionStore = create<Session & SessionActions>((set, get) => ({
     if (results.length < 3) return TARGET_ACCURACY
     return results.filter(Boolean).length / results.length
   },
+
+  recordSkip: (fact) => set(state => ({
+    skipsUsed: state.skipsUsed + 1,
+    pendingComeback: fact,
+    comebackDelay: SESSION_DEFAULTS.comebackDelay,
+  })),
+
+  tickComebackDelay: () => set(state => ({
+    comebackDelay: Math.max(0, state.comebackDelay - 1),
+  })),
+
+  clearComeback: () => set({ pendingComeback: null, comebackDelay: 0 }),
+
+  canSkip: () => get().skipsUsed < SESSION_DEFAULTS.skipsPerBlock,
 }))
