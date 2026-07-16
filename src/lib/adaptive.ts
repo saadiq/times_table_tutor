@@ -3,7 +3,7 @@ import { CONFIDENCE_THRESHOLDS } from './constants'
 
 type FactWithScore = FactProgress & { score: number }
 
-type SelectionContext = {
+export type SelectionContext = {
   newFactsIntroduced?: number
   sessionAccuracy?: number
   consecutiveWrong?: number
