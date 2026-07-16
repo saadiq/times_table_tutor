@@ -59,12 +59,12 @@ src/
 ├── components/
 │   ├── common/       # Button, Modal, ProgressBar, Navigation, Layout, Celebration, SettingsModal
 │   ├── practice/     # ProblemDisplay, AnswerInput, HintPanel, MultipleChoice, NumberPad
-│   ├── learn/        # FactCard, VisualExplainer
+│   ├── learn/        # FactCard, VisualExplainer, LadderModal
 │   ├── progress/     # ProgressView, ProgressScene, MasteryGrid, ActivityCalendar, RevealSequence
 │   └── garden/       # (legacy) GardenItem, GardenView
 ├── views/            # PracticeView, LearnView, ProgressViewPage
 ├── stores/           # Zustand stores (progress, progressView, garden, session, focusTables)
-├── lib/              # Core logic (adaptive, strategies, rewards, sounds, storage)
+├── lib/              # Core logic (adaptive, strategies, ladders, practiceFlow, rewards, sounds, storage)
 │   └── operations/   # Operation descriptor per curriculum (multiply today)
 ├── hooks/            # useSound, useActiveOperation
 ├── test/             # Vitest setup (localStorage polyfill) and shared fixtures
@@ -92,6 +92,9 @@ src/
 - Prioritizes: learning facts > trouble spots > spaced review > new facts
 - Multiple choice for new facts, number pad for confident facts
 - Supports focus tables filter (Settings → select specific tables to practice)
+- Allows one skip per goal block; the skipped fact is guaranteed to return in the same block because `skippedCount` boosts its priority
+- Confident/mastered progress requires unaided number-pad answers; attempts after `hintShown` count toward learning only
+- Correct answers can queue the commuted fact as the next problem
 
 ### Operation Abstraction (`src/lib/operations/`)
 - An `Operation` descriptor holds everything curriculum-specific: fact generation, problem formatting, answer choices, strategies, speech
@@ -99,7 +102,7 @@ src/
 - The engine (`adaptive.ts`, confidence logic, stores) stays operation-agnostic
 
 ### Strategy Hints (`src/lib/strategies.ts`)
-Nine strategies: visual_array, skip_counting, break_apart, use_neighbor, nines_trick, fives_trick, doubles, tens_trick, ones_zeros
+Eleven strategies: visual_array, skip_counting, break_apart, use_neighbor, nines_trick, fives_trick, doubles, tens_trick, ones_zeros, fact_family (flip it), known_anchor (derived-fact chains). Hints personalize against confident/mastered facts via `makeKnownFacts`.
 
 ### State Stores
 - **progressStore**: All 144 fact confidence levels, persisted to localStorage
