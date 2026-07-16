@@ -5,9 +5,11 @@ type VisualArrayProps = {
   cols: number
   /** Overrides the default multiplication rows x columns caption. */
   caption?: string
+  /** Render the last N rows dimmed — a group being removed or added. */
+  fadedRows?: number
 }
 
-export function VisualArray({ rows, cols, caption }: VisualArrayProps) {
+export function VisualArray({ rows, cols, caption, fadedRows = 0 }: VisualArrayProps) {
   // Limit display size for large numbers
   const displayRows = Math.min(rows, 10)
   const displayCols = Math.min(cols, 10)
@@ -19,15 +21,19 @@ export function VisualArray({ rows, cols, caption }: VisualArrayProps) {
         className="grid gap-1"
         style={{ gridTemplateColumns: `repeat(${displayCols}, minmax(0, 1fr))` }}
       >
-        {Array.from({ length: displayRows * displayCols }).map((_, i) => (
-          <motion.div
-            key={i}
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: i * 0.02 }}
-            className="w-4 h-4 rounded-full bg-garden-400"
-          />
-        ))}
+        {Array.from({ length: displayRows * displayCols }).map((_, i) => {
+          const row = Math.floor(i / displayCols)
+          const faded = fadedRows > 0 && row >= displayRows - fadedRows
+          return (
+            <motion.div
+              key={i}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: i * 0.02 }}
+              className={`w-4 h-4 rounded-full ${faded ? 'bg-gray-300 opacity-40' : 'bg-garden-400'}`}
+            />
+          )
+        })}
       </div>
       {isTruncated && (
         <p className="text-xs text-gray-400 mt-2">
