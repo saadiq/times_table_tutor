@@ -31,7 +31,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ params, request, env }
   // Fetch associated data
   const { results: facts } = await env.DB.prepare(
     `SELECT fact, curriculum, confidence, correct_count as correctCount, incorrect_count as incorrectCount,
-     last_seen as lastSeen, last_correct as lastCorrect, recent_attempts as recentAttempts,
+     skipped_count as skippedCount, last_seen as lastSeen, last_correct as lastCorrect, recent_attempts as recentAttempts,
      preferred_strategy as preferredStrategy FROM fact_progress WHERE profile_id = ?`
   ).bind(id).all();
 

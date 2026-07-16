@@ -8,6 +8,7 @@ interface FactSync {
   confidence: string;
   correctCount: number;
   incorrectCount: number;
+  skippedCount?: number;
   lastSeen: number | null;
   lastCorrect: number | null;
   recentAttempts: boolean[];
@@ -19,8 +20,8 @@ export const onRequestPut: PagesFunction<Env> = async ({ params, request, env })
   const { facts } = await request.json<{ facts: FactSync[] }>();
   const stmt = env.DB.prepare(
     `INSERT OR REPLACE INTO fact_progress
-     (profile_id, fact, curriculum, confidence, correct_count, incorrect_count, last_seen, last_correct, recent_attempts, preferred_strategy)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+     (profile_id, fact, curriculum, confidence, correct_count, incorrect_count, skipped_count, last_seen, last_correct, recent_attempts, preferred_strategy)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const batch = facts.map((f) =>
     stmt.bind(
@@ -31,6 +32,7 @@ export const onRequestPut: PagesFunction<Env> = async ({ params, request, env })
       f.confidence,
       f.correctCount,
       f.incorrectCount,
+      f.skippedCount ?? 0,
       f.lastSeen,
       f.lastCorrect,
       JSON.stringify(f.recentAttempts),

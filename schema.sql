@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS fact_progress (
   confidence        TEXT NOT NULL DEFAULT 'new',
   correct_count     INTEGER NOT NULL DEFAULT 0,
   incorrect_count   INTEGER NOT NULL DEFAULT 0,
+  skipped_count     INTEGER NOT NULL DEFAULT 0,
   last_seen         INTEGER,
   last_correct      INTEGER,
   recent_attempts   TEXT,
