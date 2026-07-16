@@ -267,7 +267,7 @@ export function PracticeView() {
         <HintPanel
           strategies={strategies}
           isOpen={showHint}
-          onClose={() => { if (showHint) nextProblem() }}
+          onClose={() => setShowHint(false)}
           rows={displayFact.a}
           cols={displayFact.b}
           resetKey={displayFact.fact}
