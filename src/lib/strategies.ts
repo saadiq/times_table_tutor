@@ -1,4 +1,5 @@
 import type { Strategy, FactProgress } from '../types'
+import { getAnchorStrategies } from './anchorStrategies'
 
 export type StrategyHint = {
   id: Strategy
@@ -170,17 +171,23 @@ export function getStrategiesForFact(fact: FactProgress, known?: KnownFacts): St
     })
   }
 
-  // Use a neighbor (for harder facts)
+  // Use a neighbor (for harder facts) — prefer one the learner knows.
   if (a > 2 && b > 2) {
-    const neighborA = a - 1
+    const knownNeighbors = known
+      ? [a - 1, a + 1].filter(k => k >= 1 && k <= 12 && (known.isKnown(k, b) || known.isKnown(b, k)))
+      : []
+    const neighbor = knownNeighbors[0] ?? a - 1
+    const below = neighbor === a - 1
     strategies.push({
       id: 'use_neighbor',
       name: 'Use a Neighbor',
-      description: `Start from ${neighborA} × ${b}, add ${b} more`,
+      description: below
+        ? `Start from ${neighbor} × ${b}, add ${b} more`
+        : `Start from ${neighbor} × ${b}, take ${b} away`,
       steps: [
-        `Do you know ${neighborA} × ${b}?`,
-        `If so, just add one more group of ${b}!`,
-        `${neighborA} × ${b} + ${b} = ?`,
+        `Do you know ${neighbor} × ${b}?`,
+        below ? `If so, just add one more group of ${b}!` : `That's one group of ${b} too many — take one away.`,
+        below ? `${neighbor} × ${b} + ${b} = ?` : `${neighbor} × ${b} − ${b} = ?`,
       ],
     })
   }
@@ -204,6 +211,7 @@ export function getStrategiesForFact(fact: FactProgress, known?: KnownFacts): St
   if (known) {
     const commuted = getCommutedStrategy(fact, known)
     if (commuted) strategies.push(commuted)
+    strategies.push(...getAnchorStrategies(fact, known))
     return sortByStrategyOrder(strategies)
   }
   return strategies

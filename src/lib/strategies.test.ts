@@ -48,3 +48,19 @@ describe('makeKnownFacts', () => {
     expect(known.isKnown(9, 9)).toBe(false)
   })
 })
+
+describe('personalized neighbor', () => {
+  it('prefers a known neighbor above the fact', () => {
+    const strategies = getStrategiesForFact(makeFact(7, 6), knowing('8x6'))
+    const neighbor = strategies.find(s => s.id === 'use_neighbor')
+    expect(neighbor?.description).toContain('8 × 6')
+    expect(neighbor?.steps.join(' ')).toContain('−')
+  })
+
+  it('anchor chains appear after the commuted hint and before number tricks', () => {
+    const strategies = getStrategiesForFact(makeFact(8, 7), knowing('7x8', '10x7', '2x7'))
+    const ids = strategies.map(s => s.id)
+    expect(ids.indexOf('fact_family')).toBeLessThan(ids.indexOf('known_anchor'))
+    expect(ids.indexOf('known_anchor')).toBeLessThan(ids.indexOf('visual_array'))
+  })
+})
