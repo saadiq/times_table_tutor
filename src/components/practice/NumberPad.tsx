@@ -45,6 +45,7 @@ export function NumberPad({ onSubmit, disabled }: NumberPadProps) {
             return (
               <motion.button
                 key={btn}
+                aria-label="Delete"
                 whileTap={{ scale: 0.95 }}
                 onClick={handleDelete}
                 disabled={disabled || !value}
@@ -59,6 +60,7 @@ export function NumberPad({ onSubmit, disabled }: NumberPadProps) {
             return (
               <motion.button
                 key={btn}
+                aria-label="Submit answer"
                 whileTap={{ scale: 0.95 }}
                 onClick={handleSubmit}
                 disabled={disabled || !value}
