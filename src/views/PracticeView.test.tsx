@@ -85,6 +85,41 @@ describe('PracticeView', () => {
     })
   })
 
+  describe('remount serving', () => {
+    it('serves a due comeback on mount, as multiple choice, and resolves it when answered', async () => {
+      const skipped = { ...confidentFact(7, 5), skippedCount: 1 }
+      loadFacts({
+        '7x5': skipped,
+        '7x2': confidentFact(7, 2),
+        '7x3': confidentFact(7, 3),
+      })
+      // State a previous mount left behind: 7x5 skipped, comeback now due.
+      useSessionStore.setState({ pendingComeback: '7x5', comebackDelay: 0, skipsUsed: 1 })
+
+      render(<PracticeView />)
+      await flushMount()
+
+      // Comeback route forces multiple choice: the answer appears as a choice
+      // button. The adaptive route would give confident 7x5 the number pad.
+      fireEvent.click(screen.getByRole('button', { name: '35' }))
+      expect(useSessionStore.getState().pendingComeback).toBeNull()
+    })
+
+    it('discards a stale queued follow-up on mount instead of serving it later', async () => {
+      loadFacts({
+        '7x5': confidentFact(7, 5),
+        '7x3': { ...makeFact(7, 3), confidence: 'learning' },
+      })
+      // A previous mount answered something and queued a follow-up, then unmounted.
+      useSessionStore.setState({ pendingFollowUp: '7x3' })
+
+      render(<PracticeView />)
+      await flushMount()
+
+      expect(useSessionStore.getState().pendingFollowUp).toBeNull()
+    })
+  })
+
   describe('hint-gated mastery', () => {
     it('records hintShown when the hint was opened and closed before answering', async () => {
       loadFacts({ '7x5': confidentFact(7, 5) })

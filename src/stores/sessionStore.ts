@@ -14,6 +14,7 @@ type SessionActions = {
   incrementNewFacts: () => void
   recordResult: (correct: boolean) => void
   getSessionAccuracy: () => number
+  getConsecutiveWrong: () => number
   recordSkip: (fact: string) => void
   setPendingFollowUp: (fact: string | null) => void
   tickComebackDelay: () => void
@@ -73,6 +74,16 @@ export const useSessionStore = create<Session & SessionActions>((set, get) => ({
     const results = get().recentResults
     if (results.length < 3) return TARGET_ACCURACY
     return results.filter(Boolean).length / results.length
+  },
+
+  getConsecutiveWrong: () => {
+    const results = get().recentResults
+    let count = 0
+    for (let i = results.length - 1; i >= 0; i--) {
+      if (results[i]) break
+      count++
+    }
+    return count
   },
 
   recordSkip: (fact) => set(state => ({

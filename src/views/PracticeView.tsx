@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useProgressStore, useSessionStore, useFocusTablesStore, useProfileStore, useAttemptsStore, useSettingsStore } from '../stores'
-import { selectNextFact, shouldUseMultipleChoice } from '../lib/adaptive'
+import { shouldUseMultipleChoice } from '../lib/adaptive'
 import { decideNextProblem, applyComebackOutcome, type ServeKind } from '../lib/practiceFlow'
 import { SESSION_DEFAULTS } from '../lib/constants'
 import { makeKnownFacts } from '../lib/strategies'
@@ -11,16 +11,6 @@ import { formatEquation } from '../lib/operations'
 import { ProblemDisplay, AnswerInput, HintPanel, GoalComplete, PracticeActions } from '../components/practice'
 import { ProgressBar, Celebration } from '../components/common'
 import type { FactProgress } from '../types'
-
-function countConsecutiveWrong(): number {
-  const results = useSessionStore.getState().recentResults
-  let count = 0
-  for (let i = results.length - 1; i >= 0; i--) {
-    if (results[i]) break
-    count++
-  }
-  return count
-}
 
 export function PracticeView() {
   const { facts, recordAttempt, toSyncPayload, recordSkip: recordFactSkip } = useProgressStore()
@@ -63,7 +53,7 @@ export function PracticeView() {
       context: {
         newFactsIntroduced: session.newFactsIntroduced,
         sessionAccuracy: session.getSessionAccuracy(),
-        consecutiveWrong: countConsecutiveWrong(),
+        consecutiveWrong: session.getConsecutiveWrong(),
         nearGoalEnd: session.progress >= session.goal - 1,
       },
       matchesTable: operation.matchesTable,
@@ -92,26 +82,42 @@ export function PracticeView() {
     }
   }, [recentFacts, activeFocusTables, ttsEnabled, operation, clearAdvanceTimer])
 
-  // Compute display fact synchronously to avoid flicker on initial render
+  // Compute the first serve synchronously to avoid flicker on initial render.
+  // It goes through decideNextProblem so a comeback surviving from a previous
+  // mount is honored; a stale follow-up is never served, only discarded below.
   const shouldInitialize = !currentFact && Object.keys(facts).length > 0
-  const initialFact = shouldInitialize ? selectNextFact(facts, recentFacts, activeFocusTables, {
-    newFactsIntroduced,
-    sessionAccuracy: getSessionAccuracy(),
-  }, operation.matchesTable) : null
+  const initialServe = shouldInitialize ? decideNextProblem({
+    facts,
+    recentFacts,
+    focusTables: activeFocusTables,
+    context: { newFactsIntroduced, sessionAccuracy: getSessionAccuracy() },
+    matchesTable: operation.matchesTable,
+    pendingComeback: useSessionStore.getState().pendingComeback,
+    pendingFollowUp: null,
+    comebackDelay: useSessionStore.getState().comebackDelay,
+    progress,
+    goal,
+  }) : null
+  const initialFact = initialServe?.next ?? null
   const displayFact = currentFact || initialFact
 
-  if (initialFact && !currentFact) {
+  if (initialServe && initialFact && !currentFact) {
     queueMicrotask(() => {
+      const session = useSessionStore.getState()
+      applyComebackOutcome(initialServe.comeback, session)
+      session.setPendingFollowUp(null)
+      setServedKind(initialServe.kind)
       setCurrentFact(initialFact)
       setRecentFacts(prev => [...prev.slice(-10), initialFact.fact])
     })
   }
 
   // Lock the input widget for the currently served problem.
+  const displayKind = currentFact ? servedKind : (initialServe?.kind ?? 'adaptive')
   const useMultipleChoice = useMemo(
-    () => (displayFact ? servedKind === 'comeback' || shouldUseMultipleChoice(displayFact, recentlyFailed) : false),
+    () => (displayFact ? displayKind === 'comeback' || shouldUseMultipleChoice(displayFact, recentlyFailed) : false),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [displayFact, servedKind]
+    [displayFact, displayKind]
   )
 
   const handleAnswer = (answer: number) => {

@@ -57,3 +57,23 @@ describe('sessionStore resolveComeback', () => {
     expect(useSessionStore.getState().comebackDelay).toBe(2)
   })
 })
+
+describe('sessionStore getConsecutiveWrong', () => {
+  beforeEach(() => {
+    useSessionStore.getState().resetProgress()
+  })
+
+  it('counts the trailing run of wrong answers', () => {
+    const s = useSessionStore.getState()
+    s.recordResult(true)
+    s.recordResult(false)
+    s.recordResult(false)
+    expect(useSessionStore.getState().getConsecutiveWrong()).toBe(2)
+    useSessionStore.getState().recordResult(true)
+    expect(useSessionStore.getState().getConsecutiveWrong()).toBe(0)
+  })
+
+  it('is zero with no results', () => {
+    expect(useSessionStore.getState().getConsecutiveWrong()).toBe(0)
+  })
+})
