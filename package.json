@@ -53,6 +53,6 @@
     "vite": "^7.2.4",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^4.1.9",
-    "wrangler": "^4.54.0"
+    "wrangler": "^4.111.0"
   }
 }
