@@ -43,6 +43,8 @@ export function PracticeView() {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [showResult, setShowResult] = useState(false)
   const [showHint, setShowHint] = useState(false)
+  // Latches "a hint was consulted for this problem" — closing the panel must not unmark it.
+  const [hintUsed, setHintUsed] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [celebrationType, setCelebrationType] = useState<'correct' | 'streak' | 'goal' | null>(null)
   const [attemptStartTime, setAttemptStartTime] = useState<number>(() => Date.now())
@@ -84,6 +86,7 @@ export function PracticeView() {
       setSelectedAnswer(null)
       setShowResult(false)
       setShowHint(false)
+      setHintUsed(false)
       setMessage(null)
       setAttemptStartTime(Date.now())
       if (ttsEnabled) operation.speakProblem(next)
@@ -116,7 +119,7 @@ export function PracticeView() {
     if (!displayFact) return
     if (showResult) return
 
-    const wasHintShown = showHint
+    const wasHintShown = hintUsed
 
     // Count new facts when actually attempted, not when selected (avoids skip double-count)
     if (displayFact.confidence === 'new' && !recentlyFailed.has(displayFact.fact)) {
@@ -274,7 +277,11 @@ export function PracticeView() {
         />
 
         {!showResult && (
-          <PracticeActions onHint={() => setShowHint(true)} onSkip={handleSkip} canSkip={canSkip} />
+          <PracticeActions
+            onHint={() => { setShowHint(true); setHintUsed(true) }}
+            onSkip={handleSkip}
+            canSkip={canSkip}
+          />
         )}
       </div>
     </div>
