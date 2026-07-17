@@ -5,11 +5,13 @@ type VisualArrayProps = {
   cols: number
   /** Overrides the default multiplication rows x columns caption. */
   caption?: string
-  /** Render the last N rows dimmed — a group being removed or added. */
+  /** Render the last N rows dimmed — a group being taken away. */
   fadedRows?: number
+  /** Render the last N rows in gold — a group being added. */
+  accentRows?: number
 }
 
-export function VisualArray({ rows, cols, caption, fadedRows = 0 }: VisualArrayProps) {
+export function VisualArray({ rows, cols, caption, fadedRows = 0, accentRows = 0 }: VisualArrayProps) {
   // Limit display size for large numbers
   const displayRows = Math.min(rows, 10)
   const displayCols = Math.min(cols, 10)
@@ -24,13 +26,16 @@ export function VisualArray({ rows, cols, caption, fadedRows = 0 }: VisualArrayP
         {Array.from({ length: displayRows * displayCols }).map((_, i) => {
           const row = Math.floor(i / displayCols)
           const faded = fadedRows > 0 && row >= displayRows - fadedRows
+          const accented = !faded && accentRows > 0 && row >= displayRows - accentRows
           return (
             <motion.div
               key={i}
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: i * 0.02 }}
-              className={`w-4 h-4 rounded-full ${faded ? 'bg-gray-300 opacity-40' : 'bg-garden-400'}`}
+              className={`w-4 h-4 rounded-full ${
+                faded ? 'bg-gray-300 opacity-40' : accented ? 'bg-warm-400' : 'bg-garden-400'
+              }`}
             />
           )
         })}

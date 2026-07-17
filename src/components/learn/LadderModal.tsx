@@ -76,7 +76,8 @@ export function LadderModal({ ladder, onClose }: LadderModalProps) {
                 {step.array && (
                   <div className="bg-white rounded-2xl border-2 border-gray-100 p-4">
                     <VisualArray rows={step.array.rows} cols={step.array.cols}
-                      caption={step.array.caption} fadedRows={step.array.fadedRows} />
+                      caption={step.array.caption} fadedRows={step.array.fadedRows}
+                      accentRows={step.array.accentRows} />
                   </div>
                 )}
               </>
