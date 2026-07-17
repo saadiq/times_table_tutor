@@ -37,3 +37,23 @@ describe('sessionStore skip budget', () => {
     expect(s.pendingComeback).toBeNull()
   })
 })
+
+describe('sessionStore resolveComeback', () => {
+  beforeEach(() => {
+    useSessionStore.getState().resetProgress()
+  })
+
+  it('clears the comeback when the answered fact matches', () => {
+    useSessionStore.getState().recordSkip('7x8')
+    useSessionStore.getState().resolveComeback('7x8')
+    expect(useSessionStore.getState().pendingComeback).toBeNull()
+    expect(useSessionStore.getState().comebackDelay).toBe(0)
+  })
+
+  it('leaves a non-matching comeback pending', () => {
+    useSessionStore.getState().recordSkip('7x8')
+    useSessionStore.getState().resolveComeback('3x4')
+    expect(useSessionStore.getState().pendingComeback).toBe('7x8')
+    expect(useSessionStore.getState().comebackDelay).toBe(2)
+  })
+})

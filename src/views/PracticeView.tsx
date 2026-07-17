@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useProgressStore, useSessionStore, useFocusTablesStore, useProfileStore, useAttemptsStore, useSettingsStore } from '../stores'
 import { selectNextFact, shouldUseMultipleChoice } from '../lib/adaptive'
-import { decideNextProblem, type ServeKind } from '../lib/practiceFlow'
+import { decideNextProblem, applyComebackOutcome, type ServeKind } from '../lib/practiceFlow'
 import { SESSION_DEFAULTS } from '../lib/constants'
 import { makeKnownFacts } from '../lib/strategies'
 import { useActiveOperation, useSpeakThenAdvance } from '../hooks'
@@ -74,8 +74,7 @@ export function PracticeView() {
       goal: session.goal,
     })
 
-    if (result.comeback === 'served' || result.comeback === 'dropped') session.clearComeback()
-    else if (result.comeback === 'deferred') session.tickComebackDelay()
+    applyComebackOutcome(result.comeback, session)
     session.setPendingFollowUp(null)
 
     const next = result.next
@@ -156,6 +155,7 @@ export function PracticeView() {
     }
 
     recordResult(isCorrect)
+    useSessionStore.getState().resolveComeback(displayFact.fact)
 
     if (isCorrect) {
       // Clear from recently-failed so it shows as number pad next time

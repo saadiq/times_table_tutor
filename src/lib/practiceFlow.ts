@@ -26,6 +26,21 @@ export type ServeParams = {
 const defaultMatchesTable = (fact: FactProgress, table: number) =>
   fact.a === table || fact.b === table
 
+export type ComebackSession = {
+  clearComeback: () => void
+  tickComebackDelay: () => void
+}
+
+/**
+ * Apply a serve's comeback outcome to the session. A served comeback stays
+ * pending — the caller clears it via resolveComeback when the fact is answered,
+ * so navigating away mid-comeback can never lose the skipped fact.
+ */
+export function applyComebackOutcome(outcome: ComebackOutcome, session: ComebackSession): void {
+  if (outcome === 'dropped') session.clearComeback()
+  else if (outcome === 'deferred') session.tickComebackDelay()
+}
+
 /** Choose adaptive selection, a guaranteed skipped-fact comeback, or a queued follow-up. */
 export function decideNextProblem(params: ServeParams): ServeResult {
   const {

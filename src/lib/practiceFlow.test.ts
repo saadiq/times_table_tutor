@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { decideNextProblem } from './practiceFlow'
+import { describe, it, expect, vi } from 'vitest'
+import { decideNextProblem, applyComebackOutcome } from './practiceFlow'
 import { multiplyOperation } from './operations'
 
 const facts = multiplyOperation.generateFacts()
@@ -79,5 +79,29 @@ describe('decideNextProblem follow-up handling', () => {
     const result = decideNextProblem({ ...withFollowUp, pendingComeback: '9x6', comebackDelay: 0 })
     expect(result.kind).toBe('comeback')
     expect(result.next?.fact).toBe('9x6')
+  })
+})
+
+describe('applyComebackOutcome', () => {
+  const spySession = () => ({ clearComeback: vi.fn(), tickComebackDelay: vi.fn() })
+
+  it('drops by clearing and defers by ticking', () => {
+    const dropped = spySession()
+    applyComebackOutcome('dropped', dropped)
+    expect(dropped.clearComeback).toHaveBeenCalledOnce()
+    expect(dropped.tickComebackDelay).not.toHaveBeenCalled()
+
+    const deferred = spySession()
+    applyComebackOutcome('deferred', deferred)
+    expect(deferred.tickComebackDelay).toHaveBeenCalledOnce()
+    expect(deferred.clearComeback).not.toHaveBeenCalled()
+  })
+
+  it('leaves a served comeback pending — it is cleared when answered, not when shown', () => {
+    const served = spySession()
+    applyComebackOutcome('served', served)
+    applyComebackOutcome('none', served)
+    expect(served.clearComeback).not.toHaveBeenCalled()
+    expect(served.tickComebackDelay).not.toHaveBeenCalled()
   })
 })

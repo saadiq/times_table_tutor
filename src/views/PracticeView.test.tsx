@@ -55,6 +55,36 @@ describe('PracticeView', () => {
     vi.restoreAllMocks()
   })
 
+  describe('comeback lifecycle', () => {
+    it('keeps the comeback pending while displayed and clears it when answered', async () => {
+      // Four equal-priority confident facts: serve order is insertion order.
+      loadFacts({
+        '7x5': confidentFact(7, 5),
+        '7x2': confidentFact(7, 2),
+        '7x3': confidentFact(7, 3),
+        '7x4': confidentFact(7, 4),
+      })
+      render(<PracticeView />)
+      await flushMount()
+
+      // Serve 1 is 7x5 — skip it (comeback queued, delay 2).
+      fireEvent.click(screen.getByRole('button', { name: /skip/i }))
+      expect(useSessionStore.getState().pendingComeback).toBe('7x5')
+
+      // Two intervening problems: 7x2 then 7x3 (delay ticks 1 → 0).
+      await answerOnPad('14')
+      await answerOnPad('21')
+
+      // Serve 4 is the comeback, as multiple choice (the correct answer is a choice button).
+      const comebackChoice = screen.getByRole('button', { name: '35' })
+      // Still pending while merely displayed — surviving an unmount here is the point.
+      expect(useSessionStore.getState().pendingComeback).toBe('7x5')
+
+      fireEvent.click(comebackChoice)
+      expect(useSessionStore.getState().pendingComeback).toBeNull()
+    })
+  })
+
   describe('hint-gated mastery', () => {
     it('records hintShown when the hint was opened and closed before answering', async () => {
       loadFacts({ '7x5': confidentFact(7, 5) })

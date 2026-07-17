@@ -18,6 +18,7 @@ type SessionActions = {
   setPendingFollowUp: (fact: string | null) => void
   tickComebackDelay: () => void
   clearComeback: () => void
+  resolveComeback: (fact: string) => void
   canSkip: () => boolean
 }
 
@@ -87,6 +88,13 @@ export const useSessionStore = create<Session & SessionActions>((set, get) => ({
   })),
 
   clearComeback: () => set({ pendingComeback: null, comebackDelay: 0 }),
+
+  // A comeback is resolved by ANSWERING the fact (correct or wrong), never by serving it.
+  resolveComeback: (fact) => {
+    if (get().pendingComeback === fact) {
+      set({ pendingComeback: null, comebackDelay: 0 })
+    }
+  },
 
   canSkip: () => get().skipsUsed < SESSION_DEFAULTS.skipsPerBlock,
 }))
