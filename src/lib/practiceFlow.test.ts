@@ -105,3 +105,11 @@ describe('applyComebackOutcome', () => {
     expect(served.tickComebackDelay).not.toHaveBeenCalled()
   })
 })
+
+describe('decideNextProblem follow-up focus filter', () => {
+  it('skips a follow-up that no longer matches the focus tables', () => {
+    const result = decideNextProblem({ ...base, pendingFollowUp: '8x7', focusTables: [3] })
+    expect(result.kind).toBe('adaptive')
+    expect(result.next && (result.next.a === 3 || result.next.b === 3)).toBe(true)
+  })
+})

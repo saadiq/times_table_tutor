@@ -169,3 +169,42 @@ describe('progressStore', () => {
     expect(useProgressStore.getState().facts['7x8']).toBeUndefined()
   })
 })
+
+describe('loadFromServer field preservation', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    useCurriculumStore.setState({ active: 'multiply' })
+    useProgressStore.setState({ facts: {}, initialized: false, curriculum: 'multiply' })
+  })
+
+  it('preserves skippedCount and attempt hintShown from server rows', () => {
+    useProgressStore.getState().initialize()
+    useProgressStore.getState().loadFromServer([
+      {
+        fact: '7x8', curriculum: 'multiply', confidence: 'learning',
+        correctCount: 2, incorrectCount: 1, skippedCount: 3,
+        lastSeen: 1750000000000, lastCorrect: null,
+        recentAttempts: [{
+          correct: true, inputMethod: 'number_pad', responseTimeMs: 4000,
+          timestamp: '2026-07-01T00:00:00.000Z', hintShown: true,
+        }],
+        preferredStrategy: null,
+      },
+    ])
+    const fact = useProgressStore.getState().facts['7x8']
+    expect(fact.skippedCount).toBe(3)
+    expect(fact.recentAttempts[0].hintShown).toBe(true)
+  })
+
+  it('defaults skippedCount to 0 for rows from older servers', () => {
+    useProgressStore.getState().initialize()
+    useProgressStore.getState().loadFromServer([
+      {
+        fact: '7x8', curriculum: 'multiply', confidence: 'learning',
+        correctCount: 2, incorrectCount: 1, lastSeen: null, lastCorrect: null,
+        recentAttempts: [], preferredStrategy: null,
+      },
+    ])
+    expect(useProgressStore.getState().facts['7x8'].skippedCount).toBe(0)
+  })
+})
