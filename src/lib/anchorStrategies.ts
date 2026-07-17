@@ -22,7 +22,8 @@ const CHAIN_BUILDERS: Record<number, (n: number, knows: Knows) => StrategyHint |
     '7 groups is 5 groups plus 2 groups.', `${5 * n} + ${2 * n} = ?`,
   ]) : null,
   8: (n, knows) => {
-    if (knows(10, n) && knows(2, n)) return hint('Tens Minus Twos', `Start from 10 × ${n} — you know that one`, [
+    // The hint computes the "two groups" itself, so only the 10x anchor must be known.
+    if (knows(10, n)) return hint('Tens Minus Twos', `Start from 10 × ${n} — you know that one`, [
       `You know 10 × ${n} = ${10 * n}.`,
       `8 groups is 2 groups less than 10 — that's ${2 * n} less.`, `${10 * n} − ${2 * n} = ?`,
     ])
