@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import type { AttemptRecord, DailySummary, InputMethod } from '../types'
 import { saveToStorage, loadFromStorage } from '../lib/storage'
+import { canKeepalive } from '../lib/api'
+import { getLocalDateKey, getDateKeyFromTimestamp, isWithinDays } from '../lib/attemptDates'
 
 const MAX_LOCAL_DAYS = 30
 const SYNC_DEBOUNCE_MS = 2000
@@ -34,38 +36,13 @@ type AttemptsActions = {
   getTodayStats: () => { attempts: number; correct: number; accuracy: number }
   clearOldAttempts: () => void
   clearForProfileSwitch: () => void
+  flush: () => void
   syncToCloud: (profileId: string) => Promise<void>
   fetchFromCloud: (profileId: string) => Promise<void>
 }
 
 function generateId(): string {
   return crypto.randomUUID()
-}
-
-/**
- * Get local date string (YYYY-MM-DD) from a Date object.
- * Uses user's local timezone, not UTC.
- */
-function getLocalDateKey(date: Date = new Date()): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-/**
- * Get local date key from an ISO timestamp string.
- * Converts the UTC timestamp to the user's local timezone.
- */
-function getDateKeyFromTimestamp(timestamp: string): string {
-  return getLocalDateKey(new Date(timestamp))
-}
-
-function isWithinDays(timestamp: string, days: number): boolean {
-  const date = new Date(timestamp)
-  const cutoff = new Date()
-  cutoff.setDate(cutoff.getDate() - days)
-  return date >= cutoff
 }
 
 function matchesProfile(attempt: AttemptRecord, profileId: string | null): boolean {
@@ -241,6 +218,12 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
       saveToStorage('pendingAttempts', [])
     },
 
+    // Push pending attempts for the signed-in profile; no-op when signed out.
+    flush: () => {
+      const { currentProfileId } = get()
+      if (currentProfileId) get().syncToCloud(currentProfileId)
+    },
+
     syncToCloud: async (profileId) => {
       const { pendingSync } = get()
       if (pendingSync.length === 0) return
@@ -248,18 +231,29 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
       set({ syncStatus: 'syncing' })
 
       try {
+        const body = JSON.stringify({
+          attempts: pendingSync.map((a) => ({ ...a, profileId })),
+        })
         const response = await fetch('/api/attempts/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            attempts: pendingSync.map((a) => ({ ...a, profileId })),
-          }),
+          body,
+          // Survive a page that closes right after the flush is fired — unless
+          // the backlog is too big for keepalive, which would reject outright
+          // and strand the queue for good.
+          keepalive: canKeepalive(body),
         })
 
         if (!response.ok) throw new Error('Sync failed')
 
-        set({ pendingSync: [], syncStatus: 'synced' })
-        saveToStorage('pendingAttempts', [])
+        // Drop only what this POST carried: an attempt recorded while it was
+        // in flight stays queued for the next sync instead of vanishing.
+        const syncedIds = new Set(pendingSync.map((a) => a.id))
+        set((state) => {
+          const remaining = state.pendingSync.filter((a) => !syncedIds.has(a.id))
+          saveToStorage('pendingAttempts', remaining)
+          return { pendingSync: remaining, syncStatus: 'synced' }
+        })
       } catch {
         set({ syncStatus: 'error' })
       }

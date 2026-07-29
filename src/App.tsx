@@ -13,6 +13,7 @@ function App() {
   const { initialize: initProgressView } = useProgressViewStore()
   const { initialize: initSettings } = useSettingsStore()
   const initializeAttempts = useAttemptsStore((s) => s.initialize)
+  const restorePendingSync = useProfileStore((s) => s.restorePendingSync)
   const fetchFromCloud = useAttemptsStore((s) => s.fetchFromCloud)
   const setProfileId = useAttemptsStore((s) => s.setProfileId)
   const { mode } = useSessionStore()
@@ -27,7 +28,28 @@ function App() {
     initProgressView()
     initializeAttempts()
     initSettings()
-  }, [initCurriculum, initProgress, initGarden, initFocusTables, initProgressView, initializeAttempts, initSettings])
+    // Replay a progress queue a previous session couldn't deliver. The sign-in
+    // path waits on this same replay, so a verify read can't overtake it.
+    restorePendingSync()
+  }, [initCurriculum, initProgress, initGarden, initFocusTables, initProgressView, initializeAttempts, initSettings, restorePendingSync])
+
+  // Push queued work before the page goes away — a debounced sync would
+  // otherwise die with the tab
+  useEffect(() => {
+    const flush = () => {
+      useProfileStore.getState().flushProgressSync()
+      useAttemptsStore.getState().flush()
+    }
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') flush()
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    window.addEventListener('pagehide', flush)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('pagehide', flush)
+    }
+  }, [])
 
   // Sync attempts when profile is selected
   useEffect(() => {

@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   focusTablesDivide: 'ttt_focus_tables_divide',
   attempts: 'ttt_attempts',
   pendingAttempts: 'ttt_pending_attempts',
+  pendingProgressSync: 'ttt_pending_progress_sync',
   progressView: 'ttt_progress_view',
   progressViewDivide: 'ttt_progress_view_divide',
   curriculum: 'ttt_curriculum',

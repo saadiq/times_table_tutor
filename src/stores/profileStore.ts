@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { api, ApiError } from '../lib/api';
 import { resetStoresForProfileSwitch } from '../lib/resetStores';
+import { createProgressSyncSlice, dropPersistedBucket } from '../lib/progressSyncQueue';
+import type { ProgressSyncSlice } from '../lib/progressSyncQueue';
 import type {
   Profile,
   ProfileListItem,
   CreateProfileRequest,
   ProfileData,
-  FactProgressSync,
   GardenItemSync,
   GardenStatsSync,
 } from '../types/api';
@@ -19,7 +20,7 @@ interface SavedSession {
   icon: string;
 }
 
-interface ProfileState {
+interface ProfileState extends ProgressSyncSlice {
   // State
   currentProfile: Profile | null;
   profiles: ProfileListItem[];
@@ -29,10 +30,6 @@ interface ProfileState {
   // Verification flow state
   verifyingProfileId: string | null;
   verifyError: string | null;
-
-  // Sync state
-  pendingProgressSync: FactProgressSync[];
-  syncTimeoutId: number | null;
 
   // Actions
   fetchProfiles: () => Promise<void>;
@@ -47,13 +44,10 @@ interface ProfileState {
   restoreSession: () => Promise<ProfileData | null>;
   clearSession: () => void;
 
-  // Sync actions
-  queueProgressSync: (fact: FactProgressSync) => void;
-  flushProgressSync: () => Promise<void>;
+  // Sync actions (queueProgressSync/flushProgressSync/restorePendingSync come
+  // from ProgressSyncSlice)
   syncGarden: (items: GardenItemSync[], stats: GardenStatsSync) => Promise<void>;
 }
-
-const SYNC_DEBOUNCE_MS = 2000;
 
 // Helper functions for session persistence
 function saveSession(profileId: string, icon: string): void {
@@ -83,14 +77,14 @@ function clearSavedSession(): void {
 }
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
+  ...createProgressSyncSlice(set, get),
+
   currentProfile: null,
   profiles: [],
   isLoading: false,
   error: null,
   verifyingProfileId: null,
   verifyError: null,
-  pendingProgressSync: [],
-  syncTimeoutId: null,
 
   fetchProfiles: async () => {
     set({ isLoading: true, error: null });
@@ -115,6 +109,9 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   verifyAndSelect: async (id: string, icon: string) => {
     set({ isLoading: true, verifyError: null });
     try {
+      // Land any recovered queue first: the caller overwrites local state with
+      // this read, so a replay resolving after it would look like a rollback.
+      await get().restorePendingSync();
       const data = await api.verifyProfile(id, icon);
       // Save session to localStorage for auto-login
       saveSession(id, icon);
@@ -155,6 +152,8 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
     set({ isLoading: true, error: null });
     try {
+      // Same ordering rule as verifyAndSelect: replay before the server read
+      await get().restorePendingSync();
       const data = await api.verifyProfile(session.profileId, session.icon);
       set({
         currentProfile: data.profile,
@@ -206,10 +205,10 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   },
 
   clearProfile: () => {
-    const { syncTimeoutId, currentProfile, pendingProgressSync } = get();
-    if (syncTimeoutId) {
-      clearTimeout(syncTimeoutId);
-    }
+    // Fire-and-forget: the flush captures the profile and queue synchronously
+    // before the reset below, and on failure its profile-switch guard leaves
+    // the persisted copy on disk for next-launch recovery.
+    get().flushProgressSync();
 
     // Clear session from localStorage
     clearSavedSession();
@@ -225,17 +224,19 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       verifyingProfileId: null,
       verifyError: null,
     });
-
-    // Fire-and-forget sync with captured state
-    if (currentProfile && pendingProgressSync.length > 0) {
-      api.syncProgress(currentProfile.id, pendingProgressSync).catch((err) => {
-        console.error('Failed to sync progress on profile clear:', err);
-      });
-    }
   },
 
   deleteProfile: async (id: string) => {
     await api.deleteProfile(id);
+    // Drain every trace of the deleted profile's sync state: its persisted
+    // bucket can never be delivered again, and a queue left in memory would
+    // flush to whichever child signs in next.
+    dropPersistedBucket(id);
+    if (get().currentProfile?.id === id) {
+      const { syncTimeoutId } = get();
+      if (syncTimeoutId) clearTimeout(syncTimeoutId);
+      set({ pendingProgressSync: [], syncTimeoutId: null });
+    }
     // If we're deleting the current profile's session, clear it
     const session = loadSession();
     if (session?.profileId === id) {
@@ -246,49 +247,6 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       currentProfile:
         state.currentProfile?.id === id ? null : state.currentProfile,
     }));
-  },
-
-  queueProgressSync: (fact: FactProgressSync) => {
-    const { syncTimeoutId, currentProfile } = get();
-    if (!currentProfile) return;
-
-    // Clear existing timeout
-    if (syncTimeoutId) {
-      clearTimeout(syncTimeoutId);
-    }
-
-    // Add to pending queue (replace if same fact)
-    set((state) => ({
-      pendingProgressSync: [
-        ...state.pendingProgressSync.filter((f) => f.fact !== fact.fact),
-        fact,
-      ],
-    }));
-
-    // Set new debounced sync
-    const newTimeoutId = window.setTimeout(() => {
-      get().flushProgressSync();
-    }, SYNC_DEBOUNCE_MS);
-
-    set({ syncTimeoutId: newTimeoutId });
-  },
-
-  flushProgressSync: async () => {
-    const { currentProfile, pendingProgressSync } = get();
-    if (!currentProfile || pendingProgressSync.length === 0) return;
-
-    const factsToSync = [...pendingProgressSync];
-    set({ pendingProgressSync: [], syncTimeoutId: null });
-
-    try {
-      await api.syncProgress(currentProfile.id, factsToSync);
-    } catch (err) {
-      // Re-queue on failure
-      console.error('Failed to sync progress:', err);
-      set((state) => ({
-        pendingProgressSync: [...factsToSync, ...state.pendingProgressSync],
-      }));
-    }
   },
 
   syncGarden: async (items: GardenItemSync[], stats: GardenStatsSync) => {

@@ -10,6 +10,17 @@ import type {
 
 const API_BASE = '/api';
 
+const KEEPALIVE_MAX_BODY = 60000;
+
+/**
+ * Whether a body may ride on a keepalive request. Browsers cap keepalive
+ * bodies at 64KB and reject anything larger before it leaves the page, so an
+ * oversized backlog would never sync again; those go out as a normal fetch.
+ */
+export function canKeepalive(body: string): boolean {
+  return body.length <= KEEPALIVE_MAX_BODY;
+}
+
 class ApiError extends Error {
   status: number;
 
@@ -26,6 +37,11 @@ async function request<T>(
 ): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
+    // Callers only express intent; the 64KB cap guard lives here so no call
+    // site can strand an oversized body on a rejected keepalive fetch.
+    keepalive:
+      options.keepalive === true &&
+      (typeof options.body !== 'string' || canKeepalive(options.body)),
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -73,9 +89,11 @@ export const api = {
     profileId: string,
     facts: FactProgressSync[]
   ): Promise<void> {
+    // Often fired as the page hides; request() drops keepalive over the cap.
     await request(`/profiles/${profileId}/progress`, {
       method: 'PUT',
       body: JSON.stringify({ facts }),
+      keepalive: true,
     });
   },
 
