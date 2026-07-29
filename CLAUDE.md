@@ -52,6 +52,11 @@ Before deploying to production:
 2. Update `database_id` in `wrangler.toml` with the real ID
 3. Run production migrations: `bun run db:migrate`
 
+`db:migrate` replays `schema.sql`, which is all `CREATE TABLE IF NOT EXISTS` — it
+adds missing tables but never alters an existing one. Column changes live in
+`migrations/*.sql` and must be applied once each, by hand, before the Functions
+that read the new column ship: `bun run db:migrate:file migrations/000X_....sql`.
+
 ## Project Structure
 
 ```

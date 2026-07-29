@@ -54,6 +54,18 @@ CREATE TABLE IF NOT EXISTS profile_stats (
   FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
 );
 
+-- Completed sessions, counted per curriculum (they drive that curriculum's
+-- scene warmth, so a multiply session must never warm the divide scene). A new
+-- table rather than a profile_stats column so `db:migrate` (which replays this
+-- file, all CREATE TABLE IF NOT EXISTS) can add it to an existing database.
+CREATE TABLE IF NOT EXISTS profile_sessions (
+  profile_id        TEXT NOT NULL,
+  curriculum        TEXT NOT NULL DEFAULT 'multiply',
+  sessions_completed INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (profile_id, curriculum),
+  FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
+);
+
 -- Attempt history (for progress tracking)
 CREATE TABLE IF NOT EXISTS attempts (
   id              TEXT PRIMARY KEY,

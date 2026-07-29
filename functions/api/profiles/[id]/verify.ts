@@ -28,22 +28,41 @@ export const onRequestPost: PagesFunction<Env> = async ({ params, request, env }
     `UPDATE profiles SET last_active = ? WHERE id = ?`
   ).bind(Date.now(), id).run();
 
-  // Fetch associated data
-  const { results: facts } = await env.DB.prepare(
-    `SELECT fact, curriculum, confidence, correct_count as correctCount, incorrect_count as incorrectCount,
-     skipped_count as skippedCount, last_seen as lastSeen, last_correct as lastCorrect, recent_attempts as recentAttempts,
-     preferred_strategy as preferredStrategy FROM fact_progress WHERE profile_id = ?`
-  ).bind(id).all();
+  // Fetch associated data in parallel — sign-in is the hot path. The session
+  // read alone is tolerated rather than required: sign-in is the one path a
+  // child cannot get past, so a database that hasn't had the schema replayed
+  // yet still lets them in with cold scene warmth instead of a 500.
+  const [{ results: facts }, { results: gardenItems }, statsRow, sessionRows] = await Promise.all([
+    env.DB.prepare(
+      `SELECT fact, curriculum, confidence, correct_count as correctCount, incorrect_count as incorrectCount,
+       skipped_count as skippedCount, last_seen as lastSeen, last_correct as lastCorrect, recent_attempts as recentAttempts,
+       preferred_strategy as preferredStrategy FROM fact_progress WHERE profile_id = ?`
+    ).bind(id).all(),
+    env.DB.prepare(
+      `SELECT id, item_id as itemId, type, position_x as positionX, position_y as positionY,
+       earned_for as earnedFor, earned_at as earnedAt FROM garden_items WHERE profile_id = ?`
+    ).bind(id).all(),
+    env.DB.prepare(
+      `SELECT coins, unlocked_themes as unlockedThemes, current_theme as currentTheme
+       FROM profile_stats WHERE profile_id = ?`
+    ).bind(id).first(),
+    env.DB.prepare(
+      `SELECT curriculum, sessions_completed as sessionsCompleted
+       FROM profile_sessions WHERE profile_id = ?`
+    ).bind(id).all().then(
+      (r) => r.results as { curriculum: string; sessionsCompleted: number }[],
+      (err) => {
+        console.error('Failed to read session counts:', err);
+        return [];
+      }
+    ),
+  ]);
 
-  const { results: gardenItems } = await env.DB.prepare(
-    `SELECT id, item_id as itemId, type, position_x as positionX, position_y as positionY,
-     earned_for as earnedFor, earned_at as earnedAt FROM garden_items WHERE profile_id = ?`
-  ).bind(id).all();
-
-  const stats = await env.DB.prepare(
-    `SELECT coins, unlocked_themes as unlockedThemes, current_theme as currentTheme
-     FROM profile_stats WHERE profile_id = ?`
-  ).bind(id).first() || { coins: 0, unlockedThemes: '["flower"]', currentTheme: 'flower' };
+  const stats = statsRow || { coins: 0, unlockedThemes: '["flower"]', currentTheme: 'flower' };
+  const sessions: Record<string, number> = {};
+  for (const row of sessionRows) {
+    sessions[row.curriculum] = row.sessionsCompleted;
+  }
 
   return Response.json({
     profile,
@@ -57,5 +76,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ params, request, env }
       unlockedThemes: JSON.parse(stats.unlockedThemes as string || '["flower"]'),
       currentTheme: stats.currentTheme,
     },
+    sessions,
   });
 };
