@@ -32,8 +32,15 @@ export const onRequestPut: PagesFunction<Env> = async ({ params, request, env })
     );
     await env.DB.batch(batch);
   }
+  // Upsert rather than INSERT OR REPLACE: REPLACE deletes the row first, which
+  // would reset any column this endpoint doesn't send back to its default.
   await env.DB.prepare(
-    `INSERT OR REPLACE INTO profile_stats (profile_id, coins, unlocked_themes, current_theme) VALUES (?, ?, ?, ?)`
+    `INSERT INTO profile_stats (profile_id, coins, unlocked_themes, current_theme)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(profile_id) DO UPDATE SET
+       coins = excluded.coins,
+       unlocked_themes = excluded.unlocked_themes,
+       current_theme = excluded.current_theme`
   ).bind(profileId, stats.coins, JSON.stringify(stats.unlockedThemes), stats.currentTheme).run();
   return new Response(null, { status: 204 });
 };
