@@ -7,6 +7,7 @@ import type {
   GardenItemSync,
   GardenStatsSync,
 } from '../types/api';
+import type { CurriculumId } from './operations';
 
 const API_BASE = '/api';
 
@@ -93,6 +94,19 @@ export const api = {
     await request(`/profiles/${profileId}/progress`, {
       method: 'PUT',
       body: JSON.stringify({ facts }),
+      keepalive: true,
+    });
+  },
+
+  async syncSessions(
+    profileId: string,
+    curriculum: CurriculumId,
+    sessionsCompleted: number
+  ): Promise<void> {
+    // Tiny payload that often fires as the app is closing, so keepalive it.
+    await request(`/profiles/${profileId}/sessions`, {
+      method: 'PUT',
+      body: JSON.stringify({ curriculum, sessionsCompleted }),
       keepalive: true,
     });
   },

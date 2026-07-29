@@ -75,7 +75,17 @@ export interface ProfileData {
   facts: FactProgressSync[];
   gardenItems: GardenItemSync[];
   stats: GardenStatsSync;
+  /**
+   * Completed sessions per curriculum. The scene's foundation warmth is a
+   * per-curriculum thing, so the server counts them per curriculum too and the
+   * garden PUT never carries (and so never clobbers) them. Pre-sessions servers
+   * omit the field entirely.
+   */
+  sessions?: SessionCounts;
 }
+
+/** Session counts keyed by curriculum; an unpracticed curriculum is absent. */
+export type SessionCounts = Partial<Record<'multiply' | 'divide', number>>;
 
 // Avatar options - 20 visually distinct icons
 export const PROFILE_ICONS = [

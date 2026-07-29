@@ -3,6 +3,7 @@ import { api, ApiError } from '../lib/api';
 import { resetStoresForProfileSwitch } from '../lib/resetStores';
 import { createProgressSyncSlice, dropPersistedBucket } from '../lib/progressSyncQueue';
 import type { ProgressSyncSlice } from '../lib/progressSyncQueue';
+import type { CurriculumId } from '../lib/operations';
 import type {
   Profile,
   ProfileListItem,
@@ -47,6 +48,7 @@ interface ProfileState extends ProgressSyncSlice {
   // Sync actions (queueProgressSync/flushProgressSync/restorePendingSync come
   // from ProgressSyncSlice)
   syncGarden: (items: GardenItemSync[], stats: GardenStatsSync) => Promise<void>;
+  syncSessions: (curriculum: CurriculumId, count: number) => void;
 }
 
 // Helper functions for session persistence
@@ -258,5 +260,16 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     } catch (err) {
       console.error('Failed to sync garden:', err);
     }
+  },
+
+  // Fire-and-forget: the server MAX-merges, and the local count is the source
+  // of truth until the next verify, so a dropped push costs nothing but a lag.
+  syncSessions: (curriculum: CurriculumId, count: number) => {
+    const { currentProfile } = get();
+    if (!currentProfile) return;
+
+    api.syncSessions(currentProfile.id, curriculum, count).catch((err) => {
+      console.error('Failed to sync sessions:', err);
+    });
   },
 }));

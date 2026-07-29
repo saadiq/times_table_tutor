@@ -1,4 +1,5 @@
 import { useGardenStore } from '../stores/gardenStore'
+import { useProfileStore } from '../stores/profileStore'
 import { useProgressViewStore } from '../stores/progressViewStore'
 import { calculateReward, getCelebrationMessage } from './rewards'
 
@@ -29,6 +30,10 @@ export function grantCorrectRewards(
   let celebrationType: 'correct' | 'streak' | 'goal' = 'correct'
   if (progress + 1 >= goal) {
     useProgressViewStore.getState().incrementSessions()
+    // Push the new total so the scene's foundation warmth follows the child to
+    // their other devices, tagged with the curriculum the count belongs to.
+    const { curriculum, sessionsCompleted } = useProgressViewStore.getState()
+    useProfileStore.getState().syncSessions(curriculum, sessionsCompleted)
     celebrationType = 'goal'
   } else if (newStreak % 5 === 0) {
     celebrationType = 'streak'

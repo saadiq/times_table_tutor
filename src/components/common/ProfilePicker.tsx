@@ -46,7 +46,7 @@ export function ProfilePicker() {
         // Session restored successfully, load data into stores
         loadProgressFromServer(data.facts);
         loadGardenFromServer(data.gardenItems, data.stats);
-        resyncProgressView();
+        resyncProgressView(data.sessions);
       } else {
         // No valid session, fetch profile list
         fetchProfiles();
@@ -67,7 +67,7 @@ export function ProfilePicker() {
       const data = await verifyAndSelect(id, icon);
       loadProgressFromServer(data.facts);
       loadGardenFromServer(data.gardenItems, data.stats);
-      resyncProgressView();
+      resyncProgressView(data.sessions);
     } catch {
       // Error handled in store
     }

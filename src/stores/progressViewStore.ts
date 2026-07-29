@@ -3,6 +3,7 @@ import { saveToStorage, loadFromStorage } from '../lib/storage'
 import { useProgressStore } from './progressStore'
 import { useAttemptsStore } from './attemptsStore'
 import type { SceneState, PendingReveals } from '../types/scene'
+import type { SessionCounts } from '../types/api'
 import type { CurriculumId } from '../lib/operations'
 import { useCurriculumStore } from './curriculumStore'
 
@@ -29,7 +30,7 @@ type ProgressViewState = {
 type ProgressViewActions = {
   initialize: () => void
   loadCurriculum: (id: CurriculumId) => void
-  resync: () => void
+  resync: (serverSessions?: SessionCounts) => void
   computeSceneState: () => SceneState
   getPendingReveals: () => PendingReveals
   markRevealed: (details: number, tables: number[], tier: number) => void
@@ -77,6 +78,28 @@ function migrateLegacy(legacy: LegacyState): Omit<ProgressViewState, 'curriculum
   }
 }
 
+/** Load one curriculum's stored slice, migrating legacy shapes; null if none saved. */
+function loadSlice(id: CurriculumId): ProgressViewState | null {
+  const saved = loadFromStorage<ProgressViewState | LegacyState>(progressViewKeyFor(id))
+  if (!saved) return null
+  return { ...(isLegacyState(saved) ? migrateLegacy(saved) : saved), curriculum: id }
+}
+
+/**
+ * Fold the server's counts for the curricula this device isn't showing into
+ * their stored slices, so switching to one later doesn't start from zero. The
+ * counts stay separate: a multiply session must never warm the divide scene.
+ */
+function mergeStoredSessions(sessions: SessionCounts, active: CurriculumId): void {
+  for (const [id, count] of Object.entries(sessions) as [CurriculumId, number][]) {
+    if (id === active || !count) continue
+
+    const base = loadSlice(id) ?? { ...initialState, curriculum: id }
+    if (base.sessionsCompleted >= count) continue
+    saveToStorage(progressViewKeyFor(id), { ...base, sessionsCompleted: count })
+  }
+}
+
 export const useProgressViewStore = create<ProgressViewState & ProgressViewActions>(
   (set, get) => ({
     ...initialState,
@@ -86,10 +109,8 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
     },
 
     loadCurriculum: (id) => {
-      const saved = loadFromStorage<ProgressViewState | LegacyState>(progressViewKeyFor(id))
-      if (saved) {
-        const state = { ...(isLegacyState(saved) ? migrateLegacy(saved) : saved), curriculum: id }
-
+      const state = loadSlice(id)
+      if (state) {
         // Recompute peak from actual learning+ count (may be higher than stored)
         const progressStore = useProgressStore.getState()
         const learningPlus = progressStore.getFactsAtOrAbove('learning').length
@@ -103,7 +124,10 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
       }
     },
 
-    resync: () => {
+    // serverSessions comes from verify, keyed by curriculum; take the higher of
+    // the two so a fresh device inherits the scene's warmth without ever
+    // rolling this one back.
+    resync: (serverSessions) => {
       const progressStore = useProgressStore.getState()
       const learningPlusCount = progressStore.getFactsAtOrAbove('learning').length
       const completedTables = progressStore.getMasteredTables()
@@ -116,11 +140,15 @@ export const useProgressViewStore = create<ProgressViewState & ProgressViewActio
         lastRevealedCount: learningPlusCount,
         revealedTables: [...new Set([...current.revealedTables, ...completedTables])],
         peakTier: Math.max(current.peakTier, currentTier),
-        sessionsCompleted: current.sessionsCompleted,
+        sessionsCompleted: Math.max(
+          current.sessionsCompleted,
+          serverSessions?.[current.curriculum] ?? 0
+        ),
         curriculum: current.curriculum,
       }
       set(synced)
       saveToStorage(progressViewKeyFor(current.curriculum), synced)
+      if (serverSessions) mergeStoredSessions(serverSessions, current.curriculum)
     },
 
     computeSceneState: (): SceneState => {
