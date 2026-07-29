@@ -1,3 +1,6 @@
+import { FACT_SKIP_ONLY_SQL, FACT_UPSERT_SQL, isSkipOnly } from '../../../_shared/progressSql';
+import { normalizeCurriculum } from '../../../_shared/curriculum';
+
 interface Env {
   DB: D1Database;
 }
@@ -18,22 +21,25 @@ interface FactSync {
 export const onRequestPut: PagesFunction<Env> = async ({ params, request, env }) => {
   const profileId = params.id as string;
   const { facts } = await request.json<{ facts: FactSync[] }>();
-  const stmt = env.DB.prepare(
-    `INSERT OR REPLACE INTO fact_progress
-     (profile_id, fact, curriculum, confidence, correct_count, incorrect_count, skipped_count, last_seen, last_correct, recent_attempts, preferred_strategy)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  );
+  // D1 rejects an empty batch outright, so a no-op sync short-circuits here.
+  if (!Array.isArray(facts) || facts.length === 0) {
+    return new Response(null, { status: 204 });
+  }
+  // Two statements, same bind order: a snapshot carrying a last_seen replaces
+  // the row when it is at least as fresh, while one without a last_seen (a skip
+  // on a fact this device never answered) may only raise the skip tally.
+  const upsert = env.DB.prepare(FACT_UPSERT_SQL);
+  const skipOnly = env.DB.prepare(FACT_SKIP_ONLY_SQL);
   const batch = facts.map((f) =>
-    stmt.bind(
+    (isSkipOnly(f.lastSeen) ? skipOnly : upsert).bind(
       profileId,
       f.fact,
-      // Older cached PWA clients omit curriculum; anything unrecognized is multiply.
-      f.curriculum === 'divide' ? 'divide' : 'multiply',
+      normalizeCurriculum(f.curriculum),
       f.confidence,
       f.correctCount,
       f.incorrectCount,
       f.skippedCount ?? 0,
-      f.lastSeen,
+      f.lastSeen ?? null,
       f.lastCorrect,
       JSON.stringify(f.recentAttempts),
       f.preferredStrategy
