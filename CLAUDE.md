@@ -60,19 +60,7 @@ Eleven strategies: visual_array, skip_counting, break_apart, use_neighbor, nines
 
 ## Tailwind v4 Notes
 
-Uses CSS-first configuration (not `tailwind.config.js`):
-
-```css
-/* src/index.css */
-@import "tailwindcss";
-
-@theme {
-  --color-garden-500: #22c55e;
-  --color-warm-500: #f59e0b;
-}
-```
-
-Custom colors: `garden-*` (greens), `warm-*` (yellows), `sky-*` (blues)
+Uses CSS-first configuration in `src/index.css` (not `tailwind.config.js`).
 
 ## Design Principles
 
