@@ -18,25 +18,6 @@ adds missing tables but never alters an existing one. Column changes live in
 `migrations/*.sql` and must be applied once each, by hand, before the Functions
 that read the new column ship: `bun run db:migrate:file migrations/000X_....sql`.
 
-## Project Structure
-
-```
-src/
-├── components/
-│   ├── common/       # Button, Modal, ProgressBar, Navigation, Layout, Celebration, SettingsModal
-│   ├── practice/     # ProblemDisplay, AnswerInput, HintPanel, MultipleChoice, NumberPad
-│   ├── learn/        # FactCard, VisualExplainer, LadderModal
-│   ├── progress/     # ProgressView, ProgressScene, MasteryGrid, ActivityCalendar, RevealSequence
-│   └── garden/       # (legacy) GardenItem, GardenView
-├── views/            # PracticeView, LearnView, ProgressViewPage
-├── stores/           # Zustand stores (progress, progressView, garden, session, focusTables)
-├── lib/              # Core logic (adaptive, strategies, ladders.ts, practiceFlow.ts, rewards, sounds, storage)
-│   └── operations/   # Operation descriptor per curriculum (multiply today)
-├── hooks/            # useSound, useActiveOperation
-├── test/             # Vitest setup (localStorage polyfill) and shared fixtures
-└── types/            # TypeScript types
-```
-
 ## Key Concepts
 
 ### Three Modes + Settings
