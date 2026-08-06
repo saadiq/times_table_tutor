@@ -2,48 +2,9 @@
 
 A calm, anxiety-free web app for learning times tables through adaptive practice and a progressive scene reveal reward system.
 
-## Quick Start
-
-```bash
-bun install
-bun run dev      # Start dev server
-bun run build    # Build for production
-bun run lint     # Run ESLint
-bun run test     # Run unit tests (Vitest)
-```
-
-## Tech Stack
-
-- **Runtime/Package Manager**: Bun
-- **Build Tool**: Vite 7
-- **Framework**: React 19 + TypeScript
-- **Styling**: Tailwind CSS v4 (CSS-first config in `src/index.css`)
-- **Animations**: Framer Motion
-- **Icons**: Lucide React (no emojis)
-- **State**: Zustand with localStorage persistence
-- **PWA**: vite-plugin-pwa
-- **Backend**: Cloudflare Pages Functions + D1 (SQLite)
-
 ## Backend Development
 
 The app uses Cloudflare Pages Functions with D1 database for user profiles and cloud sync.
-
-### Local Development
-
-```bash
-bun run dev       # Start frontend + API concurrently
-bun run cleanup   # Kill phantom processes, free ports
-```
-
-- Frontend (Vite): `http://localhost:5173`
-- API (Wrangler): `http://localhost:8788`
-
-### Database Commands
-
-```bash
-bun run db:migrate:local   # Run migrations on local D1
-bun run db:migrate         # Run migrations on production D1
-```
 
 ### Deployment
 
@@ -138,3 +99,4 @@ Custom colors: `garden-*` (greens), `warm-*` (yellows), `sky-*` (blues)
 - **ADHD-friendly** - Frequent small wins, clear goals, dopamine-positive feedback
 - **Mobile-first** - Large tap targets (48px+), touch-friendly
 - **Wrong answers** reframe as learning opportunities with strategy hints
+- **No emojis** - use Lucide React icons
