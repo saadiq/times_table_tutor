@@ -108,6 +108,14 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
           verifyError: 'Try again!',
           isLoading: false,
         });
+      } else if (err instanceof ApiError && err.status === 404) {
+        // Deleted from another device while this picker still lists it. Saying
+        // "try again" would send the child through every icon they own against
+        // a profile no icon can open.
+        set({
+          verifyError: "That profile isn't here anymore.",
+          isLoading: false,
+        });
       } else {
         console.error('Failed to verify profile:', err);
         set({
