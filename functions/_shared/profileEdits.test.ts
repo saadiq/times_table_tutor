@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  isUniqueNameViolation,
   validateProfileEdit,
   validateProfileFields,
   KNOWN_ICONS,
@@ -18,6 +19,24 @@ import {
 function body(overrides: Record<string, unknown> = {}) {
   return { currentIcon: 'cat', name: 'Ada', icon: 'owl', color: 'sky-400', ...overrides }
 }
+
+// Both write endpoints classify the duplicate-name race by this message, since
+// D1 reports the constraint as text rather than a code.
+describe('isUniqueNameViolation', () => {
+  it('recognizes what D1 raises when two profiles claim one name', () => {
+    const err = new Error(
+      'D1_ERROR: UNIQUE constraint failed: profiles.name: SQLITE_CONSTRAINT'
+    )
+
+    expect(isUniqueNameViolation(err)).toBe(true)
+  })
+
+  it('leaves every other write failure to rethrow', () => {
+    expect(isUniqueNameViolation(new Error('D1_ERROR: no such table: profiles'))).toBe(
+      false
+    )
+  })
+})
 
 // The name/icon/color rules live here and are reached through both endpoints —
 // POST calls this validator directly, PATCH delegates to it.

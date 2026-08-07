@@ -1,4 +1,8 @@
-import { readJsonBody, validateProfileEdit } from '../../_shared/profileEdits';
+import {
+  isUniqueNameViolation,
+  readJsonBody,
+  validateProfileEdit,
+} from '../../_shared/profileEdits';
 
 interface Env {
   DB: D1Database;
@@ -70,9 +74,7 @@ export const onRequestPatch: PagesFunction<Env> = async ({ params, request, env 
       `UPDATE profiles SET name = ?, icon = ?, color = ? WHERE id = ? AND icon = ?`
     ).bind(name, icon, color, id, currentIcon).run();
   } catch (err) {
-    // idx_profiles_name_unique is the real guard; the SELECT above only buys a
-    // friendlier message when there is no race between check and write.
-    if (String(err).includes('UNIQUE')) {
+    if (isUniqueNameViolation(err)) {
       return Response.json({ error: 'Name already taken' }, { status: 409 });
     }
     throw err;

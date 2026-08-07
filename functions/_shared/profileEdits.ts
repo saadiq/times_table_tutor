@@ -54,6 +54,19 @@ export async function readJsonBody(request: Request): Promise<unknown> {
 }
 
 /**
+ * Whether a failed write is the database refusing a duplicate name. The unique
+ * rule on profiles.name is the real guard behind both endpoints' friendlier
+ * pre-checks, which only save us from depending on this string when nothing
+ * races between their check and their write. D1 reports the constraint as
+ * message text rather than a code, so the match lives here — one place to
+ * correct when that text changes, instead of one endpoint quietly degrading to
+ * "couldn't save that" while the other still says the name is taken.
+ */
+export function isUniqueNameViolation(err: unknown): boolean {
+  return String(err).includes('UNIQUE');
+}
+
+/**
  * Validates the name/icon/color of a POST /api/profiles body. Both write
  * endpoints run this: a profile created with an off-list icon can never be
  * saved again, because the edit validator rejects the very value the form

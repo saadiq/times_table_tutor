@@ -1,4 +1,8 @@
-import { readJsonBody, validateProfileFields } from '../../_shared/profileEdits';
+import {
+  isUniqueNameViolation,
+  readJsonBody,
+  validateProfileFields,
+} from '../../_shared/profileEdits';
 
 interface Env {
   DB: D1Database;
@@ -34,9 +38,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const now = Date.now();
   try {
     // One batch, so a failed stats insert takes the profile row with it rather
-    // than leaving a profile nobody can accrue coins against. idx_profiles_name_unique
-    // is the real guard on the name; the SELECT above only avoids depending on
-    // an error string when there is no race between check and write.
+    // than leaving a profile nobody can accrue coins against.
     await env.DB.batch([
       env.DB.prepare(
         `INSERT INTO profiles (id, name, icon, color, created_at, last_active)
@@ -47,7 +49,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       ).bind(id),
     ]);
   } catch (err) {
-    if (String(err).includes('UNIQUE')) {
+    if (isUniqueNameViolation(err)) {
       return Response.json({ error: 'Name already taken' }, { status: 409 });
     }
     throw err;
