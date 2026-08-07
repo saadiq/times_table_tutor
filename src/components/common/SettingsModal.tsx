@@ -101,10 +101,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
       </Modal>
 
+      {/* Two possible children, so both need keys: AnimatePresence tracks
+          children by key and collapses unkeyed ones onto the same empty key,
+          which drops one panel's exit animation when the other opens. */}
       <AnimatePresence>
-        {showScience && <SciencePage onClose={() => setShowScience(false)} />}
+        {showScience && <SciencePage key="science" onClose={() => setShowScience(false)} />}
         {showProfileEditor && (
-          <ProfileEditor onClose={() => setShowProfileEditor(false)} />
+          <ProfileEditor key="profile-editor" onClose={() => setShowProfileEditor(false)} />
         )}
       </AnimatePresence>
     </>
