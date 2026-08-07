@@ -25,9 +25,13 @@ export const onRequestPatch: PagesFunction<Env> = async ({ params, request, env 
   }
   const { currentIcon, name, icon, color } = validation.edit;
 
+  // created_at/last_active come along here so the success response can be
+  // assembled locally: this endpoint writes only name/icon/color, so after the
+  // UPDATE every field of the row is already known.
   const profile = await env.DB.prepare(
-    `SELECT icon FROM profiles WHERE id = ?`
-  ).bind(id).first<{ icon: string }>();
+    `SELECT icon, created_at as createdAt, last_active as lastActive
+     FROM profiles WHERE id = ?`
+  ).bind(id).first<{ icon: string; createdAt: string; lastActive: string }>();
 
   if (!profile) {
     return new Response('Profile not found', { status: 404 });
@@ -62,10 +66,12 @@ export const onRequestPatch: PagesFunction<Env> = async ({ params, request, env 
     throw err;
   }
 
-  const updated = await env.DB.prepare(
-    `SELECT id, name, icon, color, created_at as createdAt, last_active as lastActive
-     FROM profiles WHERE id = ?`
-  ).bind(id).first();
-
-  return Response.json(updated);
+  return Response.json({
+    id,
+    name,
+    icon,
+    color,
+    createdAt: profile.createdAt,
+    lastActive: profile.lastActive,
+  });
 };
