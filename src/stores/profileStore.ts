@@ -66,7 +66,11 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     try {
       const profiles = await api.listProfiles();
       set({ profiles, isLoading: false });
-    } catch {
+    } catch (err) {
+      // The child gets copy they can act on; the status and body the server
+      // sent go to the console, which is the only place a parent's "it just
+      // says it couldn't load" can be turned back into a cause.
+      console.error('Failed to load profiles:', err);
       set({
         error: "Couldn't load profiles. Try again!",
         isLoading: false,
@@ -105,6 +109,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
           isLoading: false,
         });
       } else {
+        console.error('Failed to verify profile:', err);
         set({
           verifyError: "Couldn't sign in. Try again!",
           isLoading: false,
@@ -173,6 +178,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
           isLoading: false,
         });
       } else {
+        console.error('Failed to create profile:', err);
         set({
           error: "Couldn't create that profile. Try again!",
           isLoading: false,
