@@ -7,14 +7,17 @@ interface ColorPickerProps {
 
 export function ColorPicker({ selected, onSelect }: ColorPickerProps) {
   return (
-    <div className="flex justify-center gap-3">
+    // Wrapping, and shrink-0: eight 48px targets do not fit one phone-width
+    // row, and a flex row would otherwise squash them below the tap-target
+    // floor rather than spill onto a second line.
+    <div className="flex flex-wrap justify-center gap-3">
       {PROFILE_COLORS.map((colorKey) => (
         <button
           key={colorKey}
           type="button"
           aria-label={colorKey}
           onClick={() => onSelect(colorKey)}
-          className={`w-10 h-10 rounded-full bg-${colorKey} ${
+          className={`w-12 h-12 shrink-0 rounded-full bg-${colorKey} ${
             selected === colorKey ? 'ring-2 ring-offset-2 ring-gray-400' : ''
           }`}
         />
