@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateProfileEdit } from './profileEdits'
+import { validateProfileEdit, KNOWN_ICONS, KNOWN_COLORS } from './profileEdits'
 
 function body(overrides: Record<string, unknown> = {}) {
   return { currentIcon: 'cat', name: 'Ada', icon: 'owl', color: 'sky-400', ...overrides }
@@ -49,5 +49,31 @@ describe('validateProfileEdit', () => {
   it('rejects a body that is not an object', () => {
     expect(validateProfileEdit(null)).toEqual({ ok: false, error: 'Missing fields' })
     expect(validateProfileEdit('nope')).toEqual({ ok: false, error: 'Missing fields' })
+  })
+
+  it('rejects an icon that is not one of the known avatar options', () => {
+    expect(validateProfileEdit(body({ icon: 'zzz' }))).toEqual({
+      ok: false,
+      error: 'Unknown icon',
+    })
+  })
+
+  it('rejects a color that is not one of the known avatar options', () => {
+    expect(validateProfileEdit(body({ color: 'zzz' }))).toEqual({
+      ok: false,
+      error: 'Unknown color',
+    })
+  })
+
+  it('accepts every known icon', () => {
+    for (const icon of KNOWN_ICONS) {
+      expect(validateProfileEdit(body({ icon })).ok).toBe(true)
+    }
+  })
+
+  it('accepts every known color', () => {
+    for (const color of KNOWN_COLORS) {
+      expect(validateProfileEdit(body({ color })).ok).toBe(true)
+    }
   })
 })
