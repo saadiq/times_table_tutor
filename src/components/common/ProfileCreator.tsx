@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { IconPicker } from './IconPicker';
+import { ColorPicker } from './ColorPicker';
 import { iconMap } from '../../lib/iconMap';
-import { PROFILE_COLORS, type ProfileIcon, type ProfileColor } from '../../types/api';
+import { type ProfileIcon, type ProfileColor } from '../../types/api';
 
 interface ProfileCreatorProps {
   onSubmit: (name: string, icon: ProfileIcon, color: ProfileColor) => void;
@@ -148,17 +149,8 @@ export function ProfileCreator({ onSubmit, onCancel, isLoading, error }: Profile
               </div>
             </div>
 
-            <div className="flex justify-center gap-3 mb-6">
-              {PROFILE_COLORS.map((colorKey) => (
-                <button
-                  key={colorKey}
-                  type="button"
-                  onClick={() => setColor(colorKey)}
-                  className={`w-10 h-10 rounded-full bg-${colorKey} ${
-                    color === colorKey ? 'ring-2 ring-offset-2 ring-gray-400' : ''
-                  }`}
-                />
-              ))}
+            <div className="mb-6">
+              <ColorPicker selected={color} onSelect={setColor} />
             </div>
 
             <button
