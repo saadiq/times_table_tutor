@@ -3,7 +3,12 @@ import { api, ApiError } from '../lib/api';
 import { resetStoresForProfileSwitch } from '../lib/resetStores';
 import { createProgressSyncSlice, dropPersistedBucket } from '../lib/progressSyncQueue';
 import type { ProgressSyncSlice } from '../lib/progressSyncQueue';
-import { saveSession, loadSession, clearSavedSession } from '../lib/profileSession';
+import {
+  saveSession,
+  loadSession,
+  clearSavedSession,
+  verifyCachedSession,
+} from '../lib/profileSession';
 import type { CurriculumId } from '../lib/operations';
 import type {
   Profile,
@@ -124,7 +129,10 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     try {
       // Same ordering rule as verifyAndSelect: replay before the server read
       await get().restorePendingSync();
-      const data = await api.verifyProfile(session.profileId, session.icon);
+      const data = await verifyCachedSession(session);
+      // Collapse the cache back to one credential now that the server has said
+      // which of the two it accepts.
+      saveSession(data.profile.id, data.profile.icon);
       set({
         currentProfile: data.profile,
         isLoading: false,
@@ -178,7 +186,21 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     const { currentProfile } = get();
     if (!currentProfile) throw new Error('No profile signed in');
 
-    const updated = await api.updateProfile(currentProfile.id, changes);
+    const updated = await api.updateProfile(currentProfile.id, changes).catch((err) => {
+      // No HTTP status means the outcome is unknown: the write may well have
+      // committed with only its response lost. Record the icon we tried to set
+      // as a fallback credential, so a committed-but-unacknowledged change
+      // cannot leave a dead password cached and strand the child at the picker.
+      if (!(err instanceof ApiError) && changes.icon !== currentProfile.icon) {
+        saveSession(currentProfile.id, currentProfile.icon, changes.icon);
+      }
+      throw err;
+    });
+
+    // A sign-out or profile switch can land while the PATCH is in flight;
+    // writing past it would revive the signed-out profile over freshly reset
+    // stores, which then sync their empty state upward.
+    if (get().currentProfile?.id !== currentProfile.id) return updated;
 
     // Re-cache the session under the new icon. The old icon is now a dead
     // password, so a stale cache would auto-login, 401, silently clear itself,

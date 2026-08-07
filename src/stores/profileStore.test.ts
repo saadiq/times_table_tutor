@@ -262,6 +262,75 @@ describe('profileStore updateProfile', () => {
     expect(useProfileStore.getState().currentProfile?.name).toBe('kid-a')
   })
 
+  it('remembers the attempted icon when the write outcome is unknown', async () => {
+    vi.stubGlobal('fetch', failingFetch())
+    signIn()
+
+    await expect(
+      useProfileStore.getState().updateProfile({
+        currentIcon: 'cat',
+        name: 'Ada',
+        icon: 'owl',
+        color: 'sky-400',
+      })
+    ).rejects.toThrow()
+
+    // No status came back, so the PATCH may well have committed with only its
+    // response lost. Keeping 'cat' alone would cache a dead password.
+    expect(savedSession()).toEqual({ profileId: 'kid-a', icon: 'cat', pendingIcon: 'owl' })
+  })
+
+  it('signs back in with the remembered icon when the cached one is refused', async () => {
+    localStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify({ profileId: 'kid-a', icon: 'cat', pendingIcon: 'owl' })
+    )
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn<FetchSignature>()
+        .mockResolvedValueOnce(errorResponse(401, { error: 'Incorrect icon' }))
+        .mockResolvedValueOnce(
+          jsonResponse({
+            profile: updated,
+            facts: [],
+            gardenItems: [],
+            stats: { coins: 0, unlockedThemes: ['flower'], currentTheme: 'flower' },
+          })
+        )
+    )
+
+    const data = await useProfileStore.getState().restoreSession()
+
+    expect(data?.profile.icon).toBe('owl')
+    // One credential again, now that the server has said which one it takes.
+    expect(savedSession()).toEqual({ profileId: 'kid-a', icon: 'owl' })
+  })
+
+  it('does not revive a profile that signed out while the PATCH was in flight', async () => {
+    let release: (response: Response) => void = () => {}
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<FetchSignature>(() => new Promise<Response>((r) => { release = r }))
+    )
+    signIn()
+
+    const pending = useProfileStore.getState().updateProfile({
+      currentIcon: 'cat',
+      name: 'Ada',
+      icon: 'owl',
+      color: 'sky-400',
+    })
+    useProfileStore.getState().clearProfile()
+    release(jsonResponse(updated))
+    await pending
+
+    // Writing past the sign-out would auto-login the signed-out child next
+    // launch, over stores that resetStoresForProfileSwitch has just emptied.
+    expect(useProfileStore.getState().currentProfile).toBeNull()
+    expect(localStorage.getItem(SESSION_KEY)).toBeNull()
+  })
+
   it('rejects when no profile is signed in', async () => {
     const fetchMock = vi.fn<FetchSignature>(async () => jsonResponse(updated))
     vi.stubGlobal('fetch', fetchMock)
