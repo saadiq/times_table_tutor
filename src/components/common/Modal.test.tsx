@@ -157,7 +157,41 @@ describe('stacked overlays', () => {
     expect(document.activeElement).toBe(screen.getByLabelText('Go back'))
   })
 
+  // Toggled without AnimatePresence so dismissal is a real unmount. Wrapped,
+  // the exit animation never finishes in jsdom, and a test that dismissed and
+  // then asserted the handoff would be measuring the animating panel instead.
+  function ToggleHarness({ onCloseModal }: { onCloseModal: () => void }) {
+    const [showPanel, setShowPanel] = useState(true)
+    return (
+      <>
+        <Modal isOpen onClose={onCloseModal} title="Settings">
+          <button>In modal</button>
+        </Modal>
+        {showPanel && (
+          <SlideOverPanel title="The science" onClose={() => setShowPanel(false)}>
+            <button>In panel</button>
+          </SlideOverPanel>
+        )}
+      </>
+    )
+  }
+
   it('hands the keyboard back to the modal once the panel unmounts', () => {
+    const onCloseModal = vi.fn()
+    render(<ToggleHarness onCloseModal={onCloseModal} />)
+
+    fireEvent.click(screen.getByLabelText('Go back'))
+    expect(screen.queryByText('In panel')).toBeNull()
+    pressEscape()
+
+    expect(onCloseModal).toHaveBeenCalledTimes(1)
+  })
+
+  // The slide-out covers the whole screen for half a second after dismissal, so
+  // the panel keeps the keyboard until it is gone. Releasing on framer's
+  // presence instead let a second Escape — a double tap, or one key held down
+  // long enough to auto-repeat — close Settings behind the panel still on view.
+  it('keeps Escape off the modal while the dismissed panel is still animating out', () => {
     const onCloseModal = vi.fn()
     function Harness() {
       const [showPanel, setShowPanel] = useState(true)
@@ -179,8 +213,9 @@ describe('stacked overlays', () => {
     render(<Harness />)
 
     fireEvent.click(screen.getByLabelText('Go back'))
+    expect(screen.getByText('In panel')).toBeTruthy()
     pressEscape()
 
-    expect(onCloseModal).toHaveBeenCalledTimes(1)
+    expect(onCloseModal).not.toHaveBeenCalled()
   })
 })

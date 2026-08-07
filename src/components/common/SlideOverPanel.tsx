@@ -1,4 +1,4 @@
-import { motion, useIsPresent } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
 import { useOverlay } from '../../hooks'
 
@@ -19,11 +19,11 @@ type SlideOverPanelProps = {
  * overlay with every control on screen inert.
  */
 export function SlideOverPanel({ title, onClose, children }: SlideOverPanelProps) {
-  // The panel outlives its own dismissal by the length of the exit animation.
-  // Presence, not mounting, is what should hold the keyboard: otherwise a
-  // half-second of slide-out is spent swallowing the Escape meant for whatever
-  // is underneath.
-  const panelRef = useOverlay(onClose, useIsPresent())
+  // Held for as long as the panel is mounted — the half-second slide-out still
+  // covers the whole screen, so a double-tapped or auto-repeated Escape must
+  // not reach the Settings modal underneath and close a sheet the child cannot
+  // even see yet, and focus must not return to a trigger the panel still hides.
+  const panelRef = useOverlay(onClose)
 
   return (
     <motion.div

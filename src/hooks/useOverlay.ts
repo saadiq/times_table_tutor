@@ -27,11 +27,13 @@ function focusableWithin(root: HTMLElement): HTMLElement[] {
  * here yet.
  *
  * Attach the returned ref to the panel element and give it `tabIndex={-1}` so
- * focus can rest on the container. `isOpen` is what holds the keyboard: pass
- * whichever of mounted-ness, a prop, or framer's presence marks this overlay as
- * the one on top.
+ * focus can rest on the container. `isOpen` is what holds the keyboard: pass a
+ * prop for an overlay that stays mounted while closed, and leave it out for one
+ * that only exists while it is open, so it holds until it is actually gone. Not
+ * framer's presence — that flips at the *start* of an exit animation, handing
+ * Escape and focus to the layer underneath while this one still covers it.
  */
-export function useOverlay(onClose: () => void, isOpen: boolean) {
+export function useOverlay(onClose: () => void, isOpen = true) {
   const panelRef = useRef<HTMLDivElement>(null)
   const closeRef = useRef(onClose)
 
