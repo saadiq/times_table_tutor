@@ -176,6 +176,23 @@ describe('stacked overlays', () => {
     )
   }
 
+  // Both primitives claim aria-modal, so without this a screen reader can stay
+  // latched to the Settings dialog and never announce the panel in front of it.
+  it('takes the modal underneath out of the accessibility tree', () => {
+    render(<Stack onCloseModal={vi.fn()} onClosePanel={vi.fn()} />)
+
+    expect(screen.getByLabelText('Settings').inert).toBe(true)
+    expect(screen.getByLabelText('The science').inert).toBe(false)
+  })
+
+  it('gives the modal back to the screen reader once the panel unmounts', () => {
+    render(<ToggleHarness onCloseModal={vi.fn()} />)
+
+    fireEvent.click(screen.getByLabelText('Go back'))
+
+    expect(screen.getByLabelText('Settings').inert).toBe(false)
+  })
+
   it('hands the keyboard back to the modal once the panel unmounts', () => {
     const onCloseModal = vi.fn()
     render(<ToggleHarness onCloseModal={onCloseModal} />)

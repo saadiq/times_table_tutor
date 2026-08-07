@@ -1,11 +1,24 @@
 import { useEffect, useRef } from 'react'
 
 /**
- * Open overlays, outermost first. Settings stays mounted underneath the panels
- * it launches, so a single "is this the top one?" check is what keeps Escape
- * from closing two things at once and keeps focus in the panel on top.
+ * Open overlay panels, outermost first. Settings stays mounted underneath the
+ * panels it launches, so a single "is this the top one?" check is what keeps
+ * Escape from closing two things at once and keeps focus in the panel on top.
  */
-const openOverlays: object[] = []
+const openOverlays: HTMLElement[] = []
+
+/**
+ * Everything below the top overlay is covered but otherwise untouched: it keeps
+ * its aria-modal, and a screen reader that latched onto it goes on reading it
+ * instead of the panel now in front. `inert` is what takes a whole subtree out
+ * of the accessibility tree and out of tabbing at once, so the child using a
+ * screen reader gets the same one live dialog everyone else sees.
+ */
+function syncInert() {
+  openOverlays.forEach((panel, i) => {
+    panel.inert = i !== openOverlays.length - 1
+  })
+}
 
 const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]'
 
@@ -45,16 +58,17 @@ export function useOverlay(onClose: () => void, isOpen = true) {
     const panel = panelRef.current
     if (!isOpen || !panel) return
 
-    const token = {}
-    openOverlays.push(token)
+    openOverlays.push(panel)
     const trigger = document.activeElement as HTMLElement | null
     // The container, not the first control: it sets the tab starting point and
     // gives screen readers the dialog to announce, without lighting up a focus
-    // ring on a button nobody chose.
+    // ring on a button nobody chose. Ahead of syncInert, so the overlay below
+    // is not made inert while the trigger inside it still holds focus.
     panel.focus()
+    syncInert()
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (openOverlays[openOverlays.length - 1] !== token) return
+      if (openOverlays[openOverlays.length - 1] !== panel) return
 
       if (event.key === 'Escape') {
         event.preventDefault()
@@ -85,7 +99,13 @@ export function useOverlay(onClose: () => void, isOpen = true) {
     document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
-      openOverlays.splice(openOverlays.indexOf(token), 1)
+      openOverlays.splice(openOverlays.indexOf(panel), 1)
+      // Before the focus call: the trigger usually sits in the overlay this one
+      // was covering, which is inert until syncInert promotes it back. This
+      // panel is off the stack now, so nothing there would clear its own flag —
+      // a Modal, which stays mounted while closed, would reopen unusable.
+      panel.inert = false
+      syncInert()
       trigger?.focus()
     }
   }, [isOpen])
