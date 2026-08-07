@@ -173,8 +173,12 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
           isLoading: false,
         });
       } else {
+        // Same generic wording ProfileEditor uses: every other failure here is
+        // a validation 400 the picker cannot produce, a 500, or a dead network,
+        // and err.message for those is a raw response body — JSON or an HTML
+        // error page — which is not something to show a child.
         set({
-          error: err instanceof Error ? err.message : 'Failed to create profile',
+          error: "Couldn't create that profile. Try again!",
           isLoading: false,
         });
       }
