@@ -1,15 +1,19 @@
 import { useState } from 'react';
-import { Check, User } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { IconPicker } from './IconPicker';
 import { ColorPicker } from './ColorPicker';
-import { iconMap } from '../../lib/iconMap';
-import type { Profile, ProfileColor, ProfileIcon } from '../../types/api';
+import { ProfileIcon } from './ProfileIcon';
+import {
+  type Profile,
+  type ProfileColor,
+  type ProfileIcon as ProfileIconName,
+} from '../../types/api';
 
 interface ProfileEditFormProps {
   profile: Profile;
   error: string | null;
   isSaving: boolean;
-  onSave: (name: string, icon: ProfileIcon, color: ProfileColor) => void;
+  onSave: (name: string, icon: ProfileIconName, color: ProfileColor) => void;
   onCancel: () => void;
 }
 
@@ -21,7 +25,7 @@ export function ProfileEditForm({
   onCancel,
 }: ProfileEditFormProps) {
   const [name, setName] = useState(profile.name);
-  const [icon, setIcon] = useState(profile.icon as ProfileIcon);
+  const [icon, setIcon] = useState(profile.icon as ProfileIconName);
   const [color, setColor] = useState(profile.color as ProfileColor);
 
   const trimmed = name.trim();
@@ -29,17 +33,13 @@ export function ProfileEditForm({
     trimmed !== profile.name || icon !== profile.icon || color !== profile.color;
   const canSave = trimmed.length > 0 && hasChanges && !isSaving;
 
-  // Falls back like Navigation and SettingsModal: an unrecognized icon should
-  // degrade to a default glyph, not white-screen the whole editor.
-  const IconComponent = iconMap[icon] || User;
-
   return (
     <div className="space-y-6">
       <div className="flex justify-center">
         <div
           className={`w-24 h-24 rounded-full flex items-center justify-center bg-${color}`}
         >
-          <IconComponent className="w-12 h-12 text-white" />
+          <ProfileIcon icon={icon} className="w-12 h-12 text-white" />
         </div>
       </div>
 

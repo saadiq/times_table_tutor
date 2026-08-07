@@ -1,7 +1,9 @@
 import * as Icons from 'lucide-react';
 import type { ProfileIcon } from '../types/api';
 
-export const iconMap: Record<ProfileIcon, React.ComponentType<{ className?: string }>> = {
+type IconComponent = React.ComponentType<{ className?: string }>;
+
+export const iconMap: Record<ProfileIcon, IconComponent> = {
   // Animals
   cat: Icons.Cat,
   dog: Icons.Dog,

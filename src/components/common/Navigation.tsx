@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { BookOpen, Target, TreeDeciduous, Settings, User } from 'lucide-react'
+import { BookOpen, Target, TreeDeciduous, Settings } from 'lucide-react'
 import { useSessionStore } from '../../stores'
 import { useProfileStore } from '../../stores/profileStore'
 import { SettingsModal } from './SettingsModal'
-import { iconMap } from '../../lib/iconMap'
+import { ProfileIcon } from './ProfileIcon'
 import type { AppMode } from '../../types'
-import type { ProfileIcon } from '../../types/api'
 
 const navItems: Array<{ mode: AppMode; icon: typeof BookOpen; label: string }> = [
   { mode: 'learn', icon: BookOpen, label: 'Learn' },
@@ -17,10 +16,6 @@ export function Navigation() {
   const { mode, setMode } = useSessionStore()
   const { currentProfile, clearProfile } = useProfileStore()
   const [showSettings, setShowSettings] = useState(false)
-
-  const ProfileIconComponent = currentProfile
-    ? iconMap[currentProfile.icon as ProfileIcon] || User
-    : User
 
   return (
     <>
@@ -35,7 +30,7 @@ export function Navigation() {
               <div
                 className={`w-6 h-6 rounded-full flex items-center justify-center bg-${currentProfile.color}`}
               >
-                <ProfileIconComponent className="w-3.5 h-3.5 text-white" />
+                <ProfileIcon icon={currentProfile.icon} className="w-3.5 h-3.5 text-white" />
               </div>
               <span className="text-xs mt-1 font-medium truncate max-w-[48px]">
                 {currentProfile.name}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookOpen, User } from 'lucide-react'
+import { BookOpen } from 'lucide-react'
 import { AnimatePresence } from 'framer-motion'
 import { Modal } from './Modal'
 import { Toggle } from './Toggle'
@@ -9,8 +9,7 @@ import { ProfileEditor } from './ProfileEditor'
 import { useFocusTablesStore, useSettingsStore } from '../../stores'
 import { useProfileStore } from '../../stores/profileStore'
 import { useActiveOperation } from '../../hooks'
-import { iconMap } from '../../lib/iconMap'
-import type { ProfileIcon } from '../../types/api'
+import { ProfileIcon } from './ProfileIcon'
 
 type SettingsModalProps = {
   isOpen: boolean
@@ -24,12 +23,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [showScience, setShowScience] = useState(false)
   const currentProfile = useProfileStore((s) => s.currentProfile)
   const [showProfileEditor, setShowProfileEditor] = useState(false)
-  // An unrecognized icon value must not hide the only screen that can fix
-  // it, so fall back to a generic icon rather than dropping the row.
-  const ProfileIconComponent = currentProfile
-    ? iconMap[currentProfile.icon as ProfileIcon] || User
-    : User
-
   const hasSelection = focusTables.length > 0
 
   return (
@@ -44,7 +37,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center bg-${currentProfile.color}`}
               >
-                <ProfileIconComponent className="w-5 h-5 text-white" />
+                <ProfileIcon icon={currentProfile.icon} className="w-5 h-5 text-white" />
               </div>
               <div>
                 <span className="text-sm font-medium text-gray-800">{currentProfile.name}</span>
