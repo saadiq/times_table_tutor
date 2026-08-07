@@ -141,7 +141,19 @@ export function ProfilePicker() {
             </p>
 
             {error && (
-              <p className="text-red-500 mb-4 text-sm">{error}</p>
+              <div className="mb-4">
+                <p className="text-red-500 text-sm">{error}</p>
+                {/* The list is fetched once on mount, so without this the only
+                    way out of a failed load is knowing to reload the page —
+                    and the child can't sign in or create a profile until
+                    someone does. */}
+                <button
+                  onClick={() => void fetchProfiles()}
+                  className="mt-2 px-5 py-3 rounded-xl text-sm font-medium text-garden-700 bg-garden-50 hover:bg-garden-100 transition-colors"
+                >
+                  Try again
+                </button>
+              </div>
             )}
 
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-4">
