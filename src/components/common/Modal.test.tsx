@@ -8,12 +8,20 @@ import { SlideOverPanel } from './SlideOverPanel'
 
 afterEach(cleanup)
 
+// Fired at whatever holds focus rather than at the document, because that is
+// the path production depends on: the listener sits on document in the bubble
+// phase, so a descendant that stops propagation would silently kill Escape and
+// the whole trap in a browser while a test firing at document stayed green.
+function pressKey(key: string, shiftKey = false) {
+  fireEvent.keyDown(document.activeElement ?? document, { key, shiftKey })
+}
+
 function pressEscape() {
-  fireEvent.keyDown(document, { key: 'Escape' })
+  pressKey('Escape')
 }
 
 function pressTab(shiftKey = false) {
-  fireEvent.keyDown(document, { key: 'Tab', shiftKey })
+  pressKey('Tab', shiftKey)
 }
 
 function renderModal(
