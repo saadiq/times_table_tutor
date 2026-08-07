@@ -27,6 +27,14 @@ export interface CreateProfileRequest {
   color: string;
 }
 
+export interface UpdateProfileRequest {
+  /** The caller's current icon, re-verified server-side before any write. */
+  currentIcon: string;
+  name: string;
+  icon: string;
+  color: string;
+}
+
 // Sync payload types
 export interface RecentAttemptSync {
   correct: boolean;
@@ -107,3 +115,10 @@ export const PROFILE_COLORS = [
 ] as const;
 
 export type ProfileColor = typeof PROFILE_COLORS[number];
+
+/**
+ * Longest profile name the server accepts. Mirrored as
+ * MAX_PROFILE_NAME_LENGTH in functions/_shared/profileEdits.ts, which cannot
+ * import from src/ — the test there asserts the two stay equal.
+ */
+export const MAX_PROFILE_NAME_LENGTH = 20;

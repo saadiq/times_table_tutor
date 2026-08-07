@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion'
-import { ArrowLeft, Brain, Eye, Volume2, Target, Heart, RotateCcw, Clock, Shuffle } from 'lucide-react'
+import { Brain, Eye, Volume2, Target, Heart, RotateCcw, Clock, Shuffle } from 'lucide-react'
+import { SlideOverPanel } from './SlideOverPanel'
 
 type SciencePageProps = {
   onClose: () => void
@@ -31,28 +31,8 @@ function Source({ text }: { text: string }) {
 
 export function SciencePage({ onClose }: SciencePageProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: '100%' }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: '100%' }}
-      transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="fixed inset-0 bg-[var(--color-cream)] z-50 flex flex-col"
-    >
-      {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-gray-100 bg-white">
-        <button
-          onClick={onClose}
-          className="p-2 -ml-2 rounded-xl hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-garden-500 transition-colors"
-          aria-label="Go back"
-        >
-          <ArrowLeft size={20} className="text-gray-600" />
-        </button>
-        <h1 className="text-lg font-semibold text-gray-800">The Science Behind This App</h1>
-      </div>
-
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto p-5 pb-12">
-        <p className="text-sm text-gray-500 mb-6">
+    <SlideOverPanel title="The Science Behind This App" onClose={onClose}>
+      <p className="text-sm text-gray-500 mb-6">
           Every design choice in this app is grounded in research on how children
           with dyslexia learn multiplication facts. Here's why things work the way they do.
         </p>
@@ -192,7 +172,6 @@ export function SciencePage({ onClose }: SciencePageProps) {
         <p className="text-xs text-gray-400 mt-8 text-center">
           Built with care for learners who think differently.
         </p>
-      </div>
-    </motion.div>
+    </SlideOverPanel>
   )
 }

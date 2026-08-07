@@ -2,6 +2,7 @@ import type {
   ProfileListItem,
   Profile,
   CreateProfileRequest,
+  UpdateProfileRequest,
   ProfileData,
   FactProgressSync,
   GardenItemSync,
@@ -71,6 +72,13 @@ export const api = {
     return request('/profiles', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  },
+
+  async updateProfile(id: string, changes: UpdateProfileRequest): Promise<Profile> {
+    return request(`/profiles/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(changes),
     });
   },
 

@@ -5,8 +5,11 @@ import { Modal } from './Modal'
 import { Toggle } from './Toggle'
 import { FocusTablePicker } from './FocusTablePicker'
 import { SciencePage } from './SciencePage'
+import { ProfileEditor } from './ProfileEditor'
 import { useFocusTablesStore, useSettingsStore } from '../../stores'
+import { useProfileStore } from '../../stores/profileStore'
 import { useActiveOperation } from '../../hooks'
+import { ProfileIcon } from './ProfileIcon'
 
 type SettingsModalProps = {
   isOpen: boolean
@@ -18,13 +21,31 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { ttsEnabled, setTtsEnabled } = useSettingsStore()
   const operation = useActiveOperation()
   const [showScience, setShowScience] = useState(false)
-
+  const currentProfile = useProfileStore((s) => s.currentProfile)
+  const [showProfileEditor, setShowProfileEditor] = useState(false)
   const hasSelection = focusTables.length > 0
 
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose} title="Settings">
         <div className="space-y-6">
+          {currentProfile && (
+            <button
+              onClick={() => setShowProfileEditor(true)}
+              className="flex items-center gap-3 w-full py-3 text-left hover:bg-gray-50 rounded-xl transition-colors"
+            >
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center bg-${currentProfile.color}`}
+              >
+                <ProfileIcon icon={currentProfile.icon} className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <span className="text-sm font-medium text-gray-800">{currentProfile.name}</span>
+                <p className="text-xs text-gray-500 mt-0.5">Change name, icon, or color</p>
+              </div>
+            </button>
+          )}
+
           <div className="flex items-center justify-between py-3">
             <div>
               <span className="text-sm font-medium text-gray-800">Read aloud</span>
@@ -80,8 +101,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
       </Modal>
 
+      {/* Two possible children, so both need keys: AnimatePresence tracks
+          children by key and collapses unkeyed ones onto the same empty key,
+          which drops one panel's exit animation when the other opens. */}
       <AnimatePresence>
-        {showScience && <SciencePage onClose={() => setShowScience(false)} />}
+        {showScience && <SciencePage key="science" onClose={() => setShowScience(false)} />}
+        {showProfileEditor && (
+          <ProfileEditor key="profile-editor" onClose={() => setShowProfileEditor(false)} />
+        )}
       </AnimatePresence>
     </>
   )

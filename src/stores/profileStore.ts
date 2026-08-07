@@ -3,23 +3,22 @@ import { api, ApiError } from '../lib/api';
 import { resetStoresForProfileSwitch } from '../lib/resetStores';
 import { createProgressSyncSlice, dropPersistedBucket } from '../lib/progressSyncQueue';
 import type { ProgressSyncSlice } from '../lib/progressSyncQueue';
+import {
+  saveSession,
+  loadSession,
+  clearSavedSession,
+  verifyCachedSession,
+} from '../lib/profileSession';
 import type { CurriculumId } from '../lib/operations';
 import type {
   Profile,
   ProfileListItem,
   CreateProfileRequest,
+  UpdateProfileRequest,
   ProfileData,
   GardenItemSync,
   GardenStatsSync,
 } from '../types/api';
-
-// localStorage keys for session persistence
-const SESSION_KEY = 'ttt_session';
-
-interface SavedSession {
-  profileId: string;
-  icon: string;
-}
 
 interface ProfileState extends ProgressSyncSlice {
   // State
@@ -35,6 +34,7 @@ interface ProfileState extends ProgressSyncSlice {
   // Actions
   fetchProfiles: () => Promise<void>;
   createProfile: (data: CreateProfileRequest) => Promise<Profile>;
+  updateProfile: (changes: UpdateProfileRequest) => Promise<Profile>;
   clearProfile: () => void;
   deleteProfile: (id: string) => Promise<void>;
 
@@ -49,33 +49,6 @@ interface ProfileState extends ProgressSyncSlice {
   // from ProgressSyncSlice)
   syncGarden: (items: GardenItemSync[], stats: GardenStatsSync) => Promise<void>;
   syncSessions: (curriculum: CurriculumId, count: number) => void;
-}
-
-// Helper functions for session persistence
-function saveSession(profileId: string, icon: string): void {
-  try {
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ profileId, icon }));
-  } catch {
-    // localStorage might be unavailable
-  }
-}
-
-function loadSession(): SavedSession | null {
-  try {
-    const data = localStorage.getItem(SESSION_KEY);
-    if (!data) return null;
-    return JSON.parse(data) as SavedSession;
-  } catch {
-    return null;
-  }
-}
-
-function clearSavedSession(): void {
-  try {
-    localStorage.removeItem(SESSION_KEY);
-  } catch {
-    // localStorage might be unavailable
-  }
 }
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
@@ -156,7 +129,10 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     try {
       // Same ordering rule as verifyAndSelect: replay before the server read
       await get().restorePendingSync();
-      const data = await api.verifyProfile(session.profileId, session.icon);
+      const data = await verifyCachedSession(session);
+      // Collapse the cache back to one credential now that the server has said
+      // which of the two it accepts.
+      saveSession(data.profile.id, data.profile.icon);
       set({
         currentProfile: data.profile,
         isLoading: false,
@@ -204,6 +180,40 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       }
       throw err;
     }
+  },
+
+  updateProfile: async (changes: UpdateProfileRequest) => {
+    const { currentProfile } = get();
+    if (!currentProfile) throw new Error('No profile signed in');
+
+    const updated = await api.updateProfile(currentProfile.id, changes).catch((err) => {
+      // No HTTP status means the outcome is unknown: the write may well have
+      // committed with only its response lost. Record the icon we tried to set
+      // as a fallback credential, so a committed-but-unacknowledged change
+      // cannot leave a dead password cached and strand the child at the picker.
+      if (!(err instanceof ApiError) && changes.icon !== currentProfile.icon) {
+        saveSession(currentProfile.id, currentProfile.icon, changes.icon);
+      }
+      throw err;
+    });
+
+    // A sign-out or profile switch can land while the PATCH is in flight;
+    // writing past it would revive the signed-out profile over freshly reset
+    // stores, which then sync their empty state upward.
+    if (get().currentProfile?.id !== currentProfile.id) return updated;
+
+    // Re-cache the session under the new icon. The old icon is now a dead
+    // password, so a stale cache would auto-login, 401, silently clear itself,
+    // and drop the child at the picker on next launch.
+    saveSession(updated.id, updated.icon);
+
+    set((state) => ({
+      currentProfile: updated,
+      profiles: state.profiles.map((p) =>
+        p.id === updated.id ? { ...p, name: updated.name, color: updated.color } : p
+      ),
+    }));
+    return updated;
   },
 
   clearProfile: () => {

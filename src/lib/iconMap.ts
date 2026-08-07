@@ -1,7 +1,17 @@
 import * as Icons from 'lucide-react';
 import type { ProfileIcon } from '../types/api';
 
-export const iconMap: Record<ProfileIcon, React.ComponentType<{ className?: string }>> = {
+type IconComponent = React.ComponentType<{ className?: string }>;
+
+/**
+ * Null-prototype, because the stored icon is user data and is looked up here
+ * directly: on a plain object literal an icon of 'constructor' or 'toString'
+ * would resolve up the prototype chain to something truthy that is not a
+ * component, defeating every caller's `|| fallback` and throwing mid-render.
+ */
+export const iconMap: Record<ProfileIcon, IconComponent> = Object.assign(
+  Object.create(null) as Record<ProfileIcon, IconComponent>,
+  {
   // Animals
   cat: Icons.Cat,
   dog: Icons.Dog,
@@ -26,4 +36,5 @@ export const iconMap: Record<ProfileIcon, React.ComponentType<{ className?: stri
   cloud: Icons.Cloud,
   lightning: Icons.Zap,
   snowflake: Icons.Snowflake,
-};
+  }
+);

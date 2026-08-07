@@ -11,10 +11,9 @@ import {
   persistedFactKeys,
   readBuckets,
   resetProfileStore,
+  SESSION_KEY,
   writeBucket,
 } from '../test/syncFixtures'
-
-const SESSION_KEY = 'ttt_session'
 
 function profileData(id: string) {
   return {
