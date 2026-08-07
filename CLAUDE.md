@@ -51,12 +51,8 @@ that read the new column ship: `bun run db:migrate:file migrations/000X_....sql`
 ### Strategy Hints (`src/lib/strategies.ts`)
 Strategy ids are the `StrategyId` union in `src/types/index.ts`; `known_anchor` is built separately in `src/lib/anchorStrategies.ts`. Hints personalize against confident/mastered facts via `makeKnownFacts`.
 
-### State Stores
-- **progressStore**: All 144 fact confidence levels, persisted to localStorage
-- **progressViewStore**: Scene reveal state (revealed facts, unlocked characters, tier level)
-- **gardenStore**: (legacy) Coins, garden items, themes
-- **sessionStore**: Current goal, progress, streak, mode
-- **focusTablesStore**: Which tables (1-12) to focus on, with enable/disable toggle
+### State Stores (`src/stores/`)
+- **gardenStore** is legacy — kept for migration only; don't build on it.
 
 ## Tailwind v4 Notes
 
