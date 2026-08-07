@@ -9,6 +9,9 @@ export type FetchMock = Mock<FetchSignature>
 /** Disk key for the bucketed pending progress queues. */
 export const PENDING_KEY = 'ttt_pending_progress_sync'
 
+/** Disk key for the auto-login session cache. */
+export const SESSION_KEY = 'ttt_session'
+
 export function makeProfile(id: string): Profile {
   return { id, name: id, icon: 'cat', color: 'garden-500', lastActive: 0, createdAt: 0 }
 }
@@ -46,6 +49,16 @@ export function jsonResponse(body: unknown): Response {
   return {
     ok: true,
     status: 200,
+    headers: { get: () => null },
+    text: async () => JSON.stringify(body),
+    json: async () => body,
+  } as unknown as Response
+}
+
+export function errorResponse(status: number, body: unknown): Response {
+  return {
+    ok: false,
+    status,
     headers: { get: () => null },
     text: async () => JSON.stringify(body),
     json: async () => body,

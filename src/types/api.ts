@@ -27,6 +27,14 @@ export interface CreateProfileRequest {
   color: string;
 }
 
+export interface UpdateProfileRequest {
+  /** The caller's current icon, re-verified server-side before any write. */
+  currentIcon: string;
+  name: string;
+  icon: string;
+  color: string;
+}
+
 // Sync payload types
 export interface RecentAttemptSync {
   correct: boolean;

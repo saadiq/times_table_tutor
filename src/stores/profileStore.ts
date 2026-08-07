@@ -8,6 +8,7 @@ import type {
   Profile,
   ProfileListItem,
   CreateProfileRequest,
+  UpdateProfileRequest,
   ProfileData,
   GardenItemSync,
   GardenStatsSync,
@@ -35,6 +36,7 @@ interface ProfileState extends ProgressSyncSlice {
   // Actions
   fetchProfiles: () => Promise<void>;
   createProfile: (data: CreateProfileRequest) => Promise<Profile>;
+  updateProfile: (changes: UpdateProfileRequest) => Promise<Profile>;
   clearProfile: () => void;
   deleteProfile: (id: string) => Promise<void>;
 
@@ -204,6 +206,26 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       }
       throw err;
     }
+  },
+
+  updateProfile: async (changes: UpdateProfileRequest) => {
+    const { currentProfile } = get();
+    if (!currentProfile) throw new Error('No profile signed in');
+
+    const updated = await api.updateProfile(currentProfile.id, changes);
+
+    // Re-cache the session under the new icon. The old icon is now a dead
+    // password, so a stale cache would auto-login, 401, silently clear itself,
+    // and drop the child at the picker on next launch.
+    saveSession(updated.id, updated.icon);
+
+    set((state) => ({
+      currentProfile: updated,
+      profiles: state.profiles.map((p) =>
+        p.id === updated.id ? { ...p, name: updated.name, color: updated.color } : p
+      ),
+    }));
+    return updated;
   },
 
   clearProfile: () => {
