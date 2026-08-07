@@ -24,7 +24,7 @@ that read the new column ship: `bun run db:migrate:file migrations/000X_....sql`
 1. **Learn** - Visual introduction to facts (no wrong answers)
 2. **Practice** - Adaptive problems with hints on mistakes
 3. **Progress** - Scene reveal reward system with stats
-4. **Settings** - Focus table selection (bottom nav)
+4. **Settings** - Focus table selection, read-aloud, and profile editing (name, icon password, color) via `ProfileEditor`
 
 ### Scene Reveal Reward System (`src/components/progress/`)
 - p5.js canvas renders a tree scene that evolves as you master facts
