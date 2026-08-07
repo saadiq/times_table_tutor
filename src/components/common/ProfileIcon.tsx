@@ -15,6 +15,8 @@ type ProfileIconProps = {
  * change it.
  */
 export function ProfileIcon({ icon, className }: ProfileIconProps) {
+  // Safe for any string: iconMap has a null prototype, so an icon of
+  // 'constructor' or 'toString' misses rather than resolving to a non-component.
   const Glyph = (icon && iconMap[icon as ProfileIconName]) || User
   return <Glyph className={className} />
 }

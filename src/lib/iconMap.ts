@@ -3,7 +3,15 @@ import type { ProfileIcon } from '../types/api';
 
 type IconComponent = React.ComponentType<{ className?: string }>;
 
-export const iconMap: Record<ProfileIcon, IconComponent> = {
+/**
+ * Null-prototype, because the stored icon is user data and is looked up here
+ * directly: on a plain object literal an icon of 'constructor' or 'toString'
+ * would resolve up the prototype chain to something truthy that is not a
+ * component, defeating every caller's `|| fallback` and throwing mid-render.
+ */
+export const iconMap: Record<ProfileIcon, IconComponent> = Object.assign(
+  Object.create(null) as Record<ProfileIcon, IconComponent>,
+  {
   // Animals
   cat: Icons.Cat,
   dog: Icons.Dog,
@@ -28,4 +36,5 @@ export const iconMap: Record<ProfileIcon, IconComponent> = {
   cloud: Icons.Cloud,
   lightning: Icons.Zap,
   snowflake: Icons.Snowflake,
-};
+  }
+);
