@@ -20,13 +20,22 @@ function syncInert() {
   })
 }
 
-const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]'
+const FOCUSABLE =
+  'a[href], button, input:not([type="hidden"]), select, textarea, [tabindex]'
 
 function focusableWithin(root: HTMLElement): HTMLElement[] {
   return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-    // matches(':disabled') rather than .disabled: a control inside a disabled
-    // fieldset is unfocusable without carrying the attribute itself.
-    (el) => el.getAttribute('tabindex') !== '-1' && !el.matches(':disabled')
+    (el) =>
+      el.getAttribute('tabindex') !== '-1' &&
+      // matches(':disabled') rather than .disabled: a control inside a disabled
+      // fieldset is unfocusable without carrying the attribute itself.
+      !el.matches(':disabled') &&
+      // A control the browser would skip must not end up as the ring's edge:
+      // Tab off the last *visible* one would then find no edge to wrap, and
+      // native tabbing carries focus out to the app behind the overlay.
+      // Optional call — jsdom has no layout and no checkVisibility, and
+      // undefined must mean "keep" rather than empty the ring.
+      el.checkVisibility?.() !== false
   )
 }
 
