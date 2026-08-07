@@ -10,7 +10,7 @@ export type FetchMock = Mock<FetchSignature>
 export const PENDING_KEY = 'ttt_pending_progress_sync'
 
 /** Disk key for the auto-login session cache. */
-export const SESSION_KEY = 'ttt_session'
+export { SESSION_KEY } from '../lib/profileSession'
 
 export function makeProfile(id: string): Profile {
   return { id, name: id, icon: 'cat', color: 'garden-500', lastActive: 0, createdAt: 0 }

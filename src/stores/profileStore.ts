@@ -3,6 +3,7 @@ import { api, ApiError } from '../lib/api';
 import { resetStoresForProfileSwitch } from '../lib/resetStores';
 import { createProgressSyncSlice, dropPersistedBucket } from '../lib/progressSyncQueue';
 import type { ProgressSyncSlice } from '../lib/progressSyncQueue';
+import { saveSession, loadSession, clearSavedSession } from '../lib/profileSession';
 import type { CurriculumId } from '../lib/operations';
 import type {
   Profile,
@@ -13,14 +14,6 @@ import type {
   GardenItemSync,
   GardenStatsSync,
 } from '../types/api';
-
-// localStorage keys for session persistence
-const SESSION_KEY = 'ttt_session';
-
-interface SavedSession {
-  profileId: string;
-  icon: string;
-}
 
 interface ProfileState extends ProgressSyncSlice {
   // State
@@ -51,33 +44,6 @@ interface ProfileState extends ProgressSyncSlice {
   // from ProgressSyncSlice)
   syncGarden: (items: GardenItemSync[], stats: GardenStatsSync) => Promise<void>;
   syncSessions: (curriculum: CurriculumId, count: number) => void;
-}
-
-// Helper functions for session persistence
-function saveSession(profileId: string, icon: string): void {
-  try {
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ profileId, icon }));
-  } catch {
-    // localStorage might be unavailable
-  }
-}
-
-function loadSession(): SavedSession | null {
-  try {
-    const data = localStorage.getItem(SESSION_KEY);
-    if (!data) return null;
-    return JSON.parse(data) as SavedSession;
-  } catch {
-    return null;
-  }
-}
-
-function clearSavedSession(): void {
-  try {
-    localStorage.removeItem(SESSION_KEY);
-  } catch {
-    // localStorage might be unavailable
-  }
 }
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
