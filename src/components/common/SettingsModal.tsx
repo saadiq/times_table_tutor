@@ -5,8 +5,12 @@ import { Modal } from './Modal'
 import { Toggle } from './Toggle'
 import { FocusTablePicker } from './FocusTablePicker'
 import { SciencePage } from './SciencePage'
+import { ProfileEditor } from './ProfileEditor'
 import { useFocusTablesStore, useSettingsStore } from '../../stores'
+import { useProfileStore } from '../../stores/profileStore'
 import { useActiveOperation } from '../../hooks'
+import { iconMap } from '../../lib/iconMap'
+import type { ProfileIcon } from '../../types/api'
 
 type SettingsModalProps = {
   isOpen: boolean
@@ -18,6 +22,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { ttsEnabled, setTtsEnabled } = useSettingsStore()
   const operation = useActiveOperation()
   const [showScience, setShowScience] = useState(false)
+  const currentProfile = useProfileStore((s) => s.currentProfile)
+  const [showProfileEditor, setShowProfileEditor] = useState(false)
+  const ProfileIconComponent = currentProfile ? iconMap[currentProfile.icon as ProfileIcon] : null
 
   const hasSelection = focusTables.length > 0
 
@@ -25,6 +32,23 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     <>
       <Modal isOpen={isOpen} onClose={onClose} title="Settings">
         <div className="space-y-6">
+          {currentProfile && ProfileIconComponent && (
+            <button
+              onClick={() => setShowProfileEditor(true)}
+              className="flex items-center gap-3 w-full py-3 text-left hover:bg-gray-50 rounded-xl transition-colors"
+            >
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center bg-${currentProfile.color}`}
+              >
+                <ProfileIconComponent className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <span className="text-sm font-medium text-gray-800">{currentProfile.name}</span>
+                <p className="text-xs text-gray-500 mt-0.5">Change name, icon, or color</p>
+              </div>
+            </button>
+          )}
+
           <div className="flex items-center justify-between py-3">
             <div>
               <span className="text-sm font-medium text-gray-800">Read aloud</span>
@@ -82,6 +106,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
       <AnimatePresence>
         {showScience && <SciencePage onClose={() => setShowScience(false)} />}
+        {showProfileEditor && (
+          <ProfileEditor onClose={() => setShowProfileEditor(false)} />
+        )}
       </AnimatePresence>
     </>
   )
