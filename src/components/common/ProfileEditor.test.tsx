@@ -116,6 +116,95 @@ describe('ProfileEditor', () => {
     expect(screen.getByText("That's not your icon. Try again!")).toBeTruthy()
   })
 
+  it('lets a second tap on the same icon overrule a cached icon gone stale', () => {
+    // The cache can go stale before any save gets through, and only a 401 can
+    // clear trustLocalIcon — so without this escape the gate rejects the
+    // child's own real icon forever and no PATCH can ever be sent to correct it.
+    signIn(vi.fn())
+    render(<ProfileEditor onClose={onClose} />)
+
+    const owl = screen.getByRole('button', { name: 'owl' })
+    fireEvent.click(owl)
+    expect(screen.getByText("That's not your icon. Try again!")).toBeTruthy()
+
+    fireEvent.click(owl)
+
+    expect(screen.getByLabelText('Your name')).toBeTruthy()
+  })
+
+  it('resubmits the icon just proved, not the stale one, and keeps the edits', async () => {
+    const updateProfile = vi
+      .fn()
+      .mockRejectedValueOnce(new ApiError(401, 'Incorrect icon'))
+      .mockResolvedValueOnce(makeProfile('kid-a'))
+    signIn(updateProfile)
+    render(<ProfileEditor onClose={onClose} />)
+    passVerify()
+
+    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Ada' } })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    })
+
+    // Back at verify: 'owl' is the real icon, set on another device. Re-proving
+    // it must not cost the child their typed name, and the form must not carry
+    // the rejected 'cat' back into the write — that would silently reset their
+    // password to the value the other device just replaced.
+    fireEvent.click(screen.getByRole('button', { name: 'owl' }))
+    expect(screen.getByLabelText<HTMLInputElement>('Your name').value).toBe('Ada')
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    })
+
+    expect(updateProfile).toHaveBeenLastCalledWith({
+      currentIcon: 'owl',
+      name: 'Ada',
+      icon: 'owl',
+      color: 'garden-500',
+    })
+  })
+
+  it('clears a stale error as soon as the child edits the field', async () => {
+    const updateProfile = vi.fn().mockRejectedValue(new ApiError(409, 'Name already taken'))
+    signIn(updateProfile)
+    render(<ProfileEditor onClose={onClose} />)
+    passVerify()
+
+    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Taken' } })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    })
+    expect(screen.getByText('That name is already taken!')).toBeTruthy()
+
+    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Sammy' } })
+
+    expect(screen.queryByText('That name is already taken!')).toBeNull()
+  })
+
+  it('freezes the pickers but never the exit while a save is in flight', async () => {
+    let release: (profile: Profile) => void = () => {}
+    const updateProfile = vi.fn(() => new Promise<Profile>((r) => { release = r }))
+    signIn(updateProfile as UpdateProfileMock)
+    render(<ProfileEditor onClose={onClose} />)
+    passVerify()
+
+    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Ada' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    // The icon is the password: a pick made mid-save would leave the child
+    // trusting a value the server never received. The pickers inherit their
+    // disabled state from the enclosing fieldset, so ask the element itself.
+    expect(screen.getByRole('button', { name: 'owl' }).matches(':disabled')).toBe(true)
+    // ...but the panel covers the whole screen, so its one exit has to stay live
+    // even for a request that never settles.
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Go back' }).disabled).toBe(false)
+
+    await act(async () => {
+      release(makeProfile('kid-a'))
+    })
+  })
+
   it('accepts any icon at verify once a 401 has proven the cached one stale', async () => {
     const updateProfile = vi.fn().mockRejectedValue(new ApiError(401, 'Incorrect icon'))
     signIn(updateProfile)

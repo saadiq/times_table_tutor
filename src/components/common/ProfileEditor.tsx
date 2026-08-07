@@ -12,23 +12,43 @@ interface ProfileEditorProps {
   onClose: () => void;
 }
 
+/**
+ * Edits held across a save that bounced, so re-proving the icon costs the child
+ * nothing. `icon` is absent unless they deliberately picked a new one —
+ * otherwise it has to come from the icon they re-prove, never from the value
+ * the server just rejected.
+ */
+interface HeldEdits {
+  name: string;
+  icon?: ProfileIcon;
+  color: ProfileColor;
+}
+
 export function ProfileEditor({ onClose }: ProfileEditorProps) {
   const currentProfile = useProfileStore((s) => s.currentProfile);
   const updateProfile = useProfileStore((s) => s.updateProfile);
   const [currentIcon, setCurrentIcon] = useState<ProfileIcon | null>(null);
+  const [heldEdits, setHeldEdits] = useState<HeldEdits | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   // False once a save has come back 401: that means currentProfile.icon (from
   // another tab/device) is stale, so gating verify against it would reject the
   // real current icon too. The server's PATCH becomes the sole judge from then on.
   const [trustLocalIcon, setTrustLocalIcon] = useState(true);
+  // The pick the local gate last turned down. Tapping the same icon again means
+  // "I'm sure" and hands the decision to the server.
+  const [rejectedIcon, setRejectedIcon] = useState<ProfileIcon | null>(null);
 
   if (!currentProfile) return null;
 
   // Advancing is checked client-side for instant feedback; the server re-checks
   // currentIcon on the PATCH, so this is convenience, not the security boundary.
+  // The second tap is the escape hatch: a cache that went stale before any save
+  // could 401 would otherwise reject the child's own real icon every time, with
+  // nothing able to clear trustLocalIcon because that needs a save to get through.
   const handleVerify = (icon: ProfileIcon) => {
-    if (trustLocalIcon && icon !== currentProfile.icon) {
+    if (trustLocalIcon && icon !== currentProfile.icon && icon !== rejectedIcon) {
+      setRejectedIcon(icon);
       setError(WRONG_ICON);
       return;
     }
@@ -52,6 +72,11 @@ export function ProfileEditor({ onClose }: ProfileEditorProps) {
         // correct. Let the server's PATCH be the judge instead.
         setTrustLocalIcon(false);
         setCurrentIcon(null);
+        setRejectedIcon(null);
+        // Hold the edits so the detour costs nothing. The icon rides along only
+        // if the child chose it; otherwise it was the one just rejected, and
+        // re-submitting it would roll their password back to the stale value.
+        setHeldEdits({ name, color, ...(icon === currentIcon ? {} : { icon }) });
         setError(WRONG_ICON);
       } else if (err instanceof ApiError && err.status === 409) {
         setError('That name is already taken!');
@@ -64,12 +89,21 @@ export function ProfileEditor({ onClose }: ProfileEditorProps) {
   };
 
   return (
-    <SlideOverPanel title="Your profile" onClose={onClose} backDisabled={isSaving}>
+    <SlideOverPanel title="Your profile" onClose={onClose}>
       {currentIcon ? (
         <ProfileEditForm
           profile={currentProfile}
+          initial={{
+            name: heldEdits?.name ?? currentProfile.name,
+            // The icon just proved, never currentProfile.icon: once a 401 has
+            // shown that cached value to be stale, re-submitting it would
+            // silently reset the child's password to the old one.
+            icon: heldEdits?.icon ?? currentIcon,
+            color: heldEdits?.color ?? (currentProfile.color as ProfileColor),
+          }}
           error={error}
           isSaving={isSaving}
+          onDirty={() => setError(null)}
           onSave={handleSave}
           onCancel={onClose}
         />

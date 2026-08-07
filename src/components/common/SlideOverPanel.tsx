@@ -4,8 +4,6 @@ import { ArrowLeft } from 'lucide-react'
 type SlideOverPanelProps = {
   title: string
   onClose: () => void
-  /** Blocks the back arrow while a foreground action is in flight. */
-  backDisabled?: boolean
   children: React.ReactNode
 }
 
@@ -13,13 +11,13 @@ type SlideOverPanelProps = {
  * Full-screen panel that slides in from the right over the whole app, with a
  * titled header and a scrollable body. Render inside an AnimatePresence so the
  * exit animation plays.
+ *
+ * The panel covers the bottom nav and has no backdrop or Escape dismissal, so
+ * the back arrow is the only way out and is never disabled — a caller that
+ * blocked it during a slow request could strand the child behind an opaque
+ * overlay with every control on screen inert.
  */
-export function SlideOverPanel({
-  title,
-  onClose,
-  backDisabled,
-  children,
-}: SlideOverPanelProps) {
+export function SlideOverPanel({ title, onClose, children }: SlideOverPanelProps) {
   return (
     <motion.div
       initial={{ opacity: 0, x: '100%' }}
@@ -31,8 +29,7 @@ export function SlideOverPanel({
       <div className="flex items-center gap-3 p-4 border-b border-gray-100 bg-white">
         <button
           onClick={onClose}
-          disabled={backDisabled}
-          className="p-2 -ml-2 rounded-xl hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-garden-500 transition-colors disabled:opacity-50"
+          className="p-2 -ml-2 rounded-xl hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-garden-500 transition-colors"
           aria-label="Go back"
         >
           <ArrowLeft size={20} className="text-gray-600" />

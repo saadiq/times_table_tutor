@@ -10,24 +10,38 @@ import {
   type ProfileIcon as ProfileIconName,
 } from '../../types/api';
 
+export interface ProfileEditValues {
+  name: string;
+  icon: ProfileIconName;
+  color: ProfileColor;
+}
+
 interface ProfileEditFormProps {
+  /** The server's values — the baseline for "has anything actually changed". */
   profile: Profile;
+  /** What the fields open with: the child's held edits after a bounced save,
+   *  and the icon they just proved rather than the possibly-stale cached one. */
+  initial: ProfileEditValues;
   error: string | null;
   isSaving: boolean;
+  /** Any field edit, so an error stops contradicting what is on screen. */
+  onDirty: () => void;
   onSave: (name: string, icon: ProfileIconName, color: ProfileColor) => void;
   onCancel: () => void;
 }
 
 export function ProfileEditForm({
   profile,
+  initial,
   error,
   isSaving,
+  onDirty,
   onSave,
   onCancel,
 }: ProfileEditFormProps) {
-  const [name, setName] = useState(profile.name);
-  const [icon, setIcon] = useState(profile.icon as ProfileIconName);
-  const [color, setColor] = useState(profile.color as ProfileColor);
+  const [name, setName] = useState(initial.name);
+  const [icon, setIcon] = useState(initial.icon);
+  const [color, setColor] = useState(initial.color);
 
   const trimmed = name.trim();
   const hasChanges =
@@ -36,40 +50,61 @@ export function ProfileEditForm({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-center">
-        <div
-          className={`w-24 h-24 rounded-full flex items-center justify-center bg-${color}`}
-        >
-          <ProfileIcon icon={icon} className="w-12 h-12 text-white" />
+      {/* The icon is the password, so whatever the pickers show when this panel
+          closes is what the child will try to log in with. Freezing the whole
+          set while a save is in flight keeps them from trusting a value the
+          server never received — the same guard IconVerify uses. */}
+      <fieldset disabled={isSaving} className="space-y-6 disabled:opacity-50">
+        <div className="flex justify-center">
+          <div
+            className={`w-24 h-24 rounded-full flex items-center justify-center bg-${color}`}
+          >
+            <ProfileIcon icon={icon} className="w-12 h-12 text-white" />
+          </div>
         </div>
-      </div>
 
-      <div>
-        <label htmlFor="profile-name" className="block text-sm text-gray-600 mb-2">
-          Your name
-        </label>
-        <input
-          id="profile-name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          maxLength={MAX_PROFILE_NAME_LENGTH}
-          className="w-full px-4 py-3 rounded-lg border border-gray-200 text-center text-lg"
-        />
-      </div>
+        <div>
+          <label htmlFor="profile-name" className="block text-sm text-gray-600 mb-2">
+            Your name
+          </label>
+          <input
+            id="profile-name"
+            type="text"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              onDirty();
+            }}
+            maxLength={MAX_PROFILE_NAME_LENGTH}
+            className="w-full px-4 py-3 rounded-lg border border-gray-200 text-center text-lg"
+          />
+        </div>
 
-      <div>
-        <p className="text-sm text-gray-600 mb-1">Your secret icon</p>
-        <p className="text-xs text-gray-400 mb-3">
-          This is how you log in. Pick a new one to change it.
-        </p>
-        <IconPicker selected={icon} onSelect={setIcon} />
-      </div>
+        <div>
+          <p className="text-sm text-gray-600 mb-1">Your secret icon</p>
+          <p className="text-xs text-gray-400 mb-3">
+            This is how you log in. Pick a new one to change it.
+          </p>
+          <IconPicker
+            selected={icon}
+            onSelect={(next) => {
+              setIcon(next);
+              onDirty();
+            }}
+          />
+        </div>
 
-      <div>
-        <p className="text-sm text-gray-600 mb-3">Your color</p>
-        <ColorPicker selected={color} onSelect={setColor} />
-      </div>
+        <div>
+          <p className="text-sm text-gray-600 mb-3">Your color</p>
+          <ColorPicker
+            selected={color}
+            onSelect={(next) => {
+              setColor(next);
+              onDirty();
+            }}
+          />
+        </div>
+      </fieldset>
 
       {error && <p className="text-red-500 text-center text-sm">{error}</p>}
 
