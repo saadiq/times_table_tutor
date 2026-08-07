@@ -66,9 +66,9 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     try {
       const profiles = await api.listProfiles();
       set({ profiles, isLoading: false });
-    } catch (err) {
+    } catch {
       set({
-        error: err instanceof Error ? err.message : 'Failed to fetch profiles',
+        error: "Couldn't load profiles. Try again!",
         isLoading: false,
       });
     }
@@ -106,7 +106,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
         });
       } else {
         set({
-          verifyError: err instanceof Error ? err.message : 'Verification failed',
+          verifyError: "Couldn't sign in. Try again!",
           isLoading: false,
         });
       }
@@ -173,10 +173,6 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
           isLoading: false,
         });
       } else {
-        // Same generic wording ProfileEditor uses: every other failure here is
-        // a validation 400 the picker cannot produce, a 500, or a dead network,
-        // and err.message for those is a raw response body — JSON or an HTML
-        // error page — which is not something to show a child.
         set({
           error: "Couldn't create that profile. Try again!",
           isLoading: false,

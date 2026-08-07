@@ -51,6 +51,9 @@ async function request<T>(
   });
 
   if (!response.ok) {
+    // The message is the raw response body — a JSON error object, or an HTML
+    // error page from Pages itself. Useful in a console, never something to put
+    // in front of a child: branch on `status` and write your own copy.
     throw new ApiError(response.status, await response.text());
   }
 
