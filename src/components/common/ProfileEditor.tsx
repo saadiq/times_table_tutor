@@ -75,7 +75,8 @@ export function ProfileEditor({ onClose }: ProfileEditorProps) {
       <div className="flex items-center gap-3 p-4 border-b border-gray-100 bg-white">
         <button
           onClick={onClose}
-          className="p-2 -ml-2 rounded-xl hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-garden-500 transition-colors"
+          disabled={isSaving}
+          className="p-2 -ml-2 rounded-xl hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-garden-500 transition-colors disabled:opacity-50"
           aria-label="Go back"
         >
           <ArrowLeft size={20} className="text-gray-600" />
