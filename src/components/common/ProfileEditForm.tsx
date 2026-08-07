@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check } from 'lucide-react';
+import { Check, User } from 'lucide-react';
 import { IconPicker } from './IconPicker';
 import { ColorPicker } from './ColorPicker';
 import { iconMap } from '../../lib/iconMap';
@@ -29,7 +29,9 @@ export function ProfileEditForm({
     trimmed !== profile.name || icon !== profile.icon || color !== profile.color;
   const canSave = trimmed.length > 0 && hasChanges && !isSaving;
 
-  const IconComponent = iconMap[icon];
+  // Falls back like Navigation and SettingsModal: an unrecognized icon should
+  // degrade to a default glyph, not white-screen the whole editor.
+  const IconComponent = iconMap[icon] || User;
 
   return (
     <div className="space-y-6">
