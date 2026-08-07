@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   isUniqueNameViolation,
+  readJsonBody,
   validateProfileEdit,
   validateProfileFields,
   KNOWN_ICONS,
@@ -19,6 +20,37 @@ import {
 function body(overrides: Record<string, unknown> = {}) {
   return { currentIcon: 'cat', name: 'Ada', icon: 'owl', color: 'sky-400', ...overrides }
 }
+
+function post(rawBody: string | undefined) {
+  return new Request('https://example.com/api/profiles', {
+    method: 'POST',
+    body: rawBody,
+  })
+}
+
+describe('readJsonBody', () => {
+  it('parses a well-formed body', async () => {
+    expect(await readJsonBody(post(JSON.stringify(body())))).toEqual(body())
+  })
+
+  // A truncated or non-JSON body has to arrive at the validators as undefined
+  // so it leaves as their 400. Left to throw, the parse error escapes the
+  // handler and Pages answers with a 500 HTML page, which the client can only
+  // render as its generic "try again" — so the child retries into it forever.
+  it('turns a malformed body into the validators own 400', async () => {
+    const parsed = await readJsonBody(post('{"name":"Ada"'))
+
+    expect(parsed).toBeUndefined()
+    expect(validateProfileFields(parsed)).toEqual({
+      ok: false,
+      error: 'Missing fields',
+    })
+  })
+
+  it('treats an empty body the same way', async () => {
+    expect(await readJsonBody(post(undefined))).toBeUndefined()
+  })
+})
 
 // Both write endpoints classify the duplicate-name race by this message, since
 // D1 reports the constraint as text rather than a code.
