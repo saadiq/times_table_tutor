@@ -2,7 +2,6 @@ const STORAGE_KEYS = {
   progress: 'ttt_progress',
   progressDivide: 'ttt_progress_divide',
   garden: 'ttt_garden',
-  session: 'ttt_session',
   settings: 'ttt_settings',
   focusTables: 'ttt_focus_tables',
   focusTablesDivide: 'ttt_focus_tables_divide',
