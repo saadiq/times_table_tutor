@@ -40,6 +40,20 @@ function isString(value: unknown): value is string {
 }
 
 /**
+ * Reads a request body, handing anything that isn't JSON to the validators as
+ * undefined so it comes back out as their 400. Left unhandled the parse error
+ * escapes the handler and Pages answers with a 500 HTML page, which the client
+ * can only render as its generic "try again".
+ */
+export async function readJsonBody(request: Request): Promise<unknown> {
+  try {
+    return await request.json();
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Validates the name/icon/color of a POST /api/profiles body. Both write
  * endpoints run this: a profile created with an off-list icon can never be
  * saved again, because the edit validator rejects the very value the form

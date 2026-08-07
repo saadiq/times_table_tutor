@@ -1,4 +1,4 @@
-import { validateProfileEdit } from '../../_shared/profileEdits';
+import { readJsonBody, validateProfileEdit } from '../../_shared/profileEdits';
 
 interface Env {
   DB: D1Database;
@@ -20,17 +20,7 @@ export const onRequestDelete: PagesFunction<Env> = async ({ params, env }) => {
 export const onRequestPatch: PagesFunction<Env> = async ({ params, request, env }) => {
   const id = params.id as string;
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    // A truncated or non-JSON body has to reach the validator's 400. Left
-    // unhandled it escapes the handler and Pages answers with a 500 HTML page,
-    // which the client can only render as its generic "try again".
-    return Response.json({ error: 'Missing fields' }, { status: 400 });
-  }
-
-  const validation = validateProfileEdit(body);
+  const validation = validateProfileEdit(await readJsonBody(request));
   if (!validation.ok) {
     return Response.json({ error: validation.error }, { status: 400 });
   }
