@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookOpen } from 'lucide-react'
+import { BookOpen, User } from 'lucide-react'
 import { AnimatePresence } from 'framer-motion'
 import { Modal } from './Modal'
 import { Toggle } from './Toggle'
@@ -24,7 +24,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [showScience, setShowScience] = useState(false)
   const currentProfile = useProfileStore((s) => s.currentProfile)
   const [showProfileEditor, setShowProfileEditor] = useState(false)
-  const ProfileIconComponent = currentProfile ? iconMap[currentProfile.icon as ProfileIcon] : null
+  // An unrecognized icon value must not hide the only screen that can fix
+  // it, so fall back to a generic icon rather than dropping the row.
+  const ProfileIconComponent = currentProfile
+    ? iconMap[currentProfile.icon as ProfileIcon] || User
+    : User
 
   const hasSelection = focusTables.length > 0
 
@@ -32,7 +36,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     <>
       <Modal isOpen={isOpen} onClose={onClose} title="Settings">
         <div className="space-y-6">
-          {currentProfile && ProfileIconComponent && (
+          {currentProfile && (
             <button
               onClick={() => setShowProfileEditor(true)}
               className="flex items-center gap-3 w-full py-3 text-left hover:bg-gray-50 rounded-xl transition-colors"
