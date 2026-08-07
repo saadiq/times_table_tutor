@@ -1,5 +1,18 @@
 import { describe, it, expect } from 'vitest'
-import { validateProfileEdit, KNOWN_ICONS, KNOWN_COLORS } from './profileEdits'
+import {
+  validateProfileEdit,
+  KNOWN_ICONS,
+  KNOWN_COLORS,
+  MAX_PROFILE_NAME_LENGTH,
+} from './profileEdits'
+// Test-only reach across the functions/src boundary. Shipped Function code
+// must never import from src/, but this file is never bundled into a
+// handler — and it is the only thing that can catch the two copies drifting.
+import {
+  PROFILE_ICONS,
+  PROFILE_COLORS,
+  MAX_PROFILE_NAME_LENGTH as CLIENT_MAX_NAME_LENGTH,
+} from '../../src/types/api'
 
 function body(overrides: Record<string, unknown> = {}) {
   return { currentIcon: 'cat', name: 'Ada', icon: 'owl', color: 'sky-400', ...overrides }
@@ -75,5 +88,22 @@ describe('validateProfileEdit', () => {
     for (const color of KNOWN_COLORS) {
       expect(validateProfileEdit(body({ color })).ok).toBe(true)
     }
+  })
+})
+
+// These constants are hand-mirrored from src/types/api.ts because functions/
+// cannot import from src/. Left to a comment, the copies drift silently: a new
+// avatar option would render in the picker and then be rejected by the server.
+describe('parity with the client avatar options', () => {
+  it('knows exactly the icons the client offers', () => {
+    expect(KNOWN_ICONS).toEqual([...PROFILE_ICONS])
+  })
+
+  it('knows exactly the colors the client offers', () => {
+    expect(KNOWN_COLORS).toEqual([...PROFILE_COLORS])
+  })
+
+  it('enforces the same name length the client input caps at', () => {
+    expect(MAX_PROFILE_NAME_LENGTH).toBe(CLIENT_MAX_NAME_LENGTH)
   })
 })
