@@ -18,6 +18,7 @@ export function IconPicker({ selected, onSelect, showLabels = false }: IconPicke
           <motion.button
             key={iconKey}
             type="button"
+            aria-label={iconKey}
             onClick={() => onSelect(iconKey)}
             className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-colors ${
               isSelected
