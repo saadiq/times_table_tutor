@@ -1,7 +1,14 @@
--- Profiles table
+-- Profiles table. Names are the child's whole identity in the picker, so they
+-- are unique case-insensitively — the real guard behind both write endpoints'
+-- friendlier pre-checks. It rides on the column rather than a standalone
+-- CREATE UNIQUE INDEX because `db:migrate` replays this whole file in one
+-- transaction: a database holding duplicate names would fail the index and
+-- roll back every other statement with it, so no later CREATE TABLE would ever
+-- reach it. IF NOT EXISTS skips the table on those databases instead, and
+-- migrations/0002 is what brings them up to the same rule, by hand.
 CREATE TABLE IF NOT EXISTS profiles (
   id            TEXT PRIMARY KEY,
-  name          TEXT NOT NULL,
+  name          TEXT NOT NULL COLLATE NOCASE UNIQUE,
   icon          TEXT NOT NULL,
   color         TEXT NOT NULL,
   created_at    INTEGER NOT NULL,
@@ -9,13 +16,6 @@ CREATE TABLE IF NOT EXISTS profiles (
 );
 
 CREATE INDEX IF NOT EXISTS idx_profiles_last_active ON profiles(last_active DESC);
-
--- Names are the child's whole identity in the picker, so they must be unique
--- case-insensitively. This is the real guard behind both write endpoints'
--- friendlier pre-checks; migrations/0002 added it to databases that predate
--- this line, and it belongs here so a fresh one is never created without it.
-CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_name_unique
-  ON profiles(name COLLATE NOCASE);
 
 -- Learning progress (one row per fact per profile; fact keys are unique per
 -- curriculum — multiply "7x8", divide "56÷7" — so the PK needs no change)
