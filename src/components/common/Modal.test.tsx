@@ -16,14 +16,21 @@ function pressTab(shiftKey = false) {
   fireEvent.keyDown(document, { key: 'Tab', shiftKey })
 }
 
+function renderModal(
+  children: React.ReactNode,
+  { isOpen = true, onClose = vi.fn() } = {}
+) {
+  render(
+    <Modal isOpen={isOpen} onClose={onClose} title="Settings">
+      {children}
+    </Modal>
+  )
+  return onClose
+}
+
 describe('Modal keyboard handling', () => {
   it('closes on Escape', () => {
-    const onClose = vi.fn()
-    render(
-      <Modal isOpen onClose={onClose} title="Settings">
-        <button>Inside</button>
-      </Modal>
-    )
+    const onClose = renderModal(<button>Inside</button>)
 
     pressEscape()
 
@@ -31,12 +38,7 @@ describe('Modal keyboard handling', () => {
   })
 
   it('ignores Escape while closed', () => {
-    const onClose = vi.fn()
-    render(
-      <Modal isOpen={false} onClose={onClose} title="Settings">
-        <button>Inside</button>
-      </Modal>
-    )
+    const onClose = renderModal(<button>Inside</button>, { isOpen: false })
 
     pressEscape()
 
@@ -44,11 +46,11 @@ describe('Modal keyboard handling', () => {
   })
 
   it('wraps Tab from the last control back to the first', () => {
-    render(
-      <Modal isOpen onClose={vi.fn()} title="Settings">
+    renderModal(
+      <>
         <button>First</button>
         <button>Last</button>
-      </Modal>
+      </>
     )
     screen.getByText('Last').focus()
 
@@ -59,11 +61,11 @@ describe('Modal keyboard handling', () => {
   })
 
   it('wraps Shift+Tab from the first control round to the last', () => {
-    render(
-      <Modal isOpen onClose={vi.fn()} title="Settings">
+    renderModal(
+      <>
         <button>First</button>
         <button>Last</button>
-      </Modal>
+      </>
     )
     screen.getByLabelText('Close').focus()
 
@@ -73,11 +75,7 @@ describe('Modal keyboard handling', () => {
   })
 
   it('enters at the first control when focus is resting on the panel', () => {
-    render(
-      <Modal isOpen onClose={vi.fn()} title="Settings">
-        <button>First</button>
-      </Modal>
-    )
+    renderModal(<button>First</button>)
 
     // Opening leaves focus on the panel itself; Shift+Tab there must wrap
     // backwards into the panel rather than escaping to the app behind it.
