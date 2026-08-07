@@ -115,4 +115,24 @@ describe('ProfileEditor', () => {
     expect(screen.queryByLabelText('Your name')).toBeNull()
     expect(screen.getByText("That's not your icon. Try again!")).toBeTruthy()
   })
+
+  it('accepts any icon at verify once a 401 has proven the cached one stale', async () => {
+    const updateProfile = vi.fn().mockRejectedValue(new ApiError(401, 'Incorrect icon'))
+    signIn(updateProfile)
+    render(<ProfileEditor onClose={onClose} />)
+    passVerify()
+
+    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Ada' } })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    })
+
+    // Back on verify with a stale currentProfile.icon ('cat'). Picking a
+    // DIFFERENT icon — the real current one on another device — must advance
+    // to the form rather than being rejected against the known-stale value.
+    fireEvent.click(screen.getByRole('button', { name: 'owl' }))
+
+    expect(screen.getByLabelText('Your name')).toBeTruthy()
+    expect(screen.queryByText("That's not your icon. Try again!")).toBeNull()
+  })
 })

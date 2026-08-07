@@ -19,13 +19,17 @@ export function ProfileEditor({ onClose }: ProfileEditorProps) {
   const [currentIcon, setCurrentIcon] = useState<ProfileIcon | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  // False once a save has come back 401: that means currentProfile.icon (from
+  // another tab/device) is stale, so gating verify against it would reject the
+  // real current icon too. The server's PATCH becomes the sole judge from then on.
+  const [trustLocalIcon, setTrustLocalIcon] = useState(true);
 
   if (!currentProfile) return null;
 
   // Advancing is checked client-side for instant feedback; the server re-checks
   // currentIcon on the PATCH, so this is convenience, not the security boundary.
   const handleVerify = (icon: ProfileIcon) => {
-    if (icon !== currentProfile.icon) {
+    if (trustLocalIcon && icon !== currentProfile.icon) {
       setError(WRONG_ICON);
       return;
     }
@@ -43,6 +47,11 @@ export function ProfileEditor({ onClose }: ProfileEditorProps) {
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         // The icon changed under us — send them back to prove the new one.
+        // Our cached currentProfile.icon is now known-stale, so stop
+        // arbitrating verify picks against it locally — every pick would be
+        // compared to the wrong value, rejecting the one icon that's actually
+        // correct. Let the server's PATCH be the judge instead.
+        setTrustLocalIcon(false);
         setCurrentIcon(null);
         setError(WRONG_ICON);
       } else if (err instanceof ApiError && err.status === 409) {
