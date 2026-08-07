@@ -49,7 +49,7 @@ that read the new column ship: `bun run db:migrate:file migrations/000X_....sql`
 - The engine (`adaptive.ts`, confidence logic, stores) stays operation-agnostic
 
 ### Strategy Hints (`src/lib/strategies.ts`)
-Eleven strategies: visual_array, skip_counting, break_apart, use_neighbor, nines_trick, fives_trick, doubles, tens_trick, ones_zeros, fact_family (flip it), known_anchor (derived-fact chains). Hints personalize against confident/mastered facts via `makeKnownFacts`.
+Strategy ids are the `StrategyId` union in `src/types/index.ts`; `known_anchor` is built separately in `src/lib/anchorStrategies.ts`. Hints personalize against confident/mastered facts via `makeKnownFacts`.
 
 ### State Stores
 - **progressStore**: All 144 fact confidence levels, persisted to localStorage
