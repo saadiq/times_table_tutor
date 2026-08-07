@@ -79,6 +79,10 @@ export function useOverlay(onClose: () => void, isOpen = true) {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (openOverlays[openOverlays.length - 1] !== panel) return
 
+      // An Escape that closes an IME candidate list is not a dismissal; acting
+      // on it would throw away the name the child is halfway through typing.
+      if (event.isComposing) return
+
       if (event.key === 'Escape') {
         event.preventDefault()
         closeRef.current()
