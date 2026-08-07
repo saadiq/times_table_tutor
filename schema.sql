@@ -10,6 +10,13 @@ CREATE TABLE IF NOT EXISTS profiles (
 
 CREATE INDEX IF NOT EXISTS idx_profiles_last_active ON profiles(last_active DESC);
 
+-- Names are the child's whole identity in the picker, so they must be unique
+-- case-insensitively. This is the real guard behind both write endpoints'
+-- friendlier pre-checks; migrations/0002 added it to databases that predate
+-- this line, and it belongs here so a fresh one is never created without it.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_name_unique
+  ON profiles(name COLLATE NOCASE);
+
 -- Learning progress (one row per fact per profile; fact keys are unique per
 -- curriculum — multiply "7x8", divide "56÷7" — so the PK needs no change)
 CREATE TABLE IF NOT EXISTS fact_progress (
