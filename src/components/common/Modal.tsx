@@ -12,7 +12,7 @@ type ModalProps = {
 }
 
 export function Modal({ isOpen, onClose, title, children }: ModalProps) {
-  const panelRef = useOverlay<HTMLDivElement>(onClose, isOpen)
+  const panelRef = useOverlay(onClose, isOpen)
 
   // Prevent body scroll when modal is open
   useEffect(() => {

@@ -23,7 +23,7 @@ export function SlideOverPanel({ title, onClose, children }: SlideOverPanelProps
   // Presence, not mounting, is what should hold the keyboard: otherwise a
   // half-second of slide-out is spent swallowing the Escape meant for whatever
   // is underneath.
-  const panelRef = useOverlay<HTMLDivElement>(onClose, useIsPresent())
+  const panelRef = useOverlay(onClose, useIsPresent())
 
   return (
     <motion.div

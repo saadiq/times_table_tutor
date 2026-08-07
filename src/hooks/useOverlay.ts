@@ -18,20 +18,21 @@ function focusableWithin(root: HTMLElement): HTMLElement[] {
 }
 
 /**
- * Modal behaviour shared by every overlay: Escape dismisses, Tab stays inside,
- * and focus returns to whatever opened it. Without the containment a keyboard
- * user tabs straight out of the panel into the app behind it, which is covered
- * up and unreachable by touch — they end up driving controls they can't see.
+ * Modal behaviour for the two shared overlay primitives, Modal and
+ * SlideOverPanel: Escape dismisses, Tab stays inside, and focus returns to
+ * whatever opened it. Without the containment a keyboard user tabs straight out
+ * of the panel into the app behind it, which is covered up and unreachable by
+ * touch — they end up driving controls they can't see. The older one-off
+ * overlays under components/garden, learn, and progress don't route through
+ * here yet.
  *
  * Attach the returned ref to the panel element and give it `tabIndex={-1}` so
- * focus can rest on the container. Pass `isOpen` for overlays that stay mounted
- * while closed; ones that unmount can leave it at its default.
+ * focus can rest on the container. `isOpen` is what holds the keyboard: pass
+ * whichever of mounted-ness, a prop, or framer's presence marks this overlay as
+ * the one on top.
  */
-export function useOverlay<T extends HTMLElement = HTMLDivElement>(
-  onClose: () => void,
-  isOpen = true
-) {
-  const panelRef = useRef<T>(null)
+export function useOverlay(onClose: () => void, isOpen: boolean) {
+  const panelRef = useRef<HTMLDivElement>(null)
   const closeRef = useRef(onClose)
 
   useEffect(() => {
