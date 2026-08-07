@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowLeft } from 'lucide-react';
 import { IconPicker } from './IconPicker';
 import { ProfileEditForm } from './ProfileEditForm';
+import { SlideOverPanel } from './SlideOverPanel';
 import { useProfileStore } from '../../stores/profileStore';
 import { ApiError } from '../../lib/api';
 import type { ProfileColor, ProfileIcon } from '../../types/api';
@@ -65,45 +64,25 @@ export function ProfileEditor({ onClose }: ProfileEditorProps) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: '100%' }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: '100%' }}
-      transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="fixed inset-0 bg-[var(--color-cream)] z-50 flex flex-col"
-    >
-      <div className="flex items-center gap-3 p-4 border-b border-gray-100 bg-white">
-        <button
-          onClick={onClose}
-          disabled={isSaving}
-          className="p-2 -ml-2 rounded-xl hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-garden-500 transition-colors disabled:opacity-50"
-          aria-label="Go back"
-        >
-          <ArrowLeft size={20} className="text-gray-600" />
-        </button>
-        <h1 className="text-lg font-semibold text-gray-800">Your profile</h1>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-5 pb-12">
-        {currentIcon ? (
-          <ProfileEditForm
-            profile={currentProfile}
-            error={error}
-            isSaving={isSaving}
-            onSave={handleSave}
-            onCancel={onClose}
-          />
-        ) : (
-          <div>
-            <p className="text-gray-600 text-center mb-1">Pick your icon to make changes</p>
-            <p className="text-gray-400 text-sm text-center mb-4">
-              The one you use to log in
-            </p>
-            {error && <p className="text-red-500 text-center text-sm mb-4">{error}</p>}
-            <IconPicker onSelect={handleVerify} />
-          </div>
-        )}
-      </div>
-    </motion.div>
+    <SlideOverPanel title="Your profile" onClose={onClose} backDisabled={isSaving}>
+      {currentIcon ? (
+        <ProfileEditForm
+          profile={currentProfile}
+          error={error}
+          isSaving={isSaving}
+          onSave={handleSave}
+          onCancel={onClose}
+        />
+      ) : (
+        <div>
+          <p className="text-gray-600 text-center mb-1">Pick your icon to make changes</p>
+          <p className="text-gray-400 text-sm text-center mb-4">
+            The one you use to log in
+          </p>
+          {error && <p className="text-red-500 text-center text-sm mb-4">{error}</p>}
+          <IconPicker onSelect={handleVerify} />
+        </div>
+      )}
+    </SlideOverPanel>
   );
 }
