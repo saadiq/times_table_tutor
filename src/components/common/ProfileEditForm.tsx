@@ -4,6 +4,7 @@ import { IconPicker } from './IconPicker';
 import { ColorPicker } from './ColorPicker';
 import { ProfileIcon } from './ProfileIcon';
 import {
+  MAX_PROFILE_NAME_LENGTH,
   type Profile,
   type ProfileColor,
   type ProfileIcon as ProfileIconName,
@@ -52,7 +53,7 @@ export function ProfileEditForm({
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          maxLength={20}
+          maxLength={MAX_PROFILE_NAME_LENGTH}
           className="w-full px-4 py-3 rounded-lg border border-gray-200 text-center text-lg"
         />
       </div>

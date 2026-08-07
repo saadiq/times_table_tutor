@@ -4,7 +4,11 @@ import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { IconPicker } from './IconPicker';
 import { ColorPicker } from './ColorPicker';
 import { iconMap } from '../../lib/iconMap';
-import { type ProfileIcon, type ProfileColor } from '../../types/api';
+import {
+  MAX_PROFILE_NAME_LENGTH,
+  type ProfileIcon,
+  type ProfileColor,
+} from '../../types/api';
 
 interface ProfileCreatorProps {
   onSubmit: (name: string, icon: ProfileIcon, color: ProfileColor) => void;
@@ -92,7 +96,7 @@ export function ProfileCreator({ onSubmit, onCancel, isLoading, error }: Profile
               onChange={(e) => setName(e.target.value)}
               placeholder="Your name"
               className="w-full px-4 py-3 rounded-lg border border-gray-200 mb-4 text-center text-lg"
-              maxLength={20}
+              maxLength={MAX_PROFILE_NAME_LENGTH}
               autoFocus
               onKeyDown={(e) => e.key === 'Enter' && handleNext()}
             />
