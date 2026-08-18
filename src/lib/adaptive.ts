@@ -1,5 +1,6 @@
 import type { FactProgress, Confidence } from '../types'
 import { CONFIDENCE_THRESHOLDS } from './constants'
+import { typicalResponseTime } from './factConfidence'
 
 type FactWithScore = FactProgress & { score: number }
 
@@ -180,22 +181,18 @@ export function shouldUseMultipleChoice(fact: FactProgress, recentlyFailed?: Set
   }
 
   // Check if struggling on NP (failed too many of recent NP attempts)
-  const npCorrect = recentNP.filter(a => a.correct).length
-  const npAccuracy = npCorrect / recentNP.length
+  const correctNP = recentNP.filter(a => a.correct)
+  const npAccuracy = correctNP.length / recentNP.length
 
   // REGRESSION: If below threshold on recent NP, go back to MC
   if (npAccuracy < CONFIDENCE_THRESHOLDS.regressionThreshold) {
     return true
   }
 
-  // Check if answers are labored (avg time too slow on correct NP)
-  const correctNP = recentNP.filter(a => a.correct)
-  if (correctNP.length > 0) {
-    const avgTime = correctNP.reduce((sum, a) => sum + a.responseTimeMs, 0) / correctNP.length
-    // REGRESSION: If correct but very slow, go back to MC
-    if (avgTime > CONFIDENCE_THRESHOLDS.laboredTime) {
-      return true
-    }
+  // REGRESSION: If correct but labored (typical time too slow), go back to MC
+  const typicalTime = typicalResponseTime(correctNP)
+  if (typicalTime !== null && typicalTime > CONFIDENCE_THRESHOLDS.laboredTime) {
+    return true
   }
 
   // Otherwise, use number pad

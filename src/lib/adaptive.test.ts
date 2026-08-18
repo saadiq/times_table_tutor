@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { calculateFactScore, selectNextFact } from './adaptive'
+import { calculateFactScore, selectNextFact, shouldUseMultipleChoice } from './adaptive'
 import { divideOperation, multiplyOperation } from './operations'
-import { makeFact } from '../test/factories'
+import { makeFact, makeAttempt } from '../test/factories'
+import type { FactProgress } from '../types'
 
 describe('selectNextFact focus filter', () => {
   it('defaults to multiplication table membership', () => {
@@ -18,6 +19,21 @@ describe('selectNextFact focus filter', () => {
       const next = selectNextFact(facts, [], [7], {}, divideOperation.matchesTable)
       expect(next?.b).toBe(7)
     }
+  })
+})
+
+describe('labored-time regression', () => {
+  it('does not regress to multiple choice over one walk-away answer', () => {
+    const fact: FactProgress = {
+      ...makeFact(3, 4),
+      confidence: 'learning',
+      recentAttempts: [
+        makeAttempt({ responseTimeMs: 5000 }),
+        makeAttempt({ responseTimeMs: 6000 }),
+        makeAttempt({ responseTimeMs: 300000 }),
+      ],
+    }
+    expect(shouldUseMultipleChoice(fact)).toBe(false)
   })
 })
 

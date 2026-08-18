@@ -10,6 +10,7 @@ export const CONFIDENCE_THRESHOLDS = {
   masteredMaxTime: 5000,       // <5s for mastered (fluent recall)
   confidentMaxTime: 10000,     // <10s for confident
   laboredTime: 12000,          // >12s triggers regression to MC
+  responseTimeCap: 30000,      // cap per-attempt time so a walk-away can't poison the stats
 
   // Accuracy thresholds
   masteredMinAccuracy: 0.9,    // 90% for mastered

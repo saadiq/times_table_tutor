@@ -2,40 +2,62 @@ import type { FactProgress, Confidence, RecentAttempt, InputMethod } from '../ty
 import { CONFIDENCE_THRESHOLDS } from './constants'
 
 /**
+ * Typical response time: median of the attempts' times, each capped at
+ * responseTimeCap. There is no timer in the app, so a child who wanders off
+ * mid-problem records minutes — a mean would carry that outlier for the whole
+ * window, a capped median shrugs it off.
+ */
+export function typicalResponseTime(attempts: RecentAttempt[]): number | null {
+  if (attempts.length === 0) return null
+  const capped = attempts
+    .map(a => Math.min(a.responseTimeMs, CONFIDENCE_THRESHOLDS.responseTimeCap))
+    .sort((x, y) => x - y)
+  const mid = Math.floor(capped.length / 2)
+  return capped.length % 2 ? capped[mid] : (capped[mid - 1] + capped[mid]) / 2
+}
+
+/**
+ * Unaided number-pad performance over the window confidence is judged on —
+ * the single source both calculateConfidence and getMasteryProgress read.
+ * Multiple choice and hint-assisted answers are excluded.
+ */
+function unaidedWindowStats(fact: FactProgress) {
+  const recentNP = fact.recentAttempts
+    .slice(-CONFIDENCE_THRESHOLDS.recentAttemptsWindow)
+    .filter(a => a.inputMethod === 'number_pad' && !a.hintShown)
+  const correctNP = recentNP.filter(a => a.correct)
+  return {
+    correctCount: correctNP.length,
+    accuracy: recentNP.length > 0 ? correctNP.length / recentNP.length : null,
+    typicalTime: typicalResponseTime(correctNP),
+  }
+}
+
+/**
  * Calculate confidence based on number pad performance.
  * Multiple choice and hint-assisted answers can only get you to 'learning' — unaided number pad is required for confident/mastered.
  */
 export function calculateConfidence(fact: FactProgress): Confidence {
-  const recent = fact.recentAttempts.slice(-CONFIDENCE_THRESHOLDS.recentAttemptsWindow)
-
   // No attempts = new
-  if (recent.length === 0) return 'new'
+  if (fact.recentAttempts.length === 0) return 'new'
 
-  // Filter to unaided number pad attempts only for confident/mastered evaluation
-  const recentNP = recent.filter(a => a.inputMethod === 'number_pad' && !a.hintShown)
-  const correctNP = recentNP.filter(a => a.correct)
+  const { correctCount, accuracy, typicalTime } = unaidedWindowStats(fact)
+  const npAccuracy = accuracy ?? 0
+  const typicalNPTime = typicalTime ?? Infinity
 
-  // Calculate NP metrics
-  const npAccuracy = recentNP.length > 0
-    ? correctNP.length / recentNP.length
-    : 0
-  const avgNPTime = correctNP.length > 0
-    ? correctNP.reduce((sum, a) => sum + a.responseTimeMs, 0) / correctNP.length
-    : Infinity
-
-  // MASTERED: 5+ NP correct, <5s avg, 90%+ accuracy
+  // MASTERED: 5+ NP correct, <5s typical, 90%+ accuracy
   if (
-    correctNP.length >= CONFIDENCE_THRESHOLDS.masteredMinCorrect &&
-    avgNPTime < CONFIDENCE_THRESHOLDS.masteredMaxTime &&
+    correctCount >= CONFIDENCE_THRESHOLDS.masteredMinCorrect &&
+    typicalNPTime < CONFIDENCE_THRESHOLDS.masteredMaxTime &&
     npAccuracy >= CONFIDENCE_THRESHOLDS.masteredMinAccuracy
   ) {
     return 'mastered'
   }
 
-  // CONFIDENT: 3+ NP correct, <10s avg, 70%+ accuracy
+  // CONFIDENT: 3+ NP correct, <10s typical, 70%+ accuracy
   if (
-    correctNP.length >= CONFIDENCE_THRESHOLDS.confidentMinCorrect &&
-    avgNPTime < CONFIDENCE_THRESHOLDS.confidentMaxTime &&
+    correctCount >= CONFIDENCE_THRESHOLDS.confidentMinCorrect &&
+    typicalNPTime < CONFIDENCE_THRESHOLDS.confidentMaxTime &&
     npAccuracy >= CONFIDENCE_THRESHOLDS.confidentMinAccuracy
   ) {
     return 'confident'
