@@ -159,10 +159,10 @@ export function FactDetailSheet({ fact, onClose }: FactDetailSheetProps) {
               <span className="text-gray-500">Recent streak</span>
               <div className="flex gap-1">
                 {recentStreak.length > 0 ? (
-                  recentStreak.map((correct, i) => (
+                  recentStreak.map((attempt, i) => (
                     <div
                       key={i}
-                      className={`w-3 h-3 rounded-full ${correct ? 'bg-garden-500' : 'bg-red-400'}`}
+                      className={`w-3 h-3 rounded-full ${attempt.correct ? 'bg-garden-500' : 'bg-red-400'}`}
                     />
                   ))
                 ) : (
