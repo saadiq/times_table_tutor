@@ -10,6 +10,8 @@ export type RecentAttempt = {
   timestamp: string
   /** True when the hint panel was open before answering. Absent = unaided legacy data. */
   hintShown?: boolean
+  /** Time to the first digit tap; equals responseTimeMs on multiple choice. Absent = legacy data. */
+  firstInputMs?: number
 }
 
 export type FactProgress = {
@@ -87,6 +89,8 @@ export type AttemptRecord = {
   responseTimeMs: number
   inputMethod: InputMethod
   hintShown: boolean
+  /** Time to the first digit tap; equals responseTimeMs on multiple choice. Absent = legacy data. */
+  firstInputMs?: number
   profileId?: string
 }
 

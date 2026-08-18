@@ -42,6 +42,8 @@ export interface RecentAttemptSync {
   responseTimeMs: number;
   timestamp: string;
   hintShown?: boolean;
+  /** Time to the first digit tap; equals responseTimeMs on multiple choice. Absent = legacy data. */
+  firstInputMs?: number;
 }
 
 export interface FactProgressSync {

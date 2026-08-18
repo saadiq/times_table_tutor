@@ -20,15 +20,20 @@ function makeAttempt(id: string, factKey = '7x8'): AttemptRecord {
 describe('attemptsStore cloud sync', () => {
   beforeEach(() => {
     localStorage.clear()
-    useAttemptsStore.setState({
-      attempts: [], pendingSync: [], syncStatus: 'offline',
-      lastSyncTimestamp: null, syncTimeoutId: null, currentProfileId: null,
-    })
+    useAttemptsStore.setState(useAttemptsStore.getInitialState(), true)
   })
 
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
+  })
+
+  it('stores firstInputMs on the recorded attempt', () => {
+    useAttemptsStore.getState().recordAttempt({
+      factKey: '7x8', correct: true, responseTimeMs: 6000,
+      inputMethod: 'number_pad', hintShown: false, firstInputMs: 2500,
+    })
+    expect(useAttemptsStore.getState().attempts[0].firstInputMs).toBe(2500)
   })
 
   it('keepalives a normal-sized backlog so a closing page still delivers', async () => {

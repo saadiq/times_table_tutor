@@ -26,6 +26,14 @@ describe('progressStore', () => {
     expect(attempts[0].hintShown).toBe(true)
   })
 
+  it('stores firstInputMs on the recorded attempt', () => {
+    useProgressStore.getState().initialize()
+    useProgressStore.getState().recordAttempt({
+      fact: '7x8', correct: true, inputMethod: 'number_pad', responseTimeMs: 6000, firstInputMs: 2500,
+    })
+    expect(useProgressStore.getState().facts['7x8'].recentAttempts[0].firstInputMs).toBe(2500)
+  })
+
   it('recordSkip increments skippedCount and includes it in the sync payload', () => {
     useProgressStore.getState().initialize()
     useProgressStore.getState().recordSkip('7x8')

@@ -7,12 +7,10 @@ import { getLocalDateKey, getDateKeyFromTimestamp, isWithinDays } from '../lib/a
 const MAX_LOCAL_DAYS = 30
 const SYNC_DEBOUNCE_MS = 2000
 
-type SyncStatus = 'synced' | 'syncing' | 'offline' | 'error'
-
 type AttemptsState = {
   attempts: AttemptRecord[]
   pendingSync: AttemptRecord[]
-  syncStatus: SyncStatus
+  syncStatus: 'synced' | 'syncing' | 'offline' | 'error'
   lastSyncTimestamp: string | null
   syncTimeoutId: number | null
   currentProfileId: string | null
@@ -27,6 +25,7 @@ type AttemptsActions = {
     responseTimeMs: number
     inputMethod: InputMethod
     hintShown: boolean
+    firstInputMs?: number
     profileId?: string
   }) => void
   getAttemptsByDate: (date: string) => AttemptRecord[]
@@ -39,10 +38,6 @@ type AttemptsActions = {
   flush: () => void
   syncToCloud: (profileId: string) => Promise<void>
   fetchFromCloud: (profileId: string) => Promise<void>
-}
-
-function generateId(): string {
-  return crypto.randomUUID()
 }
 
 function matchesProfile(attempt: AttemptRecord, profileId: string | null): boolean {
@@ -84,13 +79,14 @@ export const useAttemptsStore = create<AttemptsState & AttemptsActions>(
       const { syncTimeoutId, currentProfileId } = get()
 
       const attempt: AttemptRecord = {
-        id: generateId(),
+        id: crypto.randomUUID(),
         factKey: params.factKey,
         timestamp: new Date().toISOString(),
         correct: params.correct,
         responseTimeMs: params.responseTimeMs,
         inputMethod: params.inputMethod,
         hintShown: params.hintShown,
+        firstInputMs: params.firstInputMs,
         profileId: params.profileId || currentProfileId || undefined,
       }
 
