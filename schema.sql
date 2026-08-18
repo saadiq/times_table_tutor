@@ -83,6 +83,8 @@ CREATE TABLE IF NOT EXISTS attempts (
   response_time_ms INTEGER,
   input_method    TEXT,
   hint_shown      INTEGER NOT NULL DEFAULT 0,
+  -- Time to the first digit tap (NULL = legacy row); see migrations/0005.
+  first_input_ms  INTEGER,
   FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
 );
 

@@ -1,16 +1,7 @@
+import { ATTEMPT_INSERT_SQL, attemptBindValues, isBindableAttempt, type AttemptPayload } from '../../_shared/attemptsSql'
+
 interface Env {
   DB: D1Database
-}
-
-interface AttemptPayload {
-  id: string
-  factKey: string
-  timestamp: string
-  correct: boolean
-  responseTimeMs: number
-  inputMethod: string
-  hintShown: boolean
-  profileId: string
 }
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
@@ -20,30 +11,17 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return Response.json({ error: 'attempts array required' }, { status: 400 })
   }
 
-  if (attempts.length === 0) {
+  // Drop malformed entries rather than let one poison the atomic batch on
+  // every retry; the client clears what this POST carried on a 200.
+  const valid = attempts.filter(isBindableAttempt)
+  if (valid.length === 0) {
     return Response.json({ synced: 0 })
   }
 
-  const stmt = env.DB.prepare(`
-    INSERT OR IGNORE INTO attempts
-      (id, profile_id, fact_key, timestamp, correct, response_time_ms, input_method, hint_shown)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `)
-
-  const batch = attempts.map((a) =>
-    stmt.bind(
-      a.id,
-      a.profileId,
-      a.factKey,
-      new Date(a.timestamp).getTime(),
-      a.correct ? 1 : 0,
-      a.responseTimeMs,
-      a.inputMethod,
-      a.hintShown ? 1 : 0
-    )
-  )
+  const stmt = env.DB.prepare(ATTEMPT_INSERT_SQL)
+  const batch = valid.map((a) => stmt.bind(...attemptBindValues(a)))
 
   await env.DB.batch(batch)
 
-  return Response.json({ synced: attempts.length })
+  return Response.json({ synced: valid.length })
 }

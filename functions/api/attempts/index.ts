@@ -1,16 +1,7 @@
+import { ATTEMPT_SELECT_COLUMNS, attemptRowToRecord, type AttemptRow } from '../../_shared/attemptsSql'
+
 interface Env {
   DB: D1Database
-}
-
-interface AttemptRow {
-  id: string
-  profile_id: string
-  fact_key: string
-  timestamp: number
-  correct: number
-  response_time_ms: number | null
-  input_method: string | null
-  hint_shown: number
 }
 
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
@@ -23,8 +14,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   let query = `
-    SELECT id, profile_id, fact_key, timestamp, correct,
-           response_time_ms, input_method, hint_shown
+    SELECT ${ATTEMPT_SELECT_COLUMNS}
     FROM attempts
     WHERE profile_id = ?
   `
@@ -39,16 +29,5 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
 
   const { results } = await env.DB.prepare(query).bind(...params).all<AttemptRow>()
 
-  const attempts = results.map((row) => ({
-    id: row.id,
-    factKey: row.fact_key,
-    timestamp: new Date(row.timestamp).toISOString(),
-    correct: row.correct === 1,
-    responseTimeMs: row.response_time_ms,
-    inputMethod: row.input_method,
-    hintShown: row.hint_shown === 1,
-    profileId: row.profile_id,
-  }))
-
-  return Response.json({ attempts })
+  return Response.json({ attempts: results.map(attemptRowToRecord) })
 }
