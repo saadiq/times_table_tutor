@@ -37,6 +37,71 @@ describe('labored-time regression', () => {
   })
 })
 
+describe('starvation guard', () => {
+  /** Zola's stuck state: a full pick window of learning facts plus never-seen new facts. */
+  function buildStarvedPool(): Record<string, FactProgress> {
+    const facts: Record<string, FactProgress> = {}
+    for (const [a, b] of [[2, 3], [3, 4], [3, 5], [3, 6], [3, 9], [4, 3], [5, 3], [10, 3]]) {
+      const f = makeFact(a, b)
+      f.confidence = 'learning'
+      facts[f.fact] = f
+    }
+    for (const [a, b] of [[3, 7], [3, 8], [3, 11], [3, 12]]) {
+      facts[`${a}x${b}`] = makeFact(a, b)
+    }
+    return facts
+  }
+
+  it('introduces a new fact even when learning facts fill the top scores', () => {
+    const facts = buildStarvedPool()
+    let sawNew = false
+    for (let i = 0; i < 80 && !sawNew; i++) {
+      const next = selectNextFact(facts, [], [3], { newFactsIntroduced: 0, sessionAccuracy: 0.9 })
+      if (next?.confidence === 'new') sawNew = true
+    }
+    expect(sawNew).toBe(true)
+  })
+
+  it('respects the session cap of 2 new facts', () => {
+    const facts = buildStarvedPool()
+    for (let i = 0; i < 40; i++) {
+      const next = selectNextFact(facts, [], [3], { newFactsIntroduced: 2, sessionAccuracy: 0.9 })
+      expect(next?.confidence).not.toBe('new')
+    }
+  })
+
+  it('ranks a capped new fact below a recency-penalized review fact', () => {
+    // Mastered seen minutes ago scores 10 - 30 = -20; a capped new fact must still lose.
+    const reviewed = { ...makeFact(3, 4), confidence: 'mastered' as const, lastSeen: new Date().toISOString() }
+    expect(calculateFactScore(makeFact(3, 7), { newFactsIntroduced: 2 }))
+      .toBeLessThan(calculateFactScore(reviewed, { newFactsIntroduced: 2 }))
+  })
+
+  it('holds off on new facts while session accuracy is low', () => {
+    const facts = buildStarvedPool()
+    for (let i = 0; i < 40; i++) {
+      const next = selectNextFact(facts, [], [3], { newFactsIntroduced: 0, sessionAccuracy: 0.6 })
+      expect(next?.confidence).not.toBe('new')
+    }
+  })
+
+  it('holds off on new facts near the goal end', () => {
+    const facts = buildStarvedPool()
+    for (let i = 0; i < 40; i++) {
+      const next = selectNextFact(facts, [], [3], { newFactsIntroduced: 0, sessionAccuracy: 0.9, nearGoalEnd: true })
+      expect(next?.confidence).not.toBe('new')
+    }
+  })
+
+  it('holds off on new facts during a frustration spiral', () => {
+    const facts = buildStarvedPool()
+    for (let i = 0; i < 40; i++) {
+      const next = selectNextFact(facts, [], [3], { newFactsIntroduced: 0, sessionAccuracy: 0.8, consecutiveWrong: 3 })
+      expect(next?.confidence).not.toBe('new')
+    }
+  })
+})
+
 describe('skippedCount scoring', () => {
   it('boosts skipped facts, capped at 3 skips', () => {
     const base = makeFact(7, 8)

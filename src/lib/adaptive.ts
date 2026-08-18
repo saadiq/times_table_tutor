@@ -11,6 +11,23 @@ export type SelectionContext = {
   nearGoalEnd?: boolean
 }
 
+// Session policy for introducing new facts — read by both the scorer and the
+// starvation guard so the two can never disagree.
+export const MAX_NEW_FACTS_PER_SESSION = 2
+const LOW_ACCURACY_FLOOR = 0.75
+const FRUSTRATION_STREAK = 3
+
+/** A healthy session has room for a new fact; a struggling or ending one does not. */
+function canIntroduceNewFact(context: SelectionContext): boolean {
+  const { newFactsIntroduced = 0, sessionAccuracy = 0.85, consecutiveWrong = 0, nearGoalEnd = false } = context
+  return (
+    newFactsIntroduced < MAX_NEW_FACTS_PER_SESSION &&
+    sessionAccuracy >= LOW_ACCURACY_FLOOR &&
+    consecutiveWrong < FRUSTRATION_STREAK &&
+    !nearGoalEnd
+  )
+}
+
 /**
  * Selects the next fact to practice based on adaptive learning principles:
  * 1. Prioritize facts currently being learned
@@ -49,11 +66,18 @@ export function selectNextFact(
   // Sort by score (higher = more likely to show)
   scored.sort((a, b) => b.score - a.score)
 
-  // Add some randomness among top candidates
-  const topCandidates = scored.slice(0, 5)
+  // Add some randomness among the top candidates
+  const topCandidates = scored.slice(0, 3)
   if (topCandidates.length === 0) return null
 
-  const randomIndex = Math.floor(Math.random() * Math.min(3, topCandidates.length))
+  // Starvation guard: a big-enough learning pool outscores new facts forever,
+  // so a healthy session reserves one pick-window slot for the best new fact.
+  if (canIntroduceNewFact(context) && !topCandidates.some(f => f.confidence === 'new')) {
+    const bestNew = scored.find(f => f.confidence === 'new')
+    if (bestNew) topCandidates[topCandidates.length - 1] = bestNew
+  }
+
+  const randomIndex = Math.floor(Math.random() * topCandidates.length)
   return topCandidates[randomIndex]
 }
 
@@ -69,13 +93,15 @@ export function calculateFactScore(fact: FactProgress, context: SelectionContext
   }
   score += confidenceScores[fact.confidence]
 
-  // Incremental rehearsal: max 2 new facts per session (Intervention Central best practice)
-  if (fact.confidence === 'new' && newFactsIntroduced >= 2) {
-    return 0
+  // Incremental rehearsal: max 2 new facts per session (Intervention Central best practice).
+  // -Infinity, not 0: recency-penalized review facts can score at or below 0, and a capped
+  // new fact must lose to every reviewable fact (it still serves when nothing else exists).
+  if (fact.confidence === 'new' && newFactsIntroduced >= MAX_NEW_FACTS_PER_SESSION) {
+    return -Infinity
   }
 
   // Target ~85% success rate (Nature Communications 2019)
-  if (sessionAccuracy < 0.75) {
+  if (sessionAccuracy < LOW_ACCURACY_FLOOR) {
     if (fact.confidence === 'confident' || fact.confidence === 'mastered') score += 40
     if (fact.confidence === 'new') score -= 30
   } else if (sessionAccuracy > 0.92) {
@@ -83,7 +109,7 @@ export function calculateFactScore(fact: FactProgress, context: SelectionContext
   }
 
   // Prevent frustration spirals with an easy win
-  if (consecutiveWrong >= 3 && (fact.confidence === 'confident' || fact.confidence === 'mastered')) {
+  if (consecutiveWrong >= FRUSTRATION_STREAK && (fact.confidence === 'confident' || fact.confidence === 'mastered')) {
     score += 50
   }
 
