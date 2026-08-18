@@ -14,7 +14,11 @@ interface FactSync {
   skippedCount?: number;
   lastSeen: number | null;
   lastCorrect: number | null;
-  recentAttempts: boolean[];
+  /**
+   * Opaque attempt objects (RecentAttemptSync in src/types/api.ts, which this
+   * file cannot import) — stored as a JSON blob, never inspected server-side.
+   */
+  recentAttempts: unknown[];
   preferredStrategy: string | null;
 }
 
