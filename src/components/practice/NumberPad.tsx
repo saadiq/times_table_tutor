@@ -4,13 +4,15 @@ import { Delete, Check } from 'lucide-react'
 
 type NumberPadProps = {
   onSubmit: (answer: number) => void
+  onDigitPress?: () => void
   disabled: boolean
 }
 
-export function NumberPad({ onSubmit, disabled }: NumberPadProps) {
+export function NumberPad({ onSubmit, onDigitPress, disabled }: NumberPadProps) {
   const [value, setValue] = useState('')
 
   const handleNumber = (num: string) => {
+    onDigitPress?.()
     if (value.length < 3) {
       setValue(prev => prev + num)
     }

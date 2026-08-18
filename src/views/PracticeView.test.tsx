@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, fireEvent, act, cleanup, screen } from '@testing-library/react'
 import { PracticeView } from './PracticeView'
 import { useProgressStore } from '../stores/progressStore'
+import { useAttemptsStore } from '../stores/attemptsStore'
 import { useSessionStore } from '../stores/sessionStore'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useFocusTablesStore } from '../stores/focusTablesStore'
@@ -117,6 +118,60 @@ describe('PracticeView', () => {
       await flushMount()
 
       expect(useSessionStore.getState().pendingFollowUp).toBeNull()
+    })
+  })
+
+  describe('attempt timing', () => {
+    beforeEach(() => {
+      useAttemptsStore.setState(useAttemptsStore.getInitialState(), true)
+    })
+
+    it('records time-to-first-digit for number-pad answers', async () => {
+      let now = 0
+      vi.spyOn(Date, 'now').mockImplementation(() => now)
+      loadFacts({ '7x5': confidentFact(7, 5) })
+      render(<PracticeView />)
+      await flushMount()
+
+      now = 1500
+      fireEvent.click(screen.getByRole('button', { name: '3' }))
+      now = 4000
+      fireEvent.click(screen.getByRole('button', { name: '5' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Submit answer' }))
+
+      const attempt = useAttemptsStore.getState().attempts.at(-1)
+      expect(attempt?.responseTimeMs).toBe(4000)
+      expect(attempt?.firstInputMs).toBe(1500)
+    })
+
+    it('clears typed digits when a skip serves the next problem', async () => {
+      loadFacts({ '7x5': confidentFact(7, 5), '7x2': confidentFact(7, 2) })
+      render(<PracticeView />)
+      await flushMount()
+
+      fireEvent.click(screen.getByRole('button', { name: '3' }))
+      fireEvent.click(screen.getByRole('button', { name: /^skip$/i }))
+
+      // The next pad must not inherit the digit: a leftover value would allow
+      // a zero-tap submit, recording a number_pad attempt whose
+      // firstInputMs===responseTimeMs fallback is reserved for multiple choice.
+      const submit = screen.getByRole('button', { name: 'Submit answer' }) as HTMLButtonElement
+      expect(submit.disabled).toBe(true)
+    })
+
+    it('records the answering tap as first input on multiple choice', async () => {
+      let now = 0
+      vi.spyOn(Date, 'now').mockImplementation(() => now)
+      loadFacts({ '7x5': makeFact(7, 5) }) // new fact -> multiple choice
+      render(<PracticeView />)
+      await flushMount()
+
+      now = 3000
+      fireEvent.click(screen.getByRole('button', { name: '35' }))
+
+      const attempt = useAttemptsStore.getState().attempts.at(-1)
+      expect(attempt?.responseTimeMs).toBe(3000)
+      expect(attempt?.firstInputMs).toBe(3000)
     })
   })
 

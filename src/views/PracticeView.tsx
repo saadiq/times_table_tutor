@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useProgressStore, useSessionStore, useFocusTablesStore, useProfileStore, useAttemptsStore, useSettingsStore } from '../stores'
 import { shouldUseMultipleChoice } from '../lib/adaptive'
 import { decideNextProblem, applyComebackOutcome, type ServeKind } from '../lib/practiceFlow'
+import { createAttemptTimer } from '../lib/attemptTimer'
 import { SESSION_DEFAULTS } from '../lib/constants'
 import { makeKnownFacts } from '../lib/strategies'
 import { useActiveOperation, useSpeakThenAdvance } from '../hooks'
@@ -10,7 +11,7 @@ import { grantCorrectRewards } from '../lib/practiceRewards'
 import { formatEquation } from '../lib/operations'
 import { ProblemDisplay, AnswerInput, HintPanel, GoalComplete, PracticeActions } from '../components/practice'
 import { ProgressBar, Celebration } from '../components/common'
-import type { FactProgress } from '../types'
+import type { FactProgress, InputMethod } from '../types'
 
 export function PracticeView() {
   const { facts, recordAttempt, toSyncPayload, recordSkip: recordFactSkip } = useProgressStore()
@@ -37,7 +38,7 @@ export function PracticeView() {
   const [hintUsed, setHintUsed] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [celebrationType, setCelebrationType] = useState<'correct' | 'streak' | 'goal' | null>(null)
-  const [attemptStartTime, setAttemptStartTime] = useState<number>(() => Date.now())
+  const [timing] = useState(() => createAttemptTimer())
   const [recentlyFailed, setRecentlyFailed] = useState<Set<string>>(new Set())
   const [servedKind, setServedKind] = useState<ServeKind>('adaptive')
   const { speakThenAdvance, clearAdvanceTimer } = useSpeakThenAdvance(ttsEnabled, operation)
@@ -77,10 +78,10 @@ export function PracticeView() {
       setShowHint(false)
       setHintUsed(false)
       setMessage(null)
-      setAttemptStartTime(Date.now())
+      timing.start()
       if (ttsEnabled) operation.speakProblem(next)
     }
-  }, [recentFacts, activeFocusTables, ttsEnabled, operation, clearAdvanceTimer])
+  }, [recentFacts, activeFocusTables, ttsEnabled, operation, clearAdvanceTimer, timing])
 
   // Compute the first serve synchronously to avoid flicker on initial render.
   // It goes through decideNextProblem so a comeback surviving from a previous
@@ -140,22 +141,24 @@ export function PracticeView() {
     setShowResult(true)
 
     const isCorrect = answer === displayFact.answer
-    const responseTimeMs = Date.now() - attemptStartTime
-    const inputMethod = useMultipleChoice ? 'multiple_choice' : 'number_pad'
+    const { responseTimeMs, firstInputMs } = timing.read()
+    const inputMethod: InputMethod = useMultipleChoice ? 'multiple_choice' : 'number_pad'
 
     recordAttempt({
       fact: displayFact.fact,
       correct: isCorrect,
       inputMethod,
       responseTimeMs,
+      firstInputMs,
       hintShown: wasHintShown,
     })
 
     recordAttemptHistory({
       factKey: displayFact.fact,
       correct: isCorrect,
-      responseTimeMs,
       inputMethod,
+      responseTimeMs,
+      firstInputMs,
       hintShown: wasHintShown,
       profileId: currentProfile?.id,
     })
@@ -268,10 +271,14 @@ export function PracticeView() {
         </AnimatePresence>
 
         <div className="mb-6">
+          {/* Keyed by fact so the pad's typed digits can't survive a skip — a
+              zero-tap submit would fake firstInputMs === responseTimeMs. */}
           <AnswerInput
+            key={displayFact.fact}
             fact={displayFact}
             useMultipleChoice={useMultipleChoice}
             onAnswer={handleAnswer}
+            onDigitPress={timing.markInput}
             selectedAnswer={selectedAnswer}
             showResult={showResult}
             disabled={showResult}

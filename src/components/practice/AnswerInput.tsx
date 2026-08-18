@@ -8,6 +8,8 @@ type AnswerInputProps = {
   fact: FactProgress
   useMultipleChoice: boolean
   onAnswer: (answer: number) => void
+  /** Fired on every number-pad digit tap, so the caller can latch the first. */
+  onDigitPress?: () => void
   selectedAnswer: number | null
   showResult: boolean
   disabled: boolean
@@ -17,6 +19,7 @@ export function AnswerInput({
   fact,
   useMultipleChoice,
   onAnswer,
+  onDigitPress,
   selectedAnswer,
   showResult,
   disabled,
@@ -43,5 +46,5 @@ export function AnswerInput({
     )
   }
 
-  return <NumberPad onSubmit={onAnswer} disabled={disabled} />
+  return <NumberPad onSubmit={onAnswer} onDigitPress={onDigitPress} disabled={disabled} />
 }
