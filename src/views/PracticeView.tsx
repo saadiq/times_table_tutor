@@ -90,7 +90,12 @@ export function PracticeView() {
     facts,
     recentFacts,
     focusTables: activeFocusTables,
-    context: { newFactsIntroduced, sessionAccuracy: getSessionAccuracy() },
+    context: {
+      newFactsIntroduced,
+      sessionAccuracy: getSessionAccuracy(),
+      consecutiveWrong: useSessionStore.getState().getConsecutiveWrong(),
+      nearGoalEnd: progress >= goal - 1,
+    },
     matchesTable: operation.matchesTable,
     pendingComeback: useSessionStore.getState().pendingComeback,
     pendingFollowUp: null,
