@@ -11,6 +11,13 @@ export const CONFIDENCE_THRESHOLDS = {
   confidentMaxTime: 10000,     // <10s for confident
   laboredTime: 12000,          // >12s triggers regression to MC
   responseTimeCap: 30000,      // cap per-attempt time so a walk-away can't poison the stats
+  // Number-pad motor allowance: every answer digit past the first adds this to
+  // each time bar. A 9-year-old needs ~1.5s per key just to find and tap it,
+  // and the bars are meant to measure recall, not keypad navigation.
+  // A guessed stand-in: attempts now record firstInputMs (the measured
+  // recall-vs-typing split, see attemptTimer.ts) which should eventually
+  // calibrate or replace this constant.
+  perDigitTimeAllowance: 1500,
 
   // Accuracy thresholds
   masteredMinAccuracy: 0.9,    // 90% for mastered

@@ -1,6 +1,6 @@
 import type { FactProgress, Confidence } from '../types'
 import { CONFIDENCE_THRESHOLDS } from './constants'
-import { typicalResponseTime } from './factConfidence'
+import { effectiveTimeBar, typicalResponseTime } from './factConfidence'
 
 type FactWithScore = FactProgress & { score: number }
 
@@ -217,7 +217,7 @@ export function shouldUseMultipleChoice(fact: FactProgress, recentlyFailed?: Set
 
   // REGRESSION: If correct but labored (typical time too slow), go back to MC
   const typicalTime = typicalResponseTime(correctNP)
-  if (typicalTime !== null && typicalTime > CONFIDENCE_THRESHOLDS.laboredTime) {
+  if (typicalTime !== null && typicalTime > effectiveTimeBar(fact, CONFIDENCE_THRESHOLDS.laboredTime)) {
     return true
   }
 

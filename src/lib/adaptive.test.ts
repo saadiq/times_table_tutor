@@ -35,6 +35,32 @@ describe('labored-time regression', () => {
     }
     expect(shouldUseMultipleChoice(fact)).toBe(false)
   })
+
+  it('allows typing time before calling a 2-digit answer labored', () => {
+    const fact: FactProgress = {
+      ...makeFact(3, 4),
+      confidence: 'learning',
+      recentAttempts: [
+        makeAttempt({ responseTimeMs: 13000 }),
+        makeAttempt({ responseTimeMs: 13000 }),
+        makeAttempt({ responseTimeMs: 13000 }),
+      ],
+    }
+    expect(shouldUseMultipleChoice(fact)).toBe(false)
+  })
+
+  it('still regresses a 1-digit answer at the base labored bar', () => {
+    const fact: FactProgress = {
+      ...makeFact(2, 3),
+      confidence: 'learning',
+      recentAttempts: [
+        makeAttempt({ responseTimeMs: 13000 }),
+        makeAttempt({ responseTimeMs: 13000 }),
+        makeAttempt({ responseTimeMs: 13000 }),
+      ],
+    }
+    expect(shouldUseMultipleChoice(fact)).toBe(true)
+  })
 })
 
 describe('starvation guard', () => {

@@ -37,6 +37,28 @@ describe('outlier-resistant timing', () => {
   })
 })
 
+describe('digit-aware time allowance', () => {
+  it('grants a 2-digit answer one digit of typing time toward mastered', () => {
+    const fact = { ...makeFact(7, 8), recentAttempts: Array.from({ length: 5 }, () => npCorrect(6000)) }
+    expect(calculateConfidence(fact)).toBe('mastered')
+  })
+
+  it('grants a 3-digit answer two digits of typing time toward mastered', () => {
+    const fact = { ...makeFact(12, 12), recentAttempts: Array.from({ length: 5 }, () => npCorrect(7500)) }
+    expect(calculateConfidence(fact)).toBe('mastered')
+  })
+
+  it('holds a 1-digit answer to the base mastered bar', () => {
+    const fact = { ...makeFact(2, 3), recentAttempts: Array.from({ length: 5 }, () => npCorrect(6000)) }
+    expect(calculateConfidence(fact)).toBe('confident')
+  })
+
+  it('extends the confident bar by the same allowance', () => {
+    const fact = { ...makeFact(7, 8), recentAttempts: [npCorrect(11000), npCorrect(11000), npCorrect(11000)] }
+    expect(calculateConfidence(fact)).toBe('confident')
+  })
+})
+
 describe('migrateRecentAttempts', () => {
   it('converts legacy boolean arrays', () => {
     const migrated = migrateRecentAttempts([true, false])
@@ -53,7 +75,8 @@ describe('getMasteryProgress', () => {
       unaidedCorrect: 0,
       neededCorrect: 3,
       typicalTimeMs: null,
-      targetTimeMs: 10000,
+      // 3x7=21 is a 2-digit answer, so the 10s bar gains one digit of typing time
+      targetTimeMs: 11500,
       accuracy: null,
       targetAccuracy: 0.7,
     })
@@ -76,7 +99,8 @@ describe('getMasteryProgress', () => {
     const progress = getMasteryProgress(fact)
     expect(progress.nextLevel).toBe('mastered')
     expect(progress.neededCorrect).toBe(5)
-    expect(progress.targetTimeMs).toBe(5000)
+    // 3x4=12 is a 2-digit answer, so the 5s bar gains one digit of typing time
+    expect(progress.targetTimeMs).toBe(6500)
     expect(progress.targetAccuracy).toBe(0.9)
   })
 

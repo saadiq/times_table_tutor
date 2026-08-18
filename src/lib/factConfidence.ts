@@ -17,6 +17,17 @@ export function typicalResponseTime(attempts: RecentAttempt[]): number | null {
 }
 
 /**
+ * The effective version of a base time bar for one fact: every answer digit
+ * past the first earns one allowance, since each digit is another key to find
+ * and tap. Every comparison against a time threshold must go through this —
+ * a raw CONFIDENCE_THRESHOLDS time is never a finished bar.
+ */
+export function effectiveTimeBar(fact: FactProgress, baseMs: number): number {
+  const digits = String(fact.answer).length
+  return baseMs + (digits - 1) * CONFIDENCE_THRESHOLDS.perDigitTimeAllowance
+}
+
+/**
  * Unaided number-pad performance over the window confidence is judged on —
  * the single source both calculateConfidence and getMasteryProgress read.
  * Multiple choice and hint-assisted answers are excluded.
@@ -45,19 +56,19 @@ export function calculateConfidence(fact: FactProgress): Confidence {
   const npAccuracy = accuracy ?? 0
   const typicalNPTime = typicalTime ?? Infinity
 
-  // MASTERED: 5+ NP correct, <5s typical, 90%+ accuracy
+  // MASTERED: 5+ NP correct, <5s typical (plus typing allowance), 90%+ accuracy
   if (
     correctCount >= CONFIDENCE_THRESHOLDS.masteredMinCorrect &&
-    typicalNPTime < CONFIDENCE_THRESHOLDS.masteredMaxTime &&
+    typicalNPTime < effectiveTimeBar(fact, CONFIDENCE_THRESHOLDS.masteredMaxTime) &&
     npAccuracy >= CONFIDENCE_THRESHOLDS.masteredMinAccuracy
   ) {
     return 'mastered'
   }
 
-  // CONFIDENT: 3+ NP correct, <10s typical, 70%+ accuracy
+  // CONFIDENT: 3+ NP correct, <10s typical (plus typing allowance), 70%+ accuracy
   if (
     correctCount >= CONFIDENCE_THRESHOLDS.confidentMinCorrect &&
-    typicalNPTime < CONFIDENCE_THRESHOLDS.confidentMaxTime &&
+    typicalNPTime < effectiveTimeBar(fact, CONFIDENCE_THRESHOLDS.confidentMaxTime) &&
     npAccuracy >= CONFIDENCE_THRESHOLDS.confidentMinAccuracy
   ) {
     return 'confident'
@@ -107,7 +118,7 @@ export function getMasteryProgress(fact: FactProgress): MasteryProgress {
     unaidedCorrect: correctCount,
     neededCorrect: target.correct,
     typicalTimeMs: typicalTime,
-    targetTimeMs: target.time,
+    targetTimeMs: effectiveTimeBar(fact, target.time),
     accuracy,
     targetAccuracy: target.accuracy,
   }
