@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calculateConfidence, migrateRecentAttempts } from './factConfidence'
+import { calculateConfidence, migrateRecentAttempts, getMasteryProgress } from './factConfidence'
 import { makeFact, makeAttempt } from '../test/factories'
 
 function npCorrect(responseTimeMs: number) {
@@ -42,6 +42,53 @@ describe('migrateRecentAttempts', () => {
     const migrated = migrateRecentAttempts([true, false])
     expect(migrated).toHaveLength(2)
     expect(migrated[0]).toMatchObject({ correct: true, inputMethod: 'multiple_choice' })
+  })
+})
+
+describe('getMasteryProgress', () => {
+  it('points a new fact at confident with nothing counted yet', () => {
+    const progress = getMasteryProgress(makeFact(3, 7))
+    expect(progress).toEqual({
+      nextLevel: 'confident',
+      unaidedCorrect: 0,
+      neededCorrect: 3,
+      typicalTimeMs: null,
+      targetTimeMs: 10000,
+      accuracy: null,
+      targetAccuracy: 0.7,
+    })
+  })
+
+  it('counts only unaided number-pad corrects', () => {
+    const fact = { ...makeFact(3, 4), confidence: 'learning' as const }
+    fact.recentAttempts = [
+      makeAttempt({ inputMethod: 'multiple_choice' }),
+      makeAttempt({ responseTimeMs: 4000, hintShown: true }),
+      npCorrect(6000),
+    ]
+    const progress = getMasteryProgress(fact)
+    expect(progress.unaidedCorrect).toBe(1)
+    expect(progress.typicalTimeMs).toBe(6000)
+  })
+
+  it('points a confident fact at the mastered thresholds', () => {
+    const fact = { ...makeFact(3, 4), confidence: 'confident' as const }
+    const progress = getMasteryProgress(fact)
+    expect(progress.nextLevel).toBe('mastered')
+    expect(progress.neededCorrect).toBe(5)
+    expect(progress.targetTimeMs).toBe(5000)
+    expect(progress.targetAccuracy).toBe(0.9)
+  })
+
+  it('reports no next level once mastered', () => {
+    const fact = { ...makeFact(3, 4), confidence: 'mastered' as const }
+    expect(getMasteryProgress(fact).nextLevel).toBeNull()
+  })
+
+  it('caps walk-away times in the typical speed it reports', () => {
+    const fact = { ...makeFact(3, 4), confidence: 'learning' as const }
+    fact.recentAttempts = [npCorrect(4000), npCorrect(200000)]
+    expect(getMasteryProgress(fact).typicalTimeMs).toBe(17000)
   })
 })
 

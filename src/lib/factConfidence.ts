@@ -67,6 +67,52 @@ export function calculateConfidence(fact: FactProgress): Confidence {
   return 'learning'
 }
 
+export type MasteryProgress = {
+  /** The level this fact is working toward; null once mastered. */
+  nextLevel: 'confident' | 'mastered' | null
+  /** Unaided number-pad corrects in the window that confidence is judged on. */
+  unaidedCorrect: number
+  neededCorrect: number
+  /** Capped-median time of those corrects; null with none yet. */
+  typicalTimeMs: number | null
+  targetTimeMs: number
+  /** Accuracy across unaided number-pad attempts in the window; null with none. */
+  accuracy: number | null
+  targetAccuracy: number
+}
+
+/**
+ * Where a fact stands against the real advancement criteria — computed from
+ * the same window and thresholds as calculateConfidence, so the display can
+ * never disagree with the engine.
+ */
+export function getMasteryProgress(fact: FactProgress): MasteryProgress {
+  const { correctCount, accuracy, typicalTime } = unaidedWindowStats(fact)
+
+  const towardMastered = fact.confidence === 'confident'
+  const target = towardMastered
+    ? {
+        correct: CONFIDENCE_THRESHOLDS.masteredMinCorrect,
+        time: CONFIDENCE_THRESHOLDS.masteredMaxTime,
+        accuracy: CONFIDENCE_THRESHOLDS.masteredMinAccuracy,
+      }
+    : {
+        correct: CONFIDENCE_THRESHOLDS.confidentMinCorrect,
+        time: CONFIDENCE_THRESHOLDS.confidentMaxTime,
+        accuracy: CONFIDENCE_THRESHOLDS.confidentMinAccuracy,
+      }
+
+  return {
+    nextLevel: fact.confidence === 'mastered' ? null : towardMastered ? 'mastered' : 'confident',
+    unaidedCorrect: correctCount,
+    neededCorrect: target.correct,
+    typicalTimeMs: typicalTime,
+    targetTimeMs: target.time,
+    accuracy,
+    targetAccuracy: target.accuracy,
+  }
+}
+
 /**
  * Migrate old boolean[] recentAttempts to new RecentAttempt[] format
  */
