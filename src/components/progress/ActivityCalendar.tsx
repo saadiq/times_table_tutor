@@ -78,6 +78,10 @@ export function ActivityCalendar() {
 
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm">
+      <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+        Practice Activity
+      </h3>
+
       {/* Stats row - always visible */}
       <button
         onClick={() => setExpanded(!expanded)}
