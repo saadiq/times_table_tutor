@@ -1,9 +1,12 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, TrendingUp, Clock, Target } from 'lucide-react'
+import { MasteryPathCard } from './MasteryPathCard'
 import { useAttemptsStore } from '../../stores/attemptsStore'
 import { useActiveOperation } from '../../hooks'
 import { formatEquation } from '../../lib/operations'
-import type { FactProgress, Confidence } from '../../types'
+import { typicalResponseTime } from '../../lib/factConfidence'
+import { formatResponseTime } from '../../lib/formatTime'
+import type { FactProgress, Confidence, AttemptRecord } from '../../types'
 
 type FactDetailSheetProps = {
   fact: FactProgress
@@ -42,29 +45,40 @@ function formatRelativeTime(dateString: string | null): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function formatResponseTime(ms: number): string {
-  if (ms < 1000) return `${ms}ms`
-  return `${(ms / 1000).toFixed(1)}s`
-}
-
-export function FactDetailSheet({ fact, onClose }: FactDetailSheetProps) {
-  const operation = useActiveOperation()
-  // Subscribe to raw data so the component re-renders when attempts change
-  useAttemptsStore(state => state.attempts)
-  useAttemptsStore(state => state.currentProfileId)
-  const getFactAttempts = useAttemptsStore(state => state.getFactAttempts)
-  const attempts = getFactAttempts(fact.fact)
-
-  // Calculate stats
+function StatTiles({ attempts }: { attempts: AttemptRecord[] }) {
   const totalAttempts = attempts.length
   const correctAttempts = attempts.filter(a => a.correct).length
-  const accuracy = totalAttempts > 0 ? Math.round((correctAttempts / totalAttempts) * 100) : 0
+  const accuracy = totalAttempts > 0 ? Math.round((correctAttempts / totalAttempts) * 100) : null
+  // Same capped-median statistic the engine judges speed with, so one
+  // abandoned problem's walk-away time can't poison the tile.
+  const typicalTime = typicalResponseTime(attempts)
 
-  // Average response time
-  const avgResponseTime = totalAttempts > 0
-    ? Math.round(attempts.reduce((sum, a) => sum + a.responseTimeMs, 0) / totalAttempts)
-    : 0
+  return (
+    <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="bg-gray-50 rounded-xl p-3 text-center">
+        <Target className="w-5 h-5 mx-auto text-garden-500 mb-1" />
+        <div className="text-xl font-bold text-gray-800">
+          {accuracy !== null ? `${accuracy}%` : '--'}
+        </div>
+        <div className="text-xs text-gray-500">Accuracy</div>
+      </div>
+      <div className="bg-gray-50 rounded-xl p-3 text-center">
+        <TrendingUp className="w-5 h-5 mx-auto text-sky-500 mb-1" />
+        <div className="text-xl font-bold text-gray-800">{totalAttempts}</div>
+        <div className="text-xs text-gray-500">Attempts</div>
+      </div>
+      <div className="bg-gray-50 rounded-xl p-3 text-center">
+        <Clock className="w-5 h-5 mx-auto text-warm-500 mb-1" />
+        <div className="text-xl font-bold text-gray-800">
+          {typicalTime !== null ? formatResponseTime(typicalTime) : '--'}
+        </div>
+        <div className="text-xs text-gray-500">Typical time</div>
+      </div>
+    </div>
+  )
+}
 
+function DetailRows({ fact, attempts }: { fact: FactProgress; attempts: AttemptRecord[] }) {
   // Input method trend (last 5 attempts)
   const recentAttempts = attempts.slice(-5)
   const inputMethodCounts = recentAttempts.reduce(
@@ -83,6 +97,43 @@ export function FactDetailSheet({ fact, onClose }: FactDetailSheetProps) {
   const recentStreak = fact.recentAttempts.slice(-5)
 
   return (
+    <div className="space-y-3">
+      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+        <span className="text-gray-500">Last practiced</span>
+        <span className="font-medium text-gray-800">{formatRelativeTime(fact.lastSeen)}</span>
+      </div>
+      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+        <span className="text-gray-500">Input method trend</span>
+        <span className="font-medium text-gray-800">{inputMethodTrend}</span>
+      </div>
+      <div className="flex justify-between items-center py-2">
+        <span className="text-gray-500">Recent streak</span>
+        <div className="flex gap-1">
+          {recentStreak.length > 0 ? (
+            recentStreak.map((attempt, i) => (
+              <div
+                key={i}
+                className={`w-3 h-3 rounded-full ${attempt.correct ? 'bg-garden-500' : 'bg-red-400'}`}
+              />
+            ))
+          ) : (
+            <span className="text-gray-400 text-sm">No attempts</span>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function FactDetailSheet({ fact, onClose }: FactDetailSheetProps) {
+  const operation = useActiveOperation()
+  // Subscribe to raw data so the component re-renders when attempts change
+  useAttemptsStore(state => state.attempts)
+  useAttemptsStore(state => state.currentProfileId)
+  const getFactAttempts = useAttemptsStore(state => state.getFactAttempts)
+  const attempts = getFactAttempts(fact.fact)
+
+  return (
     <AnimatePresence>
       {/* Backdrop */}
       <motion.div
@@ -93,15 +144,15 @@ export function FactDetailSheet({ fact, onClose }: FactDetailSheetProps) {
         className="fixed inset-0 bg-black/40 z-[70]"
       />
 
-      {/* Sheet */}
+      {/* Sheet — capped height with its own scroll so short viewports keep the header reachable */}
       <motion.div
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="fixed inset-x-0 bottom-0 z-[80] bg-white rounded-t-3xl shadow-xl safe-area-pb"
+        className="fixed inset-x-0 bottom-0 z-[80] bg-white rounded-t-3xl shadow-xl safe-area-pb max-h-[85vh] flex flex-col"
       >
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto">
           {/* Handle bar */}
           <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
 
@@ -124,53 +175,14 @@ export function FactDetailSheet({ fact, onClose }: FactDetailSheetProps) {
             </button>
           </div>
 
-          {/* Stats grid */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            <div className="bg-gray-50 rounded-xl p-3 text-center">
-              <Target className="w-5 h-5 mx-auto text-garden-500 mb-1" />
-              <div className="text-xl font-bold text-gray-800">{accuracy}%</div>
-              <div className="text-xs text-gray-500">Accuracy</div>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-3 text-center">
-              <TrendingUp className="w-5 h-5 mx-auto text-sky-500 mb-1" />
-              <div className="text-xl font-bold text-gray-800">{totalAttempts}</div>
-              <div className="text-xs text-gray-500">Attempts</div>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-3 text-center">
-              <Clock className="w-5 h-5 mx-auto text-warm-500 mb-1" />
-              <div className="text-xl font-bold text-gray-800">
-                {avgResponseTime > 0 ? formatResponseTime(avgResponseTime) : '--'}
-              </div>
-              <div className="text-xs text-gray-500">Avg time</div>
-            </div>
+          <StatTiles attempts={attempts} />
+
+          {/* Path to the next confidence level */}
+          <div className="mb-6">
+            <MasteryPathCard fact={fact} />
           </div>
 
-          {/* Details list */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-gray-500">Last practiced</span>
-              <span className="font-medium text-gray-800">{formatRelativeTime(fact.lastSeen)}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-gray-500">Input method trend</span>
-              <span className="font-medium text-gray-800">{inputMethodTrend}</span>
-            </div>
-            <div className="flex justify-between items-center py-2">
-              <span className="text-gray-500">Recent streak</span>
-              <div className="flex gap-1">
-                {recentStreak.length > 0 ? (
-                  recentStreak.map((attempt, i) => (
-                    <div
-                      key={i}
-                      className={`w-3 h-3 rounded-full ${attempt.correct ? 'bg-garden-500' : 'bg-red-400'}`}
-                    />
-                  ))
-                ) : (
-                  <span className="text-gray-400 text-sm">No attempts</span>
-                )}
-              </div>
-            </div>
-          </div>
+          <DetailRows fact={fact} attempts={attempts} />
         </div>
       </motion.div>
     </AnimatePresence>
