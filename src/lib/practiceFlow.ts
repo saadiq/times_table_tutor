@@ -1,5 +1,5 @@
 import type { FactProgress } from '../types'
-import { selectNextFact, type SelectionContext } from './adaptive'
+import { selectNextFact, MAX_NEW_FACTS_PER_SESSION, type SelectionContext } from './adaptive'
 
 export type ServeKind = 'adaptive' | 'comeback' | 'followUp'
 export type ComebackOutcome = 'none' | 'served' | 'deferred' | 'dropped'
@@ -68,6 +68,8 @@ export function decideNextProblem(params: ServeParams): ServeResult {
     const followUp = facts[pendingFollowUp]
     const eligible = !!followUp
       && (followUp.confidence === 'new' || followUp.confidence === 'learning')
+      // A never-seen twin is still a new fact — the session cap applies here too.
+      && (followUp.confidence !== 'new' || (context.newFactsIntroduced ?? 0) < MAX_NEW_FACTS_PER_SESSION)
       && progress < goal - 1
       && !recentFacts.slice(-3).includes(followUp.fact)
       && (focusTables.length === 0 || focusTables.some(t => matchesTable(followUp, t)))

@@ -80,6 +80,17 @@ describe('decideNextProblem follow-up handling', () => {
     expect(result.kind).toBe('comeback')
     expect(result.next?.fact).toBe('9x6')
   })
+
+  it('skips a never-seen follow-up once the session new-fact cap is reached', () => {
+    const result = decideNextProblem({ ...withFollowUp, context: { newFactsIntroduced: 2 } })
+    expect(result.kind).toBe('adaptive')
+  })
+
+  it('still serves a learning follow-up at the cap', () => {
+    const facts = { ...base.facts, '8x7': { ...base.facts['8x7'], confidence: 'learning' as const } }
+    const result = decideNextProblem({ ...withFollowUp, facts, context: { newFactsIntroduced: 2 } })
+    expect(result.kind).toBe('followUp')
+  })
 })
 
 describe('applyComebackOutcome', () => {
